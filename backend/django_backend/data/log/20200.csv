@@ -1,0 +1,571 @@
+﻿服务,级别,错误,消息,组件,原因
+AuthService,ERROR,INVALID_TOKEN,Token校验失败，用户ID:1001,TokenValidator,JWT签名算法不匹配，预期HS256实际RS256，导致密钥验证失败
+OrderService,WARN,TIMEOUT,订单创建超时，订单ID:ORD20250919001,OrderCreator,下游PaymentService响应时间超过5秒阈值，触发熔断机制
+PaymentService,FATAL,DB_CONNECTION_LOST,数据库连接池耗尽，无法获取连接,DBConnector,MySQL最大连接数设置为100，当前活跃连接达120，存在连接泄漏
+LogService,ERROR,CORRUPTED_LOG,日志文件损坏，偏移量:0x7FFF,LogWriter,磁盘写入过程中服务器突然断电，导致日志文件末尾CRC校验失败
+Alatest80,WARN,METRIC_LABEL_NAME_INVALID,标签名 123label 非法,LabelName,数字开头
+Alatest81,ERROR,WEBHOOK_RESPONSE_HEADER_MISS,缺少 X-Hook-ID 头,HeaderMiss,接收方未返回
+Alatest82,FATAL,THREAD_STACK_HIGH,线程栈使用 90%,StackHigh,递归深
+Alatest83,WARN,INVALID_GEO_JSON,GeoJSON 缺 type 字段,GeoJsonValid,格式错误
+Alatest84,ERROR,NATIVE_LIBRARY_LOAD_FAIL,原生库 aks_native 缺失,LibraryLoad,依赖 so 不存在
+Alatest85,FATAL,CACHE_VALUE_COMPRESSION_FAIL,压缩算法 brotli 失败,CompressFail,内存不足
+Alatest86,WARN,PASSWORD_COMPLEXITY_NOT_MET,密码 pass 复杂度不足,Complexity,缺数字符号
+Alatest87,ERROR,ROUTE_REDIRECT_LOOP,重定向循环 /akv,RedirectLoop,配置错误
+Alatest88,FATAL,INVALID_XML_ENCODING_DECLARATION,XML 声明 utf-32 不支持,XmlEncoding,仅支持 utf-8
+Alatest89,WARN,TRANSACTION_LOG_TRUNCATE_FAIL,日志截断失败,TruncateLog,文件被锁
+Alatest90,ERROR,BANDWIDTH_SAMPLE_LOST,采样丢失 10%,BandwidthSample,采集器故障
+Alatest91,FATAL,API_RESPONSE_CODE_NOT_DOCUMENT,状态码 599 无文档,ApiDoc,文档缺失
+Alatest92,WARN,MEMORY_SWAP_HIGH,交换分区 85%,SwapUsage,内存耗尽
+Alatest93,ERROR,CACHE_VALUE_DESERIALIZE_FAIL,反序列化类不存在,DeserializeErr,类被卸载
+Alatest94,FATAL,INVALID_ENUM_VALUE,枚举 xyz 无效,EnumErr,值不在范围
+Alatest95,WARN,HEAP_ALLOCATION_FAIL,堆分配 2 GB 失败,HeapFail,内存不足
+Alatest96,ERROR,MESSAGE_IN_FLIGHT_HIGH,在途 1.2 万条,InFlightErr,消费者卡死
+Alatest97,FATAL,CERT_PRIVATE_KEY_ENCRYPT_FAIL,DES 加密失败,KeyEncryptErr,算法被禁
+Alatest98,WARN,DISK_TEMP_HIGH,磁盘 65 ℃,DiskTempErr,散热故障
+Alatest99,ERROR,INVALID_JSON_POINTER,JSONPointer 负索引,PointerErr,不支持
+AuthService,ERROR,MFA_FAIL,多因子认证失败，用户ID: 10070,MfaValidator,谷歌验证器验证码错误
+PayService,WARN,PAY_FEE_CHANGE,支付手续费变更，费率: 0.6%,FeeManager,渠道调整费率
+StockService,ERROR,STOCK_EXPIRE,库存过期，商品ID: 30014,StockExpireChecker,商品超过保质期
+OrderService,INFO,ORDER_SPLIT,订单拆分成功，原订单ID: 20017,OrderSplitter,多仓库发货
+NotiService,ERROR,SMS_SIGN_FAIL,短信签名未备案，签名: 【商城】,SmsSignManager,运营商拒绝发送
+UserService,WARN,LOGIN_IP_CHANGE,登录IP变化，用户ID: 10071,IpChangeDetector,新IP: 223.104.45.6
+CartService,ERROR,CART_ITEM_DUPLICATE,购物车商品重复，商品ID: 30015,CartDeduplicator,重复添加同SKU
+EmailService,INFO,LIST_UNSUBSCRIBE,用户退订邮件，用户ID: 10072,UnsubscribeHandler,退订营销活动
+GatewayService,WARN,BACKEND_HEALTH_FAIL,后端健康检查失败，服务: StockService,HealthChecker,返回503状态
+LogService,ERROR,LOG_LOST_TIME,日志时间戳错乱，记录行: 2048,LogTimeValidator,系统时间回拨
+SearchService,INFO,QUERY_SUGGEST,"搜索建议触发，关键词: ""蓝牙""",SuggestionEngine,返回5条建议
+AarService,WARN,PASSWORD_EXPIRE,密码即将过期，用户ID: 10073,PasswordExpireReminder,剩余3天
+AbaService,ERROR,BALANCE_REFUND_FAIL,余额退款失败，用户ID: 10074,BalanceRefundProcessor,原支付渠道关闭
+PayService,INFO,PAY_CHANNEL_SWITCH,支付渠道切换，原渠道: wxpay,ChannelSwitcher,渠道故障自动切换
+StockService,WARN,STOCK_MOVE,库存调拨，商品ID: 30016,StockMoveManager,从A仓调B仓
+OrderService,ERROR,ORDER_RECEIPT_FAIL,发票开具失败，订单ID: 20018,ReceiptManager,税控系统离线
+NotiService,INFO,INBOX_FULL,用户收件箱已满，用户ID: 10075,InboxMonitor,超过100条未读
+UserService,ERROR,BIND_PHONE_FAIL,手机号绑定失败，用户ID: 10076,PhoneBinder,手机号已绑定其他账号
+CartService,WARN,CART_DISCOUNT_EXPIRE,购物车优惠过期，用户ID: 10077,DiscountTracker,优惠券已失效
+EmailService,ERROR,DKIM_FAIL,DKIM签名验证失败，域名: example.com,DkimValidator,公钥未配置
+GatewayService,INFO,CACHE_WARM,缓存预热完成，服务: ProductService,CacheWarmer,加载热点数据
+LogService,WARN,LOG_ENCODING_ERR,日志编码错误，字符: �,LogEncoder,非UTF-8字符
+SearchService,ERROR,FIELD_MISSING,搜索字段缺失，字段: price,FieldValidator,索引映射错误
+AuthService,INFO,SSO_LOGIN,单点登录成功，用户ID: 10078,SsoManager,跳转回商城
+PayService,WARN,PAY Risk,支付风险检测，用户ID: 10079,RiskEngine,异常大额支付
+StockService,ERROR,BATCH_STOCK_FAIL,批量扣减失败，商品数: 50,BatchStockManager,中间件网络闪断
+OrderService,INFO,ORDER_GIFT,赠品添加成功，订单ID: 20019,GiftManager,满赠活动
+NotiService,WARN,SILENCE_TIME,静默时段，用户ID: 10080,SilenceManager,22:00-08:00
+UserService,ERROR,THIRD_BIND_FAIL,第三方账号绑定失败，平台: qq,ThirdBinder,openid已绑定
+CartService,INFO,CART_SHARE,购物车分享成功，用户ID: 10081,CartSharer,分享码: ABCD1234
+EmailService,WARN,LIST_CLEAN,邮件列表清理，无效邮箱: 300,ListCleaner,硬反弹超过3次
+GatewayService,ERROR,BODY_TOO_LARGE,请求体过大，大小: 12MB,BodySizeLimiter,限制10MB
+LogService,INFO,LOG_REMOTE_SEND,远程日志发送成功，节点: node5,RemoteLogSender,实时备份
+SearchService,WARN,THROTTLE,搜索限流触发，IP: 192.168.1.104,SearchThrottler,超过阈值
+AarService,ERROR,LOCKOUT,账号锁定，用户ID: 10082,LockoutManager,连续10次错误
+AbaService,INFO,COUPON_SEND,优惠券发放，用户ID: 10083,CouponManager,面值10元
+PayService,ERROR,SETTLE_FAIL,结算失败，渠道: wxpay,SettleManager,对账不平
+StockService,WARN,STOCK_LESS,库存少货，商品ID: 30017,StockLessReporter,实际比系统少2件
+OrderService,ERROR,ORDER_DOUBLE,重复订单，用户ID: 10084,DuplicateChecker,同一秒提交2次
+NotiService,INFO,READ_RECEIPT,已读回执，用户ID: 10085,ReadReceiptManager,消息已读
+UserService,WARN,NAME_SENSITIVE,昵称敏感，用户ID: 10086,NameFilter,含敏感词
+CartService,ERROR,CART_DELETED,购物车被删除，用户ID: 10087,CartDeleter,用户注销
+EmailService,INFO,A_B_TEST,邮件A/B测试，组: 50/50,AbTestManager,主题行不同
+GatewayService,WARN,REGION_BLOCK,地区封禁，IP: 203.192.1.1,RegionBlocker,高风险地区
+LogService,ERROR,LOG_TAMPER,日志被篡改，校验失败,LogTamperDetector,哈希不匹配
+SearchService,INFO,AUTO_COMPLETE,"自动完成触发，关键词: ""跑步""",AutoCompleteEngine,返回10条
+AuthService,WARN,SESSION_FIXATE,会话固定攻击，IP: 192.168.1.105,SessionManager,已重置session
+PayService,INFO,PAY_QR_CREATE,支付二维码生成，订单ID: 20020,QrCodeManager,有效期5分钟
+StockService,ERROR,STOCK_FREEZE,库存冻结失败，商品ID: 30018,FreezeManager,冻结记录冲突
+OrderService,WARN,ORDER_STATUS_LAG,订单状态滞后，订单ID: 20021,StatusSyncManager,与物流状态不同步
+NotiService,ERROR,TEMPLATE_VAR_FAIL,模板变量缺失，变量: {{user}},TemplateVarManager,字段为空
+UserService,INFO,LEVEL_UP,用户等级提升，用户ID: 10088,LevelManager,当前: VIP2
+CartService,WARN,CART_CAMPAIGN_END,活动结束，优惠失效，用户ID: 10089,CampaignEnder,限时购结束
+EmailService,ERROR,BLACKLIST,发送被拒，邮箱在黑名单: user4@example.com,BlacklistChecker,用户投诉过
+GatewayService,INFO,SSL_RENEW,SSL证书自动续期成功,CertRenewer,新有效期: 1年
+LogService,WARN,LOG_BUFFER_FULL,日志缓冲区满，延迟写入,BufferMonitor,瞬时峰值
+SearchService,ERROR,QUERY_SYNTAX,"查询语法错误，关键词: ""AND OR""",SyntaxChecker,逻辑符冲突
+AarService,INFO,BIOMETRIC_PASS,生物识别通过，用户ID: 10090,BiometricManager,指纹验证成功
+AbaService,WARN,BALANCE_QUERY_FAIL,余额查询超时，用户ID: 10091,BalanceQuerier,账户服务响应慢
+PayService,ERROR,PAY_SIGN_REPEAT,支付签名重复，订单ID: 20022,SignRepeater,重放攻击
+StockService,INFO,STOCK_ALERT_SET,库存预警设置，商品ID: 30019,AlertManager,阈值: 10件
+OrderService,ERROR,ORDER_REFUND_DOUBLE,重复退款，订单ID: 20023,RefundChecker,已退金额超应付
+NotiService,WARN,CHANNEL_PRIORITY,通道降级，短信→邮件，用户ID: 10092,PrioritySwitcher,短信通道故障
+UserService,ERROR,AVATAR_VIOLATE,头像违规，用户ID: 10093,AvatarChecker,含违法图片
+CartService,INFO,CART_IMPORT,购物车导入成功，用户ID: 10094,CartImporter,从Excel导入20件
+EmailService,WARN,CHARSET_ERR,邮件字符集错误，预期: UTF-8,CharsetManager,实际: ISO-8859-1
+GatewayService,ERROR,VERSION_FAIL,版本不兼容，Header: API-Version=1.0,VersionManager,最低要求: 2.0
+LogService,INFO,LOG_ANALYZE,日志分析完成，发现异常: 15条,LogAnalyzer,生成报告
+SearchService,WARN,INDEX_OPTIMIZE,索引优化中，暂停写入,IndexOptimizer,预计10分钟
+AuthService,ERROR,OAUTH_FAIL,OAuth授权失败，平台: weibo,OAuthManager,授权码失效
+PayService,INFO,PAY_SPLIT,支付分账成功，订单ID: 20024,SplitManager,分账给3个子商户
+StockService,WARN,STOCK_DIFF,库存差异，系统: 98，实际: 95,StockAuditor,丢失3件
+OrderService,INFO,ORDER_COMMENT,订单评价，用户ID: 10095,CommentManager,5星好评
+NotiService,ERROR,PUSH_TOKEN_EXPIRE,推送令牌过期，用户ID: 10096,PushTokenManager,需重新获取
+UserService,WARN,PHONE_CHANGE,手机号更换，原号: 138****1234,PhoneChanger,新号: 139****5678
+CartService,ERROR,CART_CHECKOUT_FAIL,结算失败，商品失效，用户ID: 10097,CheckoutManager,商品下架
+EmailService,INFO,TEMPLATE_CLONE,邮件模板克隆成功，源ID: 60003,TemplateCloner,新ID: 60004
+GatewayService,WARN,DNS_SLOW,DNS解析慢，延迟: 1.2秒,DnsMonitor,运营商DNS故障
+LogService,ERROR,LOG_PERMISSION,日志文件权限不足，路径: /opt/logs,PermissionChecker,需chmod 644
+SearchService,INFO,SPELL_FIX,"搜索纠错，原词: ""蓝芽""",SpellFixer,"纠正为""蓝牙"""
+AarService,WARN,LOGIN_DEVICE,新设备登录，用户ID: 10098,DeviceManager,设备名: iPhone 15
+AbaService,ERROR,COUPON_EXPIRE,优惠券已过期，用户ID: 10099,CouponChecker,有效期至昨日
+PayService,WARN,PAY_TIMEOUT_CLOSE,支付超时关闭，订单ID: 20025,TimeoutCloser,超过30分钟未支付
+StockService,INFO,STOCK_RETURN,退货入库，商品ID: 30020,ReturnManager,数量: 1
+OrderService,ERROR,ORDER_HOLD,订单被挂起，订单ID: 20026,HoldManager,涉嫌欺诈
+NotiService,INFO,STATS_SEND,日报发送，用户数: 5000,StatsSender,昨日数据
+UserService,WARN,EMAIL_UNVERIFIED,邮箱未验证，用户ID: 10100,EmailVerifier,限制部分功能
+CartService,ERROR,CART_SYNC_FAIL,购物车同步失败，用户ID: 10101,SyncManager,网络中断
+EmailService,WARN,SUBJECT_LONG,邮件主题过长，长度: 120字,SubjectLimiter,限制50字
+GatewayService,INFO,BACKEND_RECOVER,后端恢复，服务: PayService,RecoveryManager,故障已解除
+LogService,ERROR,LOG_CHAIN_BREAK,日志链断裂，缺失上一段,ChainValidator,节点重启
+SearchService,WARN,QUERY_EMPTY,搜索词为空，IP: 192.168.1.106,EmptyQueryFilter,拒绝查询
+AuthService,INFO,PERMISSION_GRANT,权限授予，角色: ADMIN，用户ID: 10102,PermissionGranter,手动提升
+PayService,ERROR,PAY_CHANNEL_REJECT,渠道拒付，订单ID: 20027,RejectManager,风控拒绝
+StockService,WARN,STOCK_LOW_SOON,库存即将不足，商品ID: 30021,Predictor,预计3天内售完
+OrderService,INFO,ORDER_WEIGHT,订单称重，重量: 1.2kg,WeightManager,自动计算运费
+NotiService,ERROR,WEBHOOK_TIMEOUT,Webhook超时，URL: https://notify.example.com,WebhookTimer,5秒未响应
+UserService,WARN,NAME_TOO_LONG,昵称过长，用户ID: 10103,NameLengthChecker,限制20字符
+CartService,INFO,CART_SHARE_EXPIRE,分享链接过期，用户ID: 10104,ShareExpirer,超过24小时
+EmailService,ERROR,SMTP_DISCONNECT,SMTP连接被断开,SmtpKeeper,服务器主动关闭
+GatewayService,WARN,RATE_ADJUST,限流阈值调整，原: 100→新: 150,RateAdjuster,压力缓解
+LogService,INFO,LOG_EXPORT,日志导出成功，条数: 50000,LogExporter,CSV格式
+SearchService,ERROR,SORT_FAIL,排序字段不存在，字段: discount,SortValidator,未索引
+AarService,WARN,PASSWORD_SAME,新密码与旧密码相同，用户ID: 10105,PasswordSamenessChecker,拒绝修改
+AbaService,INFO,AUTO_TOPUP,自动充值成功，用户ID: 10106,AutoTopupManager,金额: 200元
+PayService,WARN,PAY_METHOD_EXPIRE,支付方式即将过期，卡尾号: 1234,CardExpireReminder,剩余30天
+StockService,ERROR,STOCK_BATCH_LOST,批量库存丢失，商品数: 30,BatchStockTracker,系统异常回滚
+OrderService,WARN,ORDER_GIFT_STOCK,赠品库存不足，订单ID: 20028,GiftStockChecker,赠品下架
+NotiService,INFO,NOTI_SUMMARY,通知汇总发送，用户ID: 10107,SummarySender,每日汇总
+UserService,ERROR,INVITE_CODE_INVALID,邀请码无效，用户ID: 10108,InviteCodeValidator,码已作废
+CartService,WARN,CART_ITEM_NUM_CHANGE,商品数量变更，原: 3→新: 5,CartItemUpdater,用户调整
+EmailService,INFO,TEMPLATE_PREVIEW,邮件模板预览成功，ID: 60005,TemplatePreviewer,无错
+GatewayService,ERROR,BACKEND_NOT_FOUND,后端服务未发现，服务名: RewardService,ServiceFinder,注册表无记录
+LogService,WARN,LOG_DEDUP,重复日志过滤，条数: 120,LogDeduper,节省空间
+SearchService,INFO,CLICK_LOG,"搜索点击日志记录，关键词: ""键盘""",ClickLogger,位置: 第3条
+AuthService,ERROR,TOKEN_REVOKE,令牌吊销失败，令牌ID: 70002,RevokeManager,已过期无法吊销
+PayService,INFO,PAY_REFUND_PART,部分退款成功，订单ID: 20029,PartialRefundManager,金额: 50元
+StockService,WARN,STOCK_WARNING_OFF,关闭库存预警，商品ID: 30022,WarningOffManager,运营手动关闭
+OrderService,ERROR,ORDER_FROZEN,订单被冻结，订单ID: 20030,FreezeManager,投诉纠纷
+NotiService,WARN,NOTI_FREQ,通知频率过高，用户ID: 10109,FreqLimiter,1小时超10条
+UserService,INFO,ADDRESS_ADD,收货地址添加，用户ID: 10110,AddressManager,地址ID: 80003
+CartService,ERROR,CART_CAMPAIGN_MISMATCH,活动商品不符，用户ID: 10111,CampaignMatcher,非活动商品
+EmailService,WARN,HTML_TAG_ERR,HTML邮件标签未闭合,HtmlValidator,少
+GatewayService,INFO,CERT_REVOKE_CHECK,证书吊销检查完成，状态: 正常,CertRevokeChecker,OCSP正常
+LogService,ERROR,LOG_READER_FAIL,日志读取器初始化失败,LogReader,配置缺失
+SearchService,WARN,HIGHLIGHT_FAIL,高亮失败，字段: title,Highlighter,映射缺失
+AarService,INFO,BIOMETRIC_ENROLL,生物特征注册成功，用户ID: 10112,BiometricEnroller,指纹: 右手拇指
+AbaService,ERROR,BALANCE_HOLD_RELEASE,余额解冻失败，用户ID: 10113,HoldReleaser,争议未解决
+PayService,WARN,PAY_FEE_DEDUCT,手续费扣除，订单ID: 20031,FeeDeductor,金额: 1.5元
+StockService,INFO,STOCK_TAKE,盘点完成，商品ID: 30023,StockTaker,盈亏: 0
+OrderService,WARN,ORDER_DELIVER_DELAY,配送延迟，订单ID: 20032,DeliverDelayer,天气原因
+NotiService,ERROR,SMS_PREFIX_FAIL,短信前缀未审批，前缀: 【测试】,PrefixManager,运营商拒绝
+UserService,WARN,GENDER_MISSING,性别未填写，用户ID: 10114,GenderCollector,完整度降低
+CartService,INFO,CART_SORT,购物车排序完成，用户ID: 10115,CartSorter,按加入时间
+EmailService,ERROR,ATTACH_SIZE,附件大小超限，大小: 30MB,AttachSizeChecker,限制20MB
+GatewayService,WARN,DNS_CACHE_MISS,DNS缓存未命中，域名: api.pay.com,DnsCacheManager,首次解析
+LogService,INFO,LOG_METRIC,日志指标上报，QPS: 1200,MetricsSender,实时
+SearchService,ERROR,FILTER_ERR,过滤器语法错误，过滤: price:abc,FilterParser,值类型不符
+AuthService,WARN,LOGIN_TIME,登录时间异常，用户ID: 10116,TimeAnomalyDetector,凌晨3点异常
+StockService,ERROR,STOCK_UNIT_ERROR,库存单位错误，商品ID: 30024,UnitManager,期望: 件，实际: 盒
+OrderService,INFO,ORDER_WEIGHT_ERROR,称重异常，订单ID: 20033,WeightChecker,差异: ±500g
+NotiService,WARN,NOTI_SOUND_OFF,通知声音关闭，用户ID: 10117,SoundToggler,用户设置
+UserService,ERROR,BIRTHDAY_FAIL,生日格式错误，用户ID: 10118,BirthdayValidator,格式: 2025-13-45
+CartService,WARN,CART_ITEM_INVALID,购物车商品失效，商品ID: 30025,ItemValidator,已售罄
+EmailService,INFO,TEMPLATE_LANG,邮件模板语言切换，语言: en,LangSwitcher,用户偏好
+GatewayService,ERROR,BODY_PARSE_FAIL,请求体解析失败，内容: 非法JSON,BodyParser,语法错误
+LogService,WARN,LOG_SKIPPED,日志被采样跳过，比例: 10%,Sampler,减少体积
+SearchService,INFO,QUERY_EXPAND,"查询扩展触发，原词: ""手机""",QueryExpander,"扩展: ""智能手机"""
+AarService,ERROR,ACCOUNT_DELETE,账号注销失败，用户ID: 10119,Deleter,存在未结订单
+AbaService,WARN,COUPON_USED,优惠券已使用，用户ID: 10120,CouponUser,不能重复用
+PayService,ERROR,PAY_QR_EXPIRE,二维码过期，订单ID: 20034,QrExpireManager,超过5分钟
+StockService,WARN,STOCK_NEGATIVE,库存为负，商品ID: 30026,NegativeStockChecker,需人工核查
+OrderService,INFO,ORDER_INSURE,订单投保成功，订单ID: 20035,InsureManager,保费: 2元
+NotiService,ERROR,PUSH_CERT_EXPIRE,推送证书过期，平台: iOS,CertWatcher,已过期3天
+UserService,WARN,PROFILE_INCOMPLETE,资料完整度低于60%，用户ID: 10121,CompletenessChecker,提示补充
+CartService,INFO,CART_COPIED,购物车复制成功，用户ID: 10122,CartCopier,分享给新用户
+EmailService,ERROR,SMTP_AUTH_FAIL,SMTP认证失败，用户名: noreply,SmtpAuthManager,密码错误
+GatewayService,WARN,HEADER_TOO_LONG,请求头过长，头: User-Agent,HeaderLengthChecker,限制512字符
+LogService,INFO,LOG_REMOTE_ACK,远程日志确认收到，节点: node6,AckManager,无丢失
+SearchService,WARN,QUERY_TRUNCATE,查询被截断，长度: 200字,QueryTruncator,限制100字
+AuthService,INFO,PASSWORD_STRENGTH,密码强度达标，用户ID: 10123,StrengthChecker,等级: 强
+PayService,WARN,REFUND_FEE_MISSING,退款手续费未配置，渠道: alipay,RefundFeeManager,使用默认
+StockService,ERROR,STOCK_LOCATE_FAIL,货位定位失败，商品ID: 30027,Locator,条码模糊
+OrderService,WARN,ORDER_PRIORITY_DROP,订单优先级降低，订单ID: 20036,PriorityManager,库存不足
+NotiService,INFO,BATCH_SEND,批量通知发送，数量: 2000,BatchSender,营销短信
+UserService,ERROR,INVITE_SELF,用户尝试邀请自己，用户ID: 10124,InviteValidator,拒绝
+CartService,WARN,CART_ITEM_NUM_ZERO,商品数量设为0，商品ID: 30028,ZeroQuantityManager,自动移除
+EmailService,WARN,PREVIEW_FAIL,邮件预览失败，模板ID: 60006,PreviewManager,变量为空
+GatewayService,INFO,ROUTE_CACHE_HIT,路由缓存命中，路径: /api/stock,RouteCacheManager,加速访问
+LogService,ERROR,LOG_INJECTION_DETECT,日志注入攻击检测，IP: 192.168.1.107,InjectionDetector,含SQL关键字
+SearchService,INFO,QUERY_LOG_ANALYZE,"搜索日志分析，热搜: ""耳机""",LogAnalyzer,排名提升
+AarService,WARN,WEAK_PASSWORD_LIST,密码在弱口令字典，用户ID: 10125,WeakPasswordChecker,强制修改
+AbaService,INFO,BALANCE_REPORT,余额日报生成，用户数: 12000,ReportGenerator,已邮件发送
+PayService,ERROR,PAY_CHANNEL_TIMEOUT,渠道超时，通道: wxpay,ChannelTimeoutManager,超过10秒
+StockService,WARN,STOCK_EXPIRE_SOON,商品即将过期，商品ID: 30029,ExpirePredictor,剩余7天
+OrderService,INFO,ORDER_TRACK,物流跟踪更新，订单ID: 20037,TrackUpdater,到达配送站
+NotiService,ERROR,BADGE_FAIL,应用角标更新失败，用户ID: 10126,BadgeManager,推送通道不可用
+UserService,WARN,THIRD_UNBIND,第三方解绑，平台: wechat，用户ID: 10127,Unbinder,用户主动
+CartService,INFO,CART_TOTAL,购物车合计计算，用户ID: 10128,TotalCalculator,优惠后: ￥199
+EmailService,ERROR,TEMPLATE_LOOP,邮件模板循环引用，ID: 60007,LoopDetector,拒绝渲染
+GatewayService,WARN,BACKEND_QUEUE,后端队列积压，服务: EmailService,QueueMonitor,积压5000
+LogService,INFO,LOG_AGE_ROTATE,日志按天轮转，日期: 2025-09-21,AgeRotator,正常
+SearchService,ERROR,CLUSTER_SPLIT,搜索集群脑裂，节点: node4/node5,SplitBrainDetector,网络分区
+AuthService,WARN,LOGIN_FAST,登录频率过快，用户ID: 10129,FastLoginDetector,1分钟5次
+PayService,INFO,PAY_SUCCESS_PAGE,支付成功页展示，订单ID: 20038,SuccessPageManager,转化跟踪
+StockService,ERROR,STOCK_BATCH_DUPLICATE,批量入库重复，批次号: B2025092101,BatchDuplicateChecker,拒绝重复
+OrderService,WARN,ORDER_BOX_CHANGE,包装变更，订单ID: 20039,BoxManager,原箱缺货
+NotiService,INFO,INBOX_MARK_READ,全部已读，用户ID: 10130,MarkReadManager,一键已读
+UserService,ERROR,SIGN_UP_LIMIT_IP,注册限流，IP: 192.168.1.108,SignupLimiter,24h超50次
+CartService,WARN,CART_DISCOUNT_CHANGE,优惠变更，用户ID: 10131,DiscountChanger,活动规则调整
+EmailService,INFO,TEMPLATE_PUBLISH,模板发布成功，ID: 60008,TemplatePublisher,上线
+GatewayService,ERROR,METHOD_NOT_ALLOWED,方法不允许，Method: DELETE /api/login,MethodChecker,返回405
+LogService,WARN,LOG_BACKLOG,日志积压，未处理: 8000条,BacklogMonitor,消费慢
+SearchService,INFO,QUERY_BOOST,查询 boost 设置，字段: sales,BoostManager,系数: 1.5
+AarService,ERROR,ACCOUNT_LOCK_EXPIRE,账号锁定期已过，用户ID: 10132,LockExpireManager,自动解锁
+AbaService,WARN,COUPON_MIN_SPEND,未达到优惠券门槛，用户ID: 10133,MinSpendChecker,差: ￥20
+PayService,INFO,PAY_RECEIPT,支付回执生成，订单ID: 20040,ReceiptGenerator,电子回执
+StockService,WARN,STOCK_ADJUST_AUDIT,库存调整待审计，商品ID: 30030,AdjustAuditor,金额>1000
+OrderService,ERROR,ORDER_CANCELLATION_FEE,取消扣费，订单ID: 20041,CancellationFeeManager,扣: ￥10
+NotiService,WARN,NOTI_LANGUAGE,通知语言切换，用户ID: 10134,LanguageSwitcher,中文→英文
+UserService,INFO,POINTS_EXPIRE,积分即将过期，用户ID: 10135,PointsExpireReminder,数量: 300
+CartService,ERROR,CART_CAMPAIGN_END,活动已结束，用户ID: 10136,CampaignEndChecker,限时抢光
+EmailService,WARN,CLICK_TRACK_FAIL,点击跟踪失败，链接: http://example.com,ClickTracker,域名DNS失效
+GatewayService,INFO,CERT_DEPLOY,证书部署完成，域名: *.example.com,CertDeployer,无中断
+LogService,ERROR,LOG_CORRUPT_BLOCK,日志块损坏，偏移: 4096,BlockCorruptChecker,磁盘坏道
+SearchService,WARN,FACET_LIMIT,分面返回限制，实际: 200，限制: 100,FacetLimiter,截断
+AuthService,INFO,SSO_LOGOUT,单点登出成功，用户ID: 10137,SsoLogoutManager,全端退出
+PayService,ERROR,PAY_REFUND_AUDIT,退款待审核，订单ID: 20042,RefundAuditor,金额>500
+StockService,INFO,STOCK_SNAPSHOT,库存快照生成，时间: 2025-09-21 00:00,SnapshotManager,备份
+OrderService,WARN,ORDER_DELIVER_TIME,配送时间窗口过期，订单ID: 20043,DeliverTimeManager,需重新预约
+NotiService,ERROR,PUSH_BADGE_FAIL,角标数字更新失败，用户ID: 10138,BadgeUpdater,APNS返回错误
+UserService,WARN,PROFILE_PHOTO_SIZE,头像尺寸过大，用户ID: 10139,PhotoSizeChecker,限制2MB
+CartService,INFO,CART_WISH_MOVE,心愿单移入购物车，用户ID: 10140,WishMover,数量: 5
+EmailService,ERROR,TEMPLATE_PARAM_MISS,模板参数缺失，参数: orderId,ParamValidator,渲染中断
+GatewayService,WARN,BACKEND_SLOW_QUEUE,后端慢请求队列，数量: 100,SlowQueueManager,超时>3s
+LogService,INFO,LOG_REMOTE_PULL,远程日志拉取完成，条数: 3000,RemotePuller,无丢失
+SearchService,ERROR,QUERY_REGEX_ERR,正则查询错误，表达式: .*?,RegexChecker,贪婪模式冲突
+AarService,WARN,MFA_NOT_BIND,未绑定多因子，用户ID: 10141,MfaBinder,提示开启
+AbaService,INFO,BALANCE_ADJUST,余额手工调整，用户ID: 10142,ManualAdjuster,原因: 退差价
+PayService,WARN,PAY_CHANNEL_LIMIT,渠道限额，剩余: ￥2000,ChannelLimitManager,今日上限
+StockService,ERROR,STOCK_LOC_EMPTY,货位空，商品ID: 30031,Locator,实物缺失
+OrderService,INFO,ORDER_PACKAGE,包裹打包完成，订单ID: 20044,PackageManager,面单打印
+NotiService,WARN,NOTI_REDUNDANT,重复通知过滤，用户ID: 10143,RedundantFilter,内容相同
+Alpha1,ERROR,AUTH_TOKEN_REVOK,令牌已吊销，用户:10035,AuthManager,用户手动登出触发吊销
+Alpha2,WARN,CACHE_HIT_DROP,命中率 99%→60%,CacheMonitor,误刷冷数据导致
+Alpha3,FATAL,DB_REPLICA_LAG,从库延迟 120s,LagWatcher,大事务未提交
+Alpha4,ERROR,FILE_QUARANTINE,文件被隔离，invoice.exe,AVScanner,检出 Trojan
+Alpha5,WARN,CERT_EXPIRE_7D,证书 7 天后过期,CertAlert,续签流程未启动
+Alpha6,ERROR,LOGIN_BRUTE,5 分钟 80 次密码错误,BruteBlocker,IP 已封 1h
+Alpha7,FATAL,KAFKA_LAG_50W,消费 Lag>50 万条,LagMonitor,下游 GC 停顿 30s
+Alpha8,WARN,INDEX_STALE_3D,索引 3 天未更新,IndexUpdater,增量任务失败
+Alpha9,ERROR,YAML_TAB_INVALID,YAML 含 Tab 字符,YamlLint,缩进必须用空格
+Alpha10,FATAL,NATIVE_LEAK_800M,原生内存泄漏 800 MB,LeakTracer,malloc 未 free
+Alpha11,WARN,PROM_CARDINALITY,标签基数 50 万,PromMonitor,导致 TSDB OOM
+Alpha12,ERROR,PAY_DUP,重复支付，订单:ORD22001,PayChecker,并发幂等失效
+Alpha13,FATAL,SPLIT_BRAIN_4_2,集群脑裂 4→2 节点,BrainDetector,网络分区
+Alpha14,WARN,EVICT_SLOW_6S,缓存淘汰耗时 6 s,EvictMonitor,数据量 300 万
+Alpha15,ERROR,WEBHOOK_TLS_FAIL,TLS 握手失败,WebhookClient,证书链不完整
+Alpha16,WARN,INODE_3P,inode 剩余 3%,InodeWatcher,小文件过多
+Alpha17,ERROR,SMS_TMPL_MISS,模板 sms_999 不存在,TmplStore,被误删
+Alpha18,FATAL,GC_OVERHEAD_98,GC 占用 98%,GcMonitor,堆 2G 不足
+Alpha19,WARN,BURST_BW_1P3G,突发 1.3 Gbps>1 G 购买值,BurstCtl,需补费用
+Alpha20,ERROR,API_V0_DEPRECATE,v0 已下线,ApiLifecycle,调用方未升级
+Alpha21,FATAL,RAID0_DISK_OFF,RAID0 磁盘离线,RaidHealth,无冗余，只读
+Alpha22,WARN,SESSION_FIX,登录未换 JSESSIONID,SecFilter,固定攻击风险
+Alpha23,ERROR,UPLOAD_120M_LIMIT,文件 120 MB>100 MB 限制,UploadGate,未分片
+Alpha24,FATAL,KAFKA_DISK_FULL,Kafka 磁盘 100%,KafkaDisk,消息写入失败
+Alpha25,WARN,MERGE_FAIL,索引段合并失败,MergeEng,磁盘<10%
+Alpha26,ERROR,PWD_WEAK,密码缺特殊字符,PwdPolicy,策略不符
+Alpha27,FATAL,CONTAINER_CORE_139,容器 core dump,Runtime,segfault
+Alpha28,WARN,TS_DRIFT_5S,时间戳漂移 5 s,NtpChecker,未同步
+Alpha29,ERROR,CHAIN_INCOMPLETE,证书链缺少中间证,ChainVal,TLS 失败
+Alpha30,FATAL,INT_PK_OVERFLOW,INT 主键溢出,KeyOverflow,已达最大值
+Alpha31,WARN,HIT_DROP_25P,缓存命中率降 25%,HitDrop,规则误改
+Alpha32,ERROR,HARD_BOUNCE,邮箱 notexist.com 硬退,BounceMgr,域名无效
+Alpha33,FATAL,DEP_SVC_503,依赖 Inventory 503,DepHealth,订单无法创建
+Alpha34,WARN,MSG_18M_LIMIT,消息 18 MB>10 MB 限制,MsgSize,队列拒绝
+Alpha35,ERROR,ENUM_INVALID,值 xyz 不在枚举范围,EnumCheck,仅 abc/def
+Alpha36,FATAL,STACK_OVF,栈溢出>10k 帧,StackOvf,递归无出口
+Alpha37,WARN,LOSS_5P,丢包率 5%,PacketLoss,链路劣化
+Alpha38,ERROR,WEBHOOK_RSP_TMO,响应超时 30 s,WHookTmo,接收方慢
+Alpha39,FATAL,DATA_DIR_LOST,/data 目录丢失,DirMon,磁盘损坏
+Alpha40,WARN,REFRESH_LAG_10S,索引刷新延迟 10 s,RefreshLag,副本慢
+Alpha41,ERROR,SIGN_NOT_FOUND,短信签名未备案,SmsSign,运营商无记录
+Alpha42,FATAL,LOCK_WAIT_50S,行锁等待超 50 s,LockWait,长事务阻塞
+Alpha43,WARN,WARM_FAIL,缓存预热失败,WarmFail,源站 404
+Alpha44,ERROR,QUOTA_EXCEED,日配额 1 万已用完,QuotaMgr,需明日重置
+Alpha45,FATAL,FRAG_92P,内存碎片率 92%,FragMgr,长期未重启
+Alpha46,WARN,DISK_TEMP_65,磁盘温度 65 ℃,DiskTemp,散热故障
+Alpha47,ERROR,CERT_REVOKED,证书被 CA 吊销,CertRev,立即更换
+Alpha48,FATAL,BROKER_CLUSTER_DOWN,Kafka 3 节点全宕,BrokerDown,网络+磁盘双故障
+Alpha49,WARN,OUT_OF_ORDER_8S,指标乱序 8 s,OrderMon,采集器时钟差
+Alpha50,ERROR,PWD_REUSE,密码与上次相同,ReuseDet,策略禁止
+Alpha51,FATAL,SSTABLE_CORRUPT,SSTable 校验失败,SstCorrupt,磁盘坏块
+Alpha52,WARN,UTIL_SPIKE_98P,带宽利用率突增 98%,UtilSpike,突发流量
+Alpha53,ERROR,PAYLOAD_2M_LIMIT,Payload 2 MB>256 KB,PayloadLim,超限拒绝
+Alpha54,FATAL,OFF_HEAP_OOM,堆外内存 OOM,OffHeapOom,DirectBuffer 不足
+Alpha55,WARN,EVICT_POLICY_NO_IMPL,自定义淘汰策略未实现,PolicyNoImpl,接口空壳
+Alpha56,ERROR,SESSION_CONCURRENT,并发会话 5>3 限制,SessConc,超限踢出
+Alpha57,FATAL,RAFT_ELECTION_FAIL,选主失败,RaftElect,网络分区
+Alpha58,WARN,SEGMENT_HIGH_300,索引段 300+ 未合并,SegHigh,影响写入
+Alpha59,ERROR,PINNING_FAIL,证书固定失败,PinFail,公钥不符
+Alpha60,FATAL,TX_LOG_TRUNC_FAIL,事务日志截断失败,TxTrunc,文件被锁
+Alpha61,WARN,SAMPLE_LOST_10P,采样丢失 10%,SampleLoss,采集器失联
+Alpha62,ERROR,API_CODE_NO_DOC,状态码 599 无文档,CodeDoc,文档缺失
+Alpha63,FATAL,SWAP_HIGH_85P,交换分区 85%,SwapHigh,内存耗尽
+Alpha64,WARN,DESERIALIZE_FAIL,反序列化类不存在,DeserFail,类被卸载
+Alpha65,ERROR,ENUM_XYZ_INVALID,枚举 xyz 无效,EnumFail,值不在范围
+Alpha66,FATAL,HEAP_ALLOC_2G_FAIL,堆分配 2 G 失败,HeapFail,内存不足
+Alpha67,WARN,IN_FLIGHT_12K,在途消息 1.2 万,InFlight,消费者卡死
+Alpha68,ERROR,KEY_ENCRYPT_DES_FAIL,DES 加密被禁,KeyEncFail,强度不足
+Alpha69,FATAL,DISK_TEMP_65C,磁盘 65 ℃,DiskTemp,散热故障
+Alpha70,WARN,JSON_PTR_NEG_IDX,JSONPointer 负索引,JsonPtr,不支持
+Alpha71,ERROR,MEMBERSHIP_CHANGE_FAIL,成员变更失败,MemberFail,无共识
+Alpha72,FATAL,LOG_ROOT_PERM_DENY,/var/log 权限不足,LogPerm,目录 755 需 775
+Alpha73,WARN,CACHE_ACCESS_SLOW,缓存访问 500 ms,CacheSlow,节点负载高
+Alpha74,ERROR,STOCK_NEGATIVE,库存为负 SKU777,StockNeg,并发未加锁
+Alpha75,FATAL,JVM_METASPACE_OOM,Metaspace OOM,MetaOom,类加载过多
+Alpha76,WARN,BANDWIDTH_THROTTLE,带宽被限至 10 Mbps,Throttle,流量包用尽
+Alpha77,ERROR,API_KEY_NOT_FOUND,API 密钥 ak_unknown 不存在,KeyFind,未注册
+UserService,ERROR,IDENTITY_EXPIRE,实名认证过期，用户ID: 10144,IdentityExpireChecker,需重新上传
+CartService,WARN,CART_STOCK_WARN,购物车库存警告，商品ID: 30032,StockWarner,仅剩1件
+EmailService,INFO,TEMPLATE_VERSION,模板版本更新，ID: 60009,VersionManager,旧版废弃
+GatewayService,ERROR,BACKEND_HEALTH_TIMEOUT,健康检查超时，服务: StockService,HealthTimeoutManager,超过5秒
+LogService,WARN,LOG_sample,日志采样率调整，原: 10%→新: 5%,SampleRateManager,节省存储
+SearchService,INFO,QUERY_CACHE_WARM,"查询缓存预热，关键词: ""口罩""",CacheWarmer,加载完成
+AuthService,ERROR,BRUTE_FORCE,暴力破解检测，IP: 192.168.1.109,BruteForceDetector,锁定IP
+PayService,INFO,PAY_SPLIT_SETTLE,分账结算完成，子商户数: 4,SplitSettler,成功
+StockService,WARN,STOCK_EXPIRE_BATCH,批量商品临期，数量: 50,BatchExpireWatcher,7天内到期
+OrderService,ERROR,ORDER_ADDRESS_CHANGE,地址变更失败，订单ID: 20045,AddressChanger,已发货
+NotiService,INFO,DIGEST_SEND,通知摘要发送，用户ID: 10145,DigestSender,每日汇总
+UserService,WARN,LOGIN_DEVICE_LIMIT,设备数超限，用户ID: 10146,DeviceLimiter,限制5台
+CartService,ERROR,CART_DISCOUNT_REMOVE,优惠被移除，用户ID: 10147,DiscountRemover,商品不参与
+EmailService,WARN,SUBJECT_EMOJI,邮件主题含表情，可能进垃圾箱,EmojiChecker,提示修改
+GatewayService,INFO,CACHE_HIT_RATIO,缓存命中率: 85%,CacheStats,提升性能
+LogService,ERROR,LOG_STORM,日志风暴检测，突增: 10倍,StormDetector,触发限流
+SearchService,WARN,FIELD_BOOST_MISS,字段boost缺失，字段: review,BoostConfigManager,使用默认1.0
+AarService,INFO,PASSWORD_EXPIRE_REMIND,密码过期提醒，用户ID: 10148,ExpireRemindManager,剩余3天
+AbaService,ERROR,COUPON_RETURN_FAIL,优惠券退回失败，用户ID: 10149,CouponReturner,已过期
+PayService,WARN,PAY_RISK_REVIEW,支付进入人工审核，订单ID: 20046,RiskReviewManager,大额异常
+StockService,INFO,STOCK_MOVE_BATCH,批量移库完成，数量: 500,BatchMoveManager,A仓→B仓
+OrderService,WARN,ORDER_WEIGHT_DIFF,称重差异，订单ID: 20047,WeightDiffChecker,差异: ±200g
+NotiService,ERROR,SMS_SIGNATURE_ERR,短信签名错位，期望:【商城】实际:【测试】,SignaturePositioner,运营商驳回
+UserService,INFO,POINTS_ADD,积分增加，用户ID: 10150,PointsAdder,数量: 50
+CartService,WARN,CART_ABANDON,购物车放弃，用户ID: 10151,AbandonTracker,超过72小时
+EmailService,ERROR,TEMPLATE_LOOP_DETECT,模板递归调用，深度: 10,LoopDetector,强制终止
+GatewayService,WARN,BACKEND_CONN_DROP,后端连接被丢弃，服务: NotiService,ConnDropMonitor,空闲超时
+LogService,INFO,LOG_AGGREGATE,"日志聚合完成，关键字: ""ERROR""",Aggregator,统计: 120条
+SearchService,ERROR,SHARD_FAIL,分片失败，索引: product,ShardManager,磁盘满
+AuthService,WARN,SESSION_TIMEOUT_SHORT,会话超时过短，设置: 5分钟,SessionTimeoutManager,建议30分钟
+PayService,INFO,PAY_CHANNEL_SWITCH_BACK,支付渠道切回，渠道: wxpay,SwitchBackManager,故障恢复
+StockService,ERROR,STOCK_BARCODE_ERR,条码扫描错误，商品ID: 30033,BarcodeScanner,无法识别
+OrderService,INFO,ORDER_RECEIPT_PRINT,发票打印完成，订单ID: 20048,ReceiptPrinter,电子档已发送
+NotiService,WARN,NOTI_CLICK_RATE_LOW,通知点击率低于5%，用户ID: 10152,ClickRateMonitor,内容优化
+UserService,ERROR,THIRD_LOGIN_FAIL,第三方登录失败，平台: qq，用户ID: 10153,ThirdLoginManager,openid失效
+CartService,INFO,CART_TOTAL_DISCOUNT,优惠计算完成，节省: ￥35,DiscountCalculator,用户满意
+EmailService,WARN,LIST_UNSUB_FAIL,退订链接失效，邮箱: user5@example.com,UnsubLinkManager,链接过期
+GatewayService,ERROR,BACKEND_RESPONSE_500,后端返回500，服务: OrderService,Error500Tracker,数据库死锁
+Alpha78,FATAL,NATIVE_LIB_LOAD_FAIL,原生库缺失,NativeLoad,so 文件不存在
+Alpha79,WARN,CACHE_COMPRESS_FAIL,brotli 压缩失败,CompressFail,内存不足
+Alpha80,ERROR,PWD_COMPLEX_FAIL,密码 pass 复杂度不足,PwdComplex,缺数字符号
+Alpha81,FATAL,REDIRECT_LOOP,重定向循环 /akv,RedirectLoop,配置错误
+Alpha82,WARN,XML_ENCODING_UTF32,XML 声明 utf-32 不支持,XmlEnc,仅 utf-8
+Alpha83,ERROR,TX_LOG_TRUNC_FAIL,日志截断失败,TxTruncFail,文件锁
+Alpha84,FATAL,BANDWIDTH_SAMPLE_LOST,采样丢 10%,BandSampleLoss,采集器故障
+Alpha85,WARN,API_599_NO_DOC,599 无文档,ApiDocMiss,需补文档
+Alpha86,ERROR,SWAP_85P,交换 85%,SwapErr,内存耗尽
+Alpha87,FATAL,DESERIALIZE_CLASS_MISS,反序列化类不存在,DeserClassMiss,类卸载
+Alpha88,WARN,ENUM_NOT_IN_LIST,xyz 不在枚举,EnumList,值非法
+Alpha89,ERROR,HEAP_2G_ALLOC_FAIL,堆 2 G 分配失败,Heap2GFail,内存不足
+Alpha90,FATAL,IN_FLIGHT_HIGH,在途 1.2 万条,InFlightHigh,消费者慢
+Alpha91,WARN,KEY_DES_ENCRYPT_BAN,DES 被禁,DesBan,强度不足
+Alpha92,ERROR,DISK_65C_TEMP,磁盘温度 65 ℃,Disk65C,散热差
+Alpha93,FATAL,JSON_PTR_NEG_FAIL,JSONPointer 负索引非法,JsonPtrNeg,不支持
+Alpha94,WARN,MEMBER_CHANGE_FAIL,成员变更无共识,MemberChange,网络分区
+Alpha95,ERROR,LOG_PERM_DENIED,/var/log 权限拒,LogDeny,需 775
+Alpha96,FATAL,CACHE_ACCESS_500MS,缓存访问 500 ms,Cache500,节点高载
+Alpha97,WARN,STOCK_NEG_SKU777,库存负值,StockNeg777,无锁扣减
+Alpha98,FATAL,METASPACE_OOM,Metaspace OOM,MetaOOM,类过多
+Alpha99,WARN,THROTTLE_10M,带宽限 10 Mbps,Throttle10M,流量包尽
+Alpha100,ERROR,API_KEY_AK_UNKNOWN,ak_unknown 未找到,KeyUnknown,未注册
+LogService,WARN,LOG_RETENTION,日志保留期调整，原: 7天→新: 30天,RetentionManager,合规要求
+SearchService,INFO,QUERY_SPELL_CHECK,"拼写检查触发，原词: ""手鸡""",SpellChecker,"纠正为""手机"""
+AarService,ERROR,ACCOUNT_RECOVER_FAIL,账号恢复失败，用户ID: 10154,RecoverManager,验证信息不足
+AbaService,WARN,BALANCE_NOTIFY_OFF,余额提醒关闭，用户ID: 10155,NotifyToggler,用户设置
+PayService,INFO,PAY_CHANNEL_RANK,渠道评分更新，wxpay: 98分,RankManager,最高
+StockService,WARN,STOCK_BATCH_DATE,批次日期错误，商品ID: 30034,BatchDateValidator,未来日期
+OrderService,ERROR,ORDER_PACKAGE_LOST,包裹丢失，订单ID: 20049,LostPackageManager,物流确认
+NotiService,INFO,INBOX_CLEAR,收件箱清空，用户ID: 10156,InboxClearer,用户手动
+UserService,WARN,PROFILE_PRIVATE,资料设为私密，用户ID: 10157,PrivacyToggler,对外隐藏
+CartService,ERROR,CART_ITEM_DELETED,商品被删除，商品ID: 30035,ItemDeleter,下架
+EmailService,INFO,TEMPLATE_SHARE,模板分享成功，ID: 60010,TemplateSharer,团队共享
+GatewayService,WARN,CERT_RENEWAL_REMIND,证书续期提醒，剩余: 10天,RenewalRemindManager,自动
+LogService,ERROR,LOG_EXPORT_FAIL,日志导出失败，原因: 磁盘满,ExportFailManager,清理后再试
+SearchService,WARN,QUERY_BOOL_ERR,布尔查询错误，语法: AND OR NOT,BoolParser,顺序错误
+AuthService,INFO,OAUTH_BIND,第三方绑定成功，平台: github，用户ID: 10158,OAuthBinder,关联账号
+PayService,ERROR,PAY_SETTLE_TIMEOUT,结算超时，渠道: alipay,SettleTimeoutManager,对账文件未到
+StockService,INFO,STOCK_BATCH_TRACE,批次追溯完成，批次号: B2025092201,TraceManager,来源清晰
+OrderService,WARN,ORDER_WAREHOUSE_CHANGE,发货仓库变更，订单ID: 20050,WarehouseChanger,原仓缺货
+NotiService,ERROR,PUSH_BADGE_CLEAR_FAIL,角标清除失败，用户ID: 10159,BadgeClearer,设备离线
+UserService,INFO,LEVEL_EXPIRE_REMIND,会员等级即将过期，用户ID: 10160,LevelExpireRemindManager,剩余15天
+CartService,WARN,CART_DISCOUNT_LIMIT,优惠达到上限，用户ID: 10161,DiscountLimitManager,不能再减
+EmailService,ERROR,TEMPLATE_IMPORT_FAIL,模板导入失败，格式: 不支持的ZIP,ImportFailManager,请使用标准模板
+GatewayService,INFO,BACKEND_LOAD_BALANCE,负载均衡切换，服务: SearchService,LoadBalancer,节点权重调整
+LogService,WARN,LOG_PARSER_SLOW,日志解析慢，延迟: 5秒,ParserMonitor,正则复杂
+SearchService,ERROR,INDEX_WRITER_FAIL,索引写入失败，磁盘只读,WriterManager,检查磁盘
+AarService,WARN,LOGIN_LOCATION,登录地异常，用户ID: 10162,LocationChecker,跨国登录
+AbaService,INFO,BALANCE_TRANSFER,余额转账成功，用户ID: 10163→10164,TransferManager,金额: ￥50
+PayService,WARN,PAY_CHANNEL_SLOW,渠道响应慢，通道: wxpay，耗时: 3s,SlowChannelManager,考虑降级
+StockService,ERROR,STOCK_COUNT_ERR,盘点数量错误，商品ID: 30036,CountErrorManager,系统与实物差5
+OrderService,INFO,ORDER_TRACK_PUSH,物流推送更新，订单ID: 20051,TrackPushManager,用户已订阅
+NotiService,WARN,NOTI_SILENCE_VACATION,假期静默开启，用户ID: 10165,VacationSilencer,7天
+UserService,ERROR,PHONE_VERIFICATION_TIMEOUT,手机验证码超时，用户ID: 10166,PhoneVerTimeoutManager,超过5分钟
+CartService,INFO,CART_WISH_CLEAR,心愿单清空，用户ID: 10167,WishClearer,活动结束
+EmailService,WARN,SUBJECT_SPAM_WORD,主题含垃圾词，可能进垃圾箱,SpamWordChecker,提示修改
+GatewayService,ERROR,BACKEND_READ_TIMEOUT,后端读取超时，服务: UserService,ReadTimeoutManager,超过6秒
+LogService,INFO,LOG_CORRELATION_ID,关联ID注入，ID: abc-1234,CorrelationManager,追踪
+SearchService,WARN,QUERY_FUZZY,模糊查询触发，编辑距离: 2,FuzzyManager,"匹配""iphnoe""→""iphone"""
+AuthService,ERROR,PERMISSION_REVOKE_FAIL,权限收回失败，角色: ADMIN,RevokeFailManager,依赖存在
+PayService,INFO,PAY_CHANNEL_DAILY_LIMIT,渠道日限额重置，通道: alipay,DailyLimitResetManager,恢复
+StockService,WARN,STOCK_SOFT_RESERVE,软预留成功，商品ID: 30037,SoftReserveManager,15分钟内有效
+OrderService,ERROR,ORDER_REFUND_AUDIT_REJECT,退款审核被拒，订单ID: 20052,RefundAuditRejectManager,不符合政策
+NotiService,INFO,INBOX_CAPACITY_WARN,收件箱容量警告，用户ID: 10168,CapacityWarner,剩余10%
+UserService,WARN,THIRD_PARTY_UNLINK,第三方解绑，平台: weibo，用户ID: 10169,UnlinkManager,用户主动
+CartService,ERROR,CART_SYNC_CONFLICT,购物车同步冲突，用户ID: 10170,SyncConflictResolver,手动合并
+EmailService,INFO,TEMPLATE rollback,模板回滚成功，ID: 60011,RollbackManager,版本: v1.2
+GatewayService,WARN,DNS_FAILOVER,DNS故障转移，原DNS: 8.8.8.8→新: 1.1.1.1,DnsFailoverManager,解析失败
+LogService,ERROR,LOG_ARCHIVE_FAIL,日志归档失败，原因: 网络中断,ArchiveFailManager,重试
+SearchService,INFO,QUERY_CACHE_EXPIRE,"查询缓存过期，关键词: ""口罩""",CacheExpireManager,10分钟TTL
+AarService,WARN,PASSWORD_REUSE,密码重复使用，用户ID: 10171,ReuseChecker,历史5次内
+AbaService,ERROR,BALANCE_NEGATIVE_AFTER_REFUND,退款后余额为负，用户ID: 10172,NegativeBalanceManager,冻结使用
+PayService,INFO,PAY_SCORE_DEDUCT,支付分抵扣，用户ID: 10173,ScoreDeductManager,抵扣: ￥3
+StockService,ERROR,STOCK_MOVE_LOST,移库丢失，商品ID: 30038,MoveLostManager,数量: 2
+OrderService,WARN,ORDER_INSURE_FAIL,投保失败，订单ID: 20053,InsureFailManager,商品不支持
+Beta001,ERROR,TOKEN_REFRESH_FAIL,刷新令牌失败，用户:10036,TokenMgr,刷新令牌已失效
+Beta002,WARN,CACHE_REHASH_SLOW,哈希重分布耗时 12s,CacheRehash,节点频繁上下线
+Beta003,FATAL,MASTER_SLAVE_DESYNC,主从数据不一致，差异 5MB,SyncChecker,网络中断导致binlog丢失
+Beta004,ERROR,UPLOAD_FILE_LOCK,文件上传被锁定，文件名:report.xlsx,FileLockMgr,并发上传冲突
+Beta005,WARN,CERT_EXPIRE_30D,证书 30 天后过期,CertAlert,未设置自动续签
+Beta006,ERROR,LOGIN_CAPTCHA_FAIL,验证码错误 5 次，IP:203.0.113.20,CaptchaMgr,触发IP封禁
+Beta007,FATAL,KAFKA_PRODUCER_FAIL,生产者发送失败，topic:beta-events,ProducerHealth,磁盘写满，无法写入
+Beta008,WARN,INDEX_SIZE_GROW,索引日增长 50GB,IndexSizeWatch,未开启压缩
+Beta009,ERROR,CONFIG_JSON_INVALID,JSON配置解析失败,JsonCfgParser,缺少闭合括号
+Beta010,FATAL,MEMORY_SWAP_OUT,交换分区使用 90%,SwapWatcher,物理内存耗尽
+Beta011,WARN,METRIC_SAMPLE_DUP,指标采样重复 3%,SampleDedup,采集器时钟回拨
+Beta012,ERROR,PAY_SIGN_FAIL,支付签名失败，订单:ORD22002,PaySigner,私钥与商户不匹配
+Beta013,FATAL,CLUSTER_QUORUM_LOSS,集群失去仲裁，节点 3→1,QuorumHealth,网络分区严重
+Beta014,WARN,CACHE_TTL_MISS,缓存TTL未设置，键:beta:config,TtlManager,永不过期风险
+Beta015,ERROR,WEBHOOK_IP_BLOCKED,Webhook IP被黑名单拦截,IpBlocker,触发安全策略
+Beta016,WARN,INODE_USAGE_95,inode使用95%,InodeWatcher,小文件爆炸
+Beta017,ERROR,EMAIL_DOMAIN_MISS,邮箱域名MX记录缺失,DnsResolver,无法投递
+Beta018,FATAL,JVM_PAUSE_10S,JVM停顿10秒,JvmPauseMonitor,Full GC耗时过长
+Beta019,WARN,BANDWIDTH_OVER_COMMIT,带宽超分配20%,BandwidthMgr,资源超售
+Beta020,ERROR,API_VERSION_UNSUPPORTED,API版本不支持，版本:v99,VersionGate,最高仅支持v3
+Beta021,FATAL,RAID5_DISK_FAIL,RAID5双盘故障,RaidHealth,数据丢失风险
+NotiService,ERROR,WEBHOOK_SSL_ERR,Webhook SSL证书错误，URL: https://notify.example.com,WebhookSslChecker,证书不受信
+UserService,INFO,PROFILE completeness 100%,资料完整度100%，用户ID: 10174,CompletenessManager,奖励积分
+CartService,WARN,CART_ITEM_SOLD_OUT,商品售罄，商品ID: 30039,SoldOutManager,自动移除
+EmailService,WARN,LIST_SEGMENT_FAIL,分群失败，条件: 近30天购买,SegmentFailManager,数据不足
+GatewayService,INFO,BACKEND_RETRY_SUCCESS,后端重试成功，服务: PayService,RetrySuccessManager,第3次成功
+LogService,WARN,LOG_INDEX_REBUILD,日志索引重建中，耗时: 2分钟,IndexRebuilder,完成
+SearchService,ERROR,QUERY_TOKENIZE_FAIL,分词失败，语言: ja,TokenizerManager,未支持日语
+Beta022,WARN,SESSION_REUSE_DETECT,会话复用攻击，用户:10037,SessionAnomaly,IP突变
+Beta023,ERROR,FILE_SIZE_ZERO,上传文件大小为0,FileValidator,空文件被拒绝
+Beta024,FATAL,MESSAGE_BROKER_OOM,消息代理内存溢出,BrokerOOM,堆积消息过多
+Beta025,WARN,INDEX_MERGE_TIMEOUT,索引合并超时1800s,MergeTimeout,磁盘IO瓶颈
+Beta026,ERROR,PASSWORD_EXPIRED,密码已过期90天，用户:10038,PwdExpiry,强制修改
+Beta027,FATAL,CONTAINER_CRASH_LOOP,容器循环崩溃，重启计数>20,K8sRuntime,liveness探针失败
+Beta028,WARN,METRIC_LABEL_EMPTY,指标标签为空，label:env,LabelValidator,标签值缺失
+Beta029,ERROR,CERT_PRIVATE_KEY_LOST,私钥文件丢失，证书:beta.com,KeyStore,文件被误删除
+Beta030,FATAL,DATA_FILE_TRAILER_BAD,数据文件尾损坏,FileTrailer,校验和错误
+Beta031,WARN,LATENCY_JITTER_200MS,抖动200ms,JitterMonitor,网络不稳定
+Beta032,ERROR,DUPLICATE_DEVICE_ID,设备ID重复，ID:dev123,DeviceReg,MAC地址冲突
+Beta033,FATAL,THREAD_DEADLOCK_DETECT,死锁检测，线程:t1&t2,DeadlockDetector,循环等待锁
+Beta034,WARN,BANDWIDTH_PACKET_LOSS_3P,丢包率3%,PacketLossMon,链路质量差
+Beta035,ERROR,JSON_PATH_SYNTAX_ERR,JSONPath语法错误,JsonPathEval,缺少括号
+Beta036,FATAL,LICENSE_FILE_EXPIRE,许可证文件过期，文件:beta.lic,LicenseMgr,未按时续费
+Beta037,WARN,DISK_SMART_PRED_FAIL,SMART预测失败，磁盘:sdc,SmartPredict,磁盘即将损坏
+Beta038,ERROR,INVALID_GEO_HASH_LEN,GeoHash长度无效，len:13,GeoHashMgr,最大12
+Beta039,FATAL,RAFT_LOG_INCONSISTENT,Raft日志不一致,RaftLogMgr,网络分区导致
+Beta040,WARN,METRIC_VALUE_NEGATIVE,指标值为负，value:-5,MetricValidator,不应为负
+Beta041,ERROR,WEBHOOK_RETURN_5XX,Webhook返回500,WebhookSrv,接收方异常
+Beta042,FATAL,MEMORY_PAGE_FAULT_HIGH,缺页中断>10k/s,PageFaultMon,内存紧张
+Beta043,WARN,CACHE_KEY_COLLISION,缓存键碰撞，key:beta:item:1,CollisionDetector,哈希冲突
+Beta044,ERROR,PASSWORD_DICT_WORD,密码为字典单词,DictChecker,强度不足
+Beta045,FATAL,ROUTING_TABLE_FULL,路由表满，条目:65536,RouteMgr,未清理旧路由
+Beta046,WARN,BANDWIDTH_UTIL_97P,带宽利用率97%,UtilMonitor,峰值持续
+AuthService,ERROR,SAML_RESP_INVALID,SAML响应无效，用户ID: 10175,SamlValidator,签名不符
+PayService,WARN,PAY_CHANNEL_QPS,渠道QPS超限，通道: wxpay，当前: 1200,QpsLimiter,限制1000
+StockService,INFO,STOCK_RETURN_RESERVE,退货预留，商品ID: 30040,ReturnReserveManager,数量: 5
+OrderService,ERROR,ORDER_BATCH_CANCEL,批量取消失败，订单数: 50,BatchCancelManager,状态冲突
+NotiService,WARN,SMS_LENGTH,短信长度过长，拆分: 3条,LengthCalculator,超70字
+UserService,INFO,ADDRESS_DEFAULT,默认地址设置，用户ID: 10176,DefaultAddressManager,ID: 80004
+CartService,ERROR,CART_DISCOUNT_CODE_USED,优惠码已使用，用户ID: 10177,CodeUsedChecker,不可重复
+EmailService,ERROR,TEMPLATE_NOT_FOUND,模板不存在，ID: 60012,TemplateFinder,已删除
+GatewayService,WARN,BACKEND_CERT_EXPIRE,后端证书即将过期，服务: StockService,BackendCertWatcher,剩余5天
+LogService,INFO,LOG_SHIP,日志投递成功，Topic: order-log,LogShipper,Kafka
+SearchService,ERROR,CLUSTER_NODE_LOST,集群节点丢失，节点: node7,NodeLostManager,网络中断
+AarService,WARN,LOGIN_CAPTCHA_FAIL,验证码错误，用户ID: 10178,CaptchaValidator,第3次错误
+AbaService,INFO,BALANCE_CASHBACK,返现到账，用户ID: 10179,CashbackManager,金额: ￥5
+PayService,ERROR,PAY_ORDER_NOT_EXIST,订单不存在，渠道: alipay，订单号: 20054,OrderExistChecker,查无记录
+StockService,WARN,STOCK_NEGATIVE_ALARM,负库存报警，商品ID: 30041,NegativeAlarmManager,当前: -3
+OrderService,INFO,ORDER_WEIGHT_MANUAL,人工称重，订单ID: 20055,ManualWeighter,修正: 1.35kg
+NotiService,ERROR,PUSH_TOPIC_FAIL,推送主题订阅失败，用户ID: 10180,TopicManager,主题不存在
+UserService,WARN,NICKNAME_UPDATE_LIMIT,昵称修改达上限，用户ID: 10181,NicknameLimitManager,每月1次
+CartService,INFO,CART_SHARE_CLICK,分享链接点击，分享码: ABCD1234,ShareClickTracker,IP: 192.168.1.110
+EmailService,WARN,PREHEADER_EMPTY,邮件预头为空，可能降低打开率,PreheaderChecker,建议补充
+GatewayService,ERROR,BODY_COMPRESS_FAIL,请求体压缩失败，算法: gzip,CompressFailManager,头不一致
+LogService,WARN,LOG_DUPLICATE_KEY,日志主键重复，Key: abc-def,DuplicateKeyManager,丢弃重复
+SearchService,INFO,QUERY_SYNONYM,"同义词扩展，""手机""→""智能手机""",SynonymManager,提升召回
+AuthService,ERROR,OAUTH_TOKEN_EXPIRE,OAuth令牌过期，平台: facebook，用户ID: 10182,OAuthTokenManager,需刷新
+PayService,INFO,PAY_CHANNEL_FEES,渠道费率更新，wxpay: 0.6%→0.55%,FeeUpdateManager,已生效
+StockService,ERROR,STOCK_BATCH_DATE_ERR,批次日期逻辑错误，商品ID: 30042,BatchDateLogicManager,生产日期>当前
+OrderService,WARN,ORDER_DELIVER_NOTE,配送备注超长，订单ID: 20056,NoteLengthManager,限制200字
+NotiService,INFO,SMS_BLACKLIST_REMOVE,黑名单移除，手机号: 138****0000,BlacklistRemover,申诉成功
+UserService,ERROR,BIND_EMAIL_FAIL,邮箱绑定失败，用户ID: 10183,EmailBinder,邮箱已注册
+CartService,WARN,CART_ITEM_PRICE_CHANGE,商品价格变动，原: ￥99→新: ￥109,PriceChangeManager,用户须知
+EmailService,ERROR,DKIM_KEY_MISS,DKIM私钥缺失，域名: example.com,DkimKeyManager,签名失败
+GatewayService,INFO,CACHE_PURGE,缓存清理完成，Pattern: /api/product/*,PurgeManager,手动
+SearchService,ERROR,INDEX_LOCK_TIMEOUT,索引锁超时，操作: merge,LockTimeoutManager,重试
+AarService,INFO,BIOMETRIC_UPDATE,生物特征更新，用户ID: 10184,BiometricUpdater,重新录入
+AbaService,WARN,COUPON_SINGLE,优惠券限单张，用户ID: 10185,SingleCouponManager,已使用一张
+PayService,ERROR,PAY_REFUND_PART_FAIL,部分退款失败，订单ID: 20057,PartRefundFailManager,剩余金额不足
+StockService,INFO,STOCK_BATCH_MERGE,批次合并，商品ID: 30043,BatchMergeManager,减少碎片化
+OrderService,ERROR,ORDER_BATCH_HOLD,批量挂起，订单数: 20,BatchHoldManager,涉嫌作弊
+NotiService,WARN,PUSH_SOUND_FAIL,推送声音文件缺失， sound: coupon.caf,SoundFileManager,使用默认
+UserService,INFO,PROFILE_VIEW,资料被查看，用户ID: 10186,ViewTracker,来源: 搜索
+CartService,ERROR,CART_CLEAR_FAIL,购物车清空失败，用户ID: 10187,ClearFailManager,锁冲突
+EmailService,WARN,LIST_IMPORT_DUP,导入重复邮箱，数量: 100,ImportDupManager,自动跳过
+GatewayService,ERROR,SSL_HANDSHAKE_FAIL,SSL握手失败， cipher mismatch,HandshakeFailManager,协议不一致
+LogService,INFO,LOG_REMOTE_INDEX,远程索引创建成功，Index: log-2025-09-22,RemoteIndexManager,Elasticsearch
+SearchService,WARN,QUERY_BRACKET_ERR,"括号不匹配，查询: ""(手机 AND """,BracketValidator,语法错误
+AuthService,WARN,PASSWORD_DICT,密码在常见字典，用户ID: 10188,DictPasswordManager,建议修改
+PayService,INFO,PAY_SCORE_QUERY,支付分查询，用户ID: 10189,ScoreQueryManager,分数: 750
+StockService,ERROR,STOCK_UNIT_MISMATCH,单位不匹配，系统: 件，入库: 箱,UnitMismatchManager,拒收
+OrderService,INFO,ORDER_TRACK_PUSH_OFF,物流推送关闭，用户ID: 10190,TrackPushToggler,用户设置
+NotiService,ERROR,EMAIL_BOUNCE_HARD,硬反弹，邮箱: user6@example.com,BounceHardManager,地址不存在
+UserService,WARN,THIRD_DATA_SYNC_FAIL,第三方数据同步失败，平台: wechat,SyncFailManager,API限流
+CartService,INFO,CART_RECOMMEND,推荐商品加入购物车，用户ID: 10191,RecommendManager,数量: 2
+GatewayService,WARN,BACKUP_BACKEND_DOWN,备后端也宕机，服务: PayService,BackupDownManager,单点
+LogService,ERROR,LOG_ENCRYPT_FAIL,日志加密失败，算法: AES,EncryptFailManager,密钥缺失
+SearchService,INFO,AUTO_COMPLETE_CACHE,"自动完成缓存命中，关键词: ""跑步""",AcCacheManager,延迟<10ms
+AarService,ERROR,ACCOUNT_MERGE_FAIL,账号合并失败，用户ID: 10192→10193,MergeFailManager,冲突
+AbaService,INFO,BALANCE_MONTH_REPORT,月度余额报告，用户ID: 10194,MonthReportManager,已邮件
+PayService,WARN,PAY_CHANNEL_SLOW_LOG,渠道慢日志，wxpay>2s 次数: 15,SlowLogManager,警告
+StockService,WARN,STOCK_SOFT_RESERVE_EXPIRE,软预留过期，商品ID: 30044,SoftReserveExpireManager,自动释放
+OrderService,ERROR,ORDER_BATCH_REFUND_FAIL,批量退款失败，订单数: 30,BatchRefundFailManager,渠道限制
+NotiService,INFO,SMS_REPLY,短信回复收到，手机号: 139****8888,SmsReplyManager,内容: 退订
+UserService,WARN,LOGIN_PASSWORD_SIMPLE,密码过于简单，用户ID: 10195,SimplePasswordManager,强制修改
+CartService,ERROR,CART_NETWORK_ERR,购物车网络错误，用户ID: 10196,NetworkErrManager,请重试
+EmailService,WARN,PREVIEW_LINK_FAIL,预览链接生成失败，模板ID: 60013,PreviewLinkManager,过期时间设置错误
+GatewayService,INFO,CERT_OCSP_VALID,OCSP检查有效，证书: *.pay.com,OcspValidManager,正常
+LogService,WARN,LOG_LOST_FIELD,日志字段缺失，字段: userId,FieldCheckManager,补默认值
+SearchService,ERROR,CLUSTER_DISK_FULL,集群磁盘满，节点: node8,DiskFullManager,只读
+AuthService,INFO,PERMISSION_SYNC,权限同步完成，角色数: 25,SyncManager,耗时: 3s
+PayService,ERROR,PAY_SETTLE_DISCREPANCY,结算差异，金额: ￥0.01,DiscrepancyManager,待调账
+AarService,WARN,DEVICE_LOST,设备丢失，用户ID: 10198,DeviceLostManager,远程登出
+AbaService,ERROR,COUPON_BIND_EXPIRE,优惠券绑定超时，用户ID: 10199,BindExpireManager,超过24小时
+PayService,INFO,PAY_CHANNEL_PRIORITY,渠道优先级调整，wxpay→alipay,PriorityManager,费率优势
+StockService,ERROR,STOCK_MOVE_BATCH_FAIL,批量移库失败，数量: 1000,BatchMoveFailManager,线路占用
+OrderService,INFO,ORDER_TRACK_NUMBER,运单号生成，订单ID: 20059,TrackNumberManager,顺丰: SF1234567890
+NotiService,WARN,NOTI_CUSTOM_OFF,自定义通知关闭，用户ID: 10200,CustomOffManager,用户设置
+UserService,ERROR,LOGIN_SMS_FAIL,短信登录失败，手机号: 138****1111,SmsLoginManager,验证码错误
+CartService,INFO,CART_BATCH_REMOVE,批量移除商品，数量: 10,BatchRemoveManager,用户选择
+EmailService,WARN,CLICK_RATE_DROP,点击率下降， CampaignID: 90001,DropWatcher,环比-15%
+GatewayService,ERROR,BACKEND_DNS_FAIL,后端DNS解析失败，服务: RewardService,DnsFailManager,域名过期
