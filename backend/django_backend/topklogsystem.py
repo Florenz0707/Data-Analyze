@@ -7,23 +7,44 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
 import json
 import logging
+import warnings
+import yaml
 import pandas as pd
 from typing import Any, Dict, List
 
-# langchain
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+# silence specific pydantic warnings about 'validate_default'
+try:
+    from pydantic._internal._generate_schema import UnsupportedFieldAttributeWarning
+    warnings.filterwarnings("ignore", category=UnsupportedFieldAttributeWarning)
+except Exception:
+    warnings.filterwarnings(
+        "ignore",
+        message=r"The 'validate_default' attribute",
+        category=Warning,
+    )
+
+# langchain LLM backends
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
+from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline as hf_pipeline
 
 # llama-index & chroma
 import chromadb
 from llama_index.core import Settings  # 全局
 from llama_index.core import Document
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext
+from llama_index.core import VectorStoreIndex, StorageContext
 from llama_index.vector_stores.chroma import ChromaVectorStore  # 注意导入路径
+from llama_index.llms.langchain import LangChainLLM
+from llama_index.embeddings.langchain import LangchainEmbedding
 
 # 日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _slugify(text: str) -> str:
+    return ''.join(c if c.isalnum() else '_' for c in text)[:64]
 
 
 class TopKLogSystem:
@@ -33,14 +54,70 @@ class TopKLogSystem:
             llm: str,
             embedding_model: str,
     ) -> None:
-        # init models
-        self.embedding_model = OllamaEmbeddings(model=embedding_model)
+        # load provider config
+        with open("./config/llm_config.yaml", "r", encoding="utf-8") as f:
+            env_cfg = yaml.safe_load(f) or {}
+        provider = (env_cfg.get("LLM_PROVIDER") or "ollama").lower()
 
-        self.llm = OllamaLLM(model=llm, temperature=0.1)
+        # init models by provider
+        self.provider = provider
+        if provider == "transformers":
+            tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
+            llm_model = tcfg.get("llm_model", llm)
+            device_map = tcfg.get("device_map", "auto")
+            torch_dtype = tcfg.get("torch_dtype", "auto")
+            trust_remote_code = bool(tcfg.get("trust_remote_code", False))
+            max_new_tokens = int(tcfg.get("max_new_tokens", 512))
+            temperature = float(tcfg.get("temperature", 0.7))
+            top_p = float(tcfg.get("top_p", 0.95))
+            repetition_penalty = float(tcfg.get("repetition_penalty", 1.1))
+            do_sample = bool(tcfg.get("do_sample", True))
 
-        # init database
-        Settings.llm = self.llm
-        Settings.embed_model = self.embedding_model  # 全局设置
+            embedding_name = tcfg.get("embedding_model", embedding_model)
+
+            # embeddings via HuggingFace
+            hf_embed = HuggingFaceEmbeddings(model_name=embedding_name)
+            self.collection_name = f"log_collection_transformers_{_slugify(embedding_name)}"
+
+            # LLM via transformers pipeline
+            tokenizer = AutoTokenizer.from_pretrained(llm_model, trust_remote_code=trust_remote_code)
+            model = AutoModelForCausalLM.from_pretrained(
+                llm_model,
+                device_map=device_map,
+                torch_dtype=None if torch_dtype == "auto" else torch_dtype,
+                trust_remote_code=trust_remote_code,
+            )
+            gen_pipe = hf_pipeline(
+                task="text-generation",
+                model=model,
+                tokenizer=tokenizer,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                repetition_penalty=repetition_penalty,
+                do_sample=do_sample,
+            )
+            hf_llm = HuggingFacePipeline(pipeline=gen_pipe)
+
+            # register to llama-index via adapters
+            Settings.llm = LangChainLLM(llm=hf_llm)
+            Settings.embed_model = LangchainEmbedding(hf_embed)
+
+            self.llm = hf_llm
+            self.embedding_model = hf_embed
+        else:
+            # default ollama
+            ocfg = env_cfg.get("OLLAMA_CONFIG", {})
+            llm_name = ocfg.get("model", llm)
+            embed_name = ocfg.get("embedding_model", embedding_model)
+
+            self.embedding_model = OllamaEmbeddings(model=embed_name)
+            self.llm = OllamaLLM(model=llm_name, temperature=0.1)
+            self.collection_name = f"log_collection_ollama_{_slugify(embed_name)}"
+
+            # register to llama-index via adapters as well
+            Settings.llm = LangChainLLM(llm=self.llm)
+            Settings.embed_model = LangchainEmbedding(self.embedding_model)  # 全局设置
 
         self.log_path = log_path
         self.log_index = None
@@ -54,10 +131,13 @@ class TopKLogSystem:
 
         chroma_client = chromadb.PersistentClient(path=vector_store_path)  # chromadb 持久化
 
+        # 选择集合名称，避免不同嵌入维度冲突
+        collection_name = getattr(self, "collection_name", None) or "log_collection_default"
+
         # ChromaVectorStore 将 collection 与 store 绑定
         # 也是将 Chroma 包装为 llama-index 的接口
         # StorageContext存储上下文， 包含 Vector Store、Document Store、Index Store 等
-        log_collection = chroma_client.get_or_create_collection("log_collection")
+        log_collection = chroma_client.get_or_create_collection(collection_name)
 
         # 构建 log 库 index
         log_vector_store = ChromaVectorStore(chroma_collection=log_collection)
@@ -125,7 +205,7 @@ class TopKLogSystem:
             # LLM 生成响应
 
     def generate_response(self, query: str, context: Dict) -> str:
-        prompt = self._build_prompt(query, context)  # 构建提示词
+        prompt = self._build_prompt_text(query, context)  # 构建提示词
 
         try:
             response = self.llm.invoke(prompt)  # 调用LLM
@@ -136,9 +216,33 @@ class TopKLogSystem:
 
             # 构建 prompt
 
+    def _build_prompt_text(self, query: str, context: Dict) -> str:
+        # 构建日志上下文为纯文本，兼容 Ollama 与 transformers
+        log_context = "## 相关历史日志参考:\n"
+        for i, log in enumerate(context, 1):
+            content = log.get('content') if isinstance(log, dict) else str(log)
+            log_context += f"日志 {i}: {content}\n"
+
+        prompt = (
+            "你是一名资深日志分析助手，擅长阅读历史日志并给出精确、可操作的建议。\n\n"
+            f"{log_context}\n"
+            "## 当前需要分析的问题:\n"
+            f"{query}\n\n"
+            "请基于以上信息，提供简洁且结构化的分析报告：\n"
+            "第一部分 - 问题诊断\n"
+            "第二部分 - 可能原因（按概率排序）\n"
+            "第三部分 - 建议的排查步骤\n"
+            "第四部分 - 临时缓解措施\n"
+            "第五部分 - 最终修复建议\n\n"
+            "（每个部分最多分三点阐述，每一点不超过20字。你不需要给出任何代码。）\n"
+        )
+        return prompt
+
     def _build_prompt(self, query: str, context: Dict) -> List[Dict]:
         # 系统消息 - 定义角色和任务
-        system_message = SystemMessagePromptTemplate.from_template(" ")
+        system_message = SystemMessagePromptTemplate.from_template("""
+            你是一名资深日志分析助手，擅长阅读历史日志并给出精确、可操作的建议。
+        """)
 
         # 构建日志上下文
         log_context = "## 相关历史日志参考:\n"
@@ -151,7 +255,13 @@ class TopKLogSystem:
             ## 当前需要分析的问题:
             {query}
 
-            请基于以上信息，提供详细的分析报告:
+            请基于以上信息，提供简洁且结构化的分析报告
+            第一部分 - 问题诊断
+            第二部分 - 可能原因（按概率排序）
+            第三部分 - 建议的排查步骤
+            第四部分 - 临时缓解措施
+            第五部分 - 最终修复建议
+            （每个部分最多分三点阐述，每一点不超过20字。你不需要给出任何代码。）
         """)
 
         # 创建提示词

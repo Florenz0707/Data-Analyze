@@ -1,0 +1,36 @@
+LLM_PROVIDER: transformers
+
+OLLAMA_CONFIG:
+  model: deepseek-r1:7b
+  embedding_model: bge-large:latest
+  host: http://localhost:11434
+  port: 11434
+  api_key: ollama
+  api_key_secret: ollama
+
+# Configuration block for running models via Hugging Face transformers
+# Switch to this by setting LLM_PROVIDER: transformers
+TRANSFORMERS_CONFIG:
+  # Text generation model (Hugging Face repo id or local path)
+  llm_model: "Qwen/Qwen2.5-1.5B-Instruct"
+
+  # Device / precision settings
+  device: "cuda"            # "cuda" | "cpu" | "auto"
+  device_map: "auto"        # for accelerate-style loading; use "auto" for best fit
+  torch_dtype: "auto"       # "float16" | "bfloat16" | "auto"
+  trust_remote_code: false   # set true if model repo requires custom code
+
+  # Generation parameters (defaults; can be overridden per-call)
+  max_new_tokens: 600
+  temperature: 0.7
+  top_p: 0.95
+  repetition_penalty: 1.1
+  do_sample: true
+
+  # Performance tweaks
+  use_flash_attention_2: false  # enable if your torch build and GPU support it
+
+  # Embedding model (for RAG/retrieval)
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  embedding_device: "auto"     # "cuda" | "cpu" | "auto"
+  embedding_batch_size: 32

@@ -1,6 +1,64 @@
-.venv/
-.idea/
+# Python 通用
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
+# Django 特有
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+.env
+.venv
+venv/
+ENV/
+coverage.xml
+htmlcov/
+
+# IDE - VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# IDE - PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# IDE - Vim
+*.swp
+*.swo
+.DS_Store
+
+# 其他构建工具
+.coverage
+.tox/
+.pytest_cache/
+
+# Others
 data/vector_stores/*
 db.sqlite3

@@ -1,7 +1,4 @@
 from ninja import NinjaAPI, Router
-# from ninja.security import BaseAuth
-from django.http import HttpRequest
-from typing import Optional
 from . import services
 from django.conf import settings
 from .schemas import LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorResponse
@@ -13,25 +10,6 @@ logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.0.1")
 
-# class ApiKeyAuth(AuthBase):
-    # def authenticate(self, request):
-        # auth_header = request.headers.get("Authorization")
-        # if not auth_header:
-            # return None  # 未提供认证信息，返回None表示认证失败
-
-        # try:
-            # # 解析 Authorization 头（格式：Bearer <api_key>）
-            # scheme, key = auth_header.split()
-            # if scheme.lower() != "bearer":
-                # return None  # 认证方案不是Bearer，失败
-
-            # # 查询对应的APIKey对象（验证有效性）
-            # api_key = APIKey.objects.get(key=key)
-            # # 返回APIKey对象（而非字符串），后续可通过request.auth访问
-            # return api_key
-        # except (ValueError, APIKey.DoesNotExist):
-            # # 解析失败或APIKey不存在，返回None表示认证失败
-            # return None
 
 def api_key_auth(request):
     """验证请求头中的API Key"""
