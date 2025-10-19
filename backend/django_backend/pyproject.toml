@@ -1,0 +1,25 @@
+[project]
+name = "data-analyze"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Florenz",email = "florenz@tju.edu.cn"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "chromadb>=1.2.0",
+    "django>=5.2.7",
+    "django-cors-headers>=4.9.0",
+    "django-ninja>=1.4.4",
+    "langchain==0.3.27",
+    "langchain-community>=0.3.31",
+    "langchain-core>=0.3.79",
+    "langchain-ollama>=0.3.10",
+    "llama-index>=0.14.5",
+    "llama-index-core>=0.14.5",
+    "llama-index-embeddings-langchain>=0.4.1",
+    "llama-index-llms-langchain>=0.7.1",
+    "llama-index-vector-stores-chroma>=0.5.3",
+    "ollama>=0.6.0",
+]
