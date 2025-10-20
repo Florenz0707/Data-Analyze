@@ -4,8 +4,8 @@ HTTPS_PROXY: "http://127.0.0.1:7077"
 LLM_PROVIDER: transformers
 
 LOG_PATH: "data/log"
-SYSTEM_PROMPT_PATH: "./config/system_prompt.yaml"
-RESPONSE_TEMPLATE_PATH: "./config/response_template.md"
+SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"
+RESPONSE_TEMPLATE_PATH: "config/response_template.md"
 
 OLLAMA_CONFIG:
   model: deepseek-r1:7b

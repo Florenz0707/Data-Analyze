@@ -10,7 +10,7 @@ import logging
 import warnings
 import yaml
 import pandas as pd
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 # silence specific pydantic warnings about 'validate_default'
 try:
@@ -96,6 +96,10 @@ class TopKLogSystem:
         self.system_prompt_path = env_cfg.get("SYSTEM_PROMPT_PATH", "./config/system_prompt.yaml")
         self.response_template_path = env_cfg.get("RESPONSE_TEMPLATE_PATH", "./config/response_template.md")
 
+        # 默认格式控制（可被 system_prompt.yaml 覆盖）
+        self.max_parts_num: int = 3
+        self.max_part_length: int = 50
+
         # 加载系统前置提示和回答模板
         self.system_prompt = self._load_system_prompt(self.system_prompt_path)
         self.response_template = self._load_response_template(self.response_template_path)
@@ -161,18 +165,107 @@ class TopKLogSystem:
         self.vector_store = None
         self._build_vectorstore()  # 直接构建
 
-    def _load_system_prompt(self, path: str) -> str:
-        """加载系统前置提示（YAML，包含 Role/Mission）。"""
+    def _extract_format_limits(self, data: Dict[str, Any]) -> Tuple[int, int]:
+        """从 system_prompt.yaml 的字典中提取 MAX_PARTS_NUM 与 MAX_PART_LENGTH。"""
+        parts = data.get('MAX_PARTS_NUM')
+        length = data.get('MAX_PART_LENGTH')
         try:
-            if path and os.path.exists(path):
-                with open(path, 'r', encoding='utf-8') as f:
-                    data = yaml.safe_load(f) or {}
-                    role = data.get('Role') or ''
-                    mission = data.get('Mission') or ''
-                    text = f"{role}\n{mission}".strip()
-                    if text:
-                        logger.info(f"已加载系统前置提示: {path}")
-                        return text
+            if parts is not None:
+                self.max_parts_num = max(1, min(10, int(parts)))
+        except Exception:
+            pass
+        try:
+            if length is not None:
+                self.max_part_length = max(10, min(200, int(length)))
+        except Exception:
+            pass
+        return self.max_parts_num, self.max_part_length
+
+    def _load_system_prompt(self, path: str) -> str:
+        """加载系统前置提示。支持：
+        - 纯文本（整文件为字符串）
+        - YAML 字典，优先字段 text；否则将所有键值按顺序拼接：
+          Role, Mission, Guidelines, Constraints, Style, Tone, OutputLanguage, OutputRules 等；
+          列表值会按 "- item" 逐行展开；其他未知键也会以 "Key: Value" 加入。
+        同时提取 MAX_PARTS_NUM 与 MAX_PART_LENGTH 并存入实例变量。
+        """
+        try:
+            if not path or not os.path.exists(path):
+                raise FileNotFoundError("system_prompt 文件不存在")
+            with open(path, 'r', encoding='utf-8') as f:
+                raw = f.read()
+            try:
+                data = yaml.safe_load(raw)
+            except Exception:
+                data = None
+
+            if isinstance(data, str):
+                text = data.strip()
+                if text:
+                    logger.info(f"已加载系统前置提示(纯文本): {path}")
+                    return text
+            if isinstance(data, dict):
+                # 提取格式限制
+                self._extract_format_limits(data)
+
+                # 优先使用 text 字段
+                if isinstance(data.get('text'), str) and data.get('text').strip():
+                    logger.info(f"已加载系统前置提示(text字段): {path}")
+                    return data['text'].strip()
+
+                order = [
+                    'Role', 'Mission', 'Guidelines', 'Constraints',
+                    'Style', 'Tone', 'OutputLanguage', 'OutputRules',
+                    'Log', 'Query',  # 允许在 YAML 中内联占位符
+                ]
+                lines: List[str] = []
+
+                def emit_kv(k: str, v: Any):
+                    if v is None:
+                        return
+                    if isinstance(v, str):
+                        v = v.strip()
+                        if v:
+                            lines.append(f"{k}: {v}")
+                    elif isinstance(v, (int, float, bool)):
+                        lines.append(f"{k}: {v}")
+                    elif isinstance(v, list):
+                        if v:
+                            lines.append(f"{k}:")
+                            for item in v:
+                                if isinstance(item, (str, int, float, bool)):
+                                    lines.append(f"- {str(item).strip()}")
+                                elif isinstance(item, dict):
+                                    lines.append(f"- {json.dumps(item, ensure_ascii=False)}")
+                    elif isinstance(v, dict):
+                        # 展平一层
+                        lines.append(f"{k}:")
+                        for sk, sv in v.items():
+                            emit_kv(f"  {sk}", sv)
+
+                # 先按已知顺序输出
+                for k in order:
+                    if k in data:
+                        emit_kv(k, data[k])
+
+                # 再输出剩余未知键（排除我们消费过的控制键）
+                consumed = set(order + ['text', 'MAX_PARTS_NUM', 'MAX_PART_LENGTH'])
+                for k, v in data.items():
+                    if k not in consumed:
+                        emit_kv(k, v)
+
+                text = "\n".join(lines).strip()
+                if text:
+                    logger.info(f"已加载系统前置提示(YAML结构): {path}")
+                    return text
+
+                raise ValueError("system_prompt.yaml 为空或无法解析有效内容")
+
+            # 非 YAML / 解析失败，按纯文本处理
+            text = raw.strip()
+            if text:
+                logger.info(f"已加载系统前置提示(回退纯文本): {path}")
+                return text
         except Exception as e:
             logger.warning(f"加载系统前置提示失败（{path}）：{e}，将使用默认。")
         return "资深日志分析助手\n请按要求提供简洁且结构化的分析报告。"
@@ -292,92 +385,124 @@ class TopKLogSystem:
             f"日志 {i}: {(log.get('content') if isinstance(log, dict) else str(log))}"
             for i, log in enumerate(context, 1)
         )
-        # 组合系统前置提示 + 用户问题 + 回答模板
-        parts = [
-            f"{self.system_prompt}",
-            "",
-            "## 相关历史日志参考:",
-            log_context,
-            "",
-            "## 当前需要分析的问题:",
-            query,
-            "",
+        # 渲染 system_prompt 模板中的 {log_context} 与 {query}
+        sp = self.system_prompt or ""
+        has_lc = "{log_context}" in sp
+        has_q = "{query}" in sp
+        try:
+            if has_lc or has_q:
+                sp = sp.format(log_context=log_context, query=query)
+        except Exception as e:
+            logger.warning(f"渲染 system_prompt 占位符失败：{e}，使用未渲染文本")
+
+        parts = [sp.strip()] if sp.strip() else []
+
+        # 若 system_prompt 未包含对应内容，再追加默认段落，避免重复
+        if not has_lc:
+            parts.extend(["## 相关历史日志参考:", log_context, ""])
+        if not has_q:
+            parts.extend(["## 当前需要分析的问题:", query, ""])
+
+        parts.extend([
             "请严格按照以下回答模板输出，不要回显上述提示或问题，仅填充内容：",
             self.response_template,
-        ]
+        ])
         return "\n".join(parts)
 
     def _sanitize_output(self, text: str, query: str) -> str:
         """
-        防止将提示词内容泄露给前端：
-        - 去除系统提示、日志上下文和“当前需要分析的问题”段落。
-        - 去除任何包含“不要回显/严格按照/提供简洁且结构化/不需要给出任何代码/严格遵守以上要求”等提示语的行。
-        - 若出现多次模板段落（如先回显模板再给答案），保留最后一个从“# 问题诊断”开始的段落。
-        - 去除模板占位符行（如“1. ......”）。
+        输出清洗与标准化：
+        - 从首个“### 问题诊断”或“# 问题诊断”开始截取。
+        - 仅保留五个白名单段落；忽略“总结”等其他段落。
+        - 将段落内容规范为最多 self.max_parts_num 条，超出截断；不足自动补齐占位。
+        - 将 `-`/`*`/编号等项目统一为 1./2./3.，并将每条截断到 self.max_part_length 字以内（中文按字符截断）。
         """
         if not text:
             return text
 
         lines = text.splitlines()
 
-        # 先移除明显的指令性语句与上下文、问题段落
-        filtered: List[str] = []
-        skip_block = False
-        i = 0
-        while i < len(lines):
-            ln = lines[i]
-            s = ln.strip()
+        # 起始定位
+        def find_start(headers) -> int:
+            for idx, ln in enumerate(lines):
+                s = ln.strip()
+                if any(s.startswith(h) for h in headers):
+                    return idx
+            return -1
 
-            # 指令性提示过滤关键词
-            instr_keywords = (
-                "不要回显",
-                "严格按照",
-                "提供简洁且结构化的分析报告",
-                "不需要给出任何代码",
-                "严格遵守以上要求",
-                "Role:",
-                "Mission:",
-                "资深日志分析助手",
-            )
-            if any(k in s for k in instr_keywords):
-                i += 1
+        start_idx = find_start(["### 问题诊断"])
+        if start_idx == -1:
+            start_idx = find_start(["# 问题诊断"])
+        if start_idx > 0:
+            lines = lines[start_idx:]
+
+        # 白名单段落
+        sections = [
+            "问题诊断",
+            "可能原因（按概率降序排序）",
+            "建议的排查步骤",
+            "临时缓解措施",
+            "最终修复建议",
+        ]
+
+        # 收集每个段落的原始行
+        collected: Dict[str, List[str]] = {s: [] for s in sections}
+        current = None
+        for ln in lines:
+            st = ln.strip()
+            if st.startswith('#'):
+                name = st.lstrip('#').strip()
+                key = next((k for k in sections if name.startswith(k)), None)
+                current = key
                 continue
+            if current:
+                # 跳过明显的指令或回显
+                if st in {"", "1. ......", "2. ......", "3. ......"}:
+                    continue
+                if st == query.strip():
+                    continue
+                collected[current].append(st)
 
-            # 过滤日志上下文块
-            if s.startswith("## 相关历史日志参考"):
-                i += 1
-                while i < len(lines) and (lines[i].strip() == "" or lines[i].strip().startswith("日志 ")):
-                    i += 1
-                continue
+        # 规范化每个段落：提取前 N 条，转换为 1./2./...，并 <=max_len
+        def normalize_items(items: List[str]) -> List[str]:
+            N = max(1, int(self.max_parts_num))
+            max_len = max(10, int(self.max_part_length))
+            norm: List[str] = []
+            # 提取候选：以 -, *, 数字., 中文数字等开头，或普通句子
+            for raw in items:
+                s = raw
+                # 去除 markdown 列表前缀
+                if s.startswith(('- ', '* ', '• ', '· ')):
+                    s = s[2:].strip()
+                # 去除有序列表前缀
+                if len(s) > 2 and (s[0].isdigit() and s[1] in ['.', '、']):
+                    s = s[2:].strip()
+                # 去除代码反引号
+                s = s.replace('`', '')
+                if s:
+                    norm.append(s)
+                if len(norm) >= N * 2:  # 收集多一些，后面再截取N
+                    break
+            if not norm:
+                return [f"{i}. 待确认" for i in range(1, N+1)]
+            # 截取前N并限制长度
+            out: List[str] = []
+            for idx, s in enumerate(norm[:N], start=1):
+                trimmed = s[:max_len]
+                out.append(f"{idx}. {trimmed}")
+            # 如不足N，补齐
+            while len(out) < N:
+                out.append(f"{len(out)+1}. 待确认")
+            return out
 
-            # 过滤“当前需要分析的问题”与紧随的 query
-            if s.startswith("## 当前需要分析的问题"):
-                i += 1
-                if i < len(lines) and lines[i].strip() == query.strip():
-                    i += 1
-                while i < len(lines) and lines[i].strip() == "":
-                    i += 1
-                continue
+        result_lines: List[str] = []
+        for sec in sections:
+            result_lines.append(f"# {sec}")
+            items = normalize_items(collected.get(sec, []))
+            result_lines.extend(items)
+            result_lines.append("")
 
-            filtered.append(ln)
-            i += 1
-
-        # 如果出现多个“# 问题诊断”，保留最后一个开始的段落
-        header = "# 问题诊断"
-        idxs = [idx for idx, ln in enumerate(filtered) if ln.strip().startswith(header)]
-        if idxs:
-            start = idxs[-1]
-            filtered = filtered[start:]
-
-        # 去掉模板占位符行
-        cleaned = []
-        for ln in filtered:
-            s = ln.strip()
-            if s in {"1. ......", "2. ......", "3. ......"}:
-                continue
-            cleaned.append(ln)
-
-        return "\n".join(cleaned).strip()
+        return "\n".join(result_lines).strip()
 
     # 执行查询
     def query(self, query: str) -> Dict:
