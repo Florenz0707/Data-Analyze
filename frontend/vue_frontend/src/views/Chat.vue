@@ -34,13 +34,16 @@
           开始与 DeepSeek-KAI.v.0.0.1 的对话吧！
         </div>
 
-        <ChatMessage
-          v-for="msg in messages"
-          :key="msg.id"
-          :is-user="msg.isUser"
-          :content="msg.content"
-          :timestamp="msg.timestamp"
-        />
+        <!-- 功能1: 修改消息展示方式以支持Markdown -->
+        <div 
+          v-for="msg in messages" 
+          :key="msg.id" 
+          class="message-wrapper" 
+          :class="{ 'user-message': msg.isUser, 'bot-message': !msg.isUser }">
+            <div class="message-content" v-html="renderMarkdown(msg.content)"></div>
+            <div class="message-timestamp">{{ msg.timestamp }}</div>
+        </div>
+
 
         <div v-if="loading" class="loading-indicator">
           <div class="loading"></div>
@@ -62,8 +65,19 @@ import { useRouter } from 'vue-router';
 import { useStore } from '../store';
 import api from '../api';
 import SessionList from '../components/SessionList.vue';
-import ChatMessage from '../components/ChatMessage.vue';
+// 移除了 ChatMessage 组件的导入，因为我们直接在模板中处理消息渲染
+// import ChatMessage from '../components/ChatMessage.vue';
 import ChatInput from '../components/ChatInput.vue';
+
+// 功能1: 导入 markdown-it 用于解析 Markdown
+import markdownit from 'markdown-it';
+
+// 初始化 markdown-it
+const md = markdownit({
+  html: true, // 允许HTML标签
+  linkify: true, // 自动转换链接
+  typographer: true, // 启用智能标点符号
+});
 
 const store = useStore();
 const router = useRouter();
@@ -74,6 +88,12 @@ const currentSession = computed(() => store.currentSession);
 const messages = computed(() => store.messages[currentSession.value] || []);
 const loading = computed(() => store.loading);
 const error = computed(() => store.error);
+
+// 功能1: 创建一个渲染 Markdown 的函数
+const renderMarkdown = (content) => {
+  // 确保内容是字符串类型
+  return md.render(content || '');
+};
 
 // 初始化加载历史记录
 const loadHistory = async (sessionId) => {
@@ -90,7 +110,9 @@ const loadHistory = async (sessionId) => {
 
 // 挂载时加载当前会话历史
 onMounted(() => {
-  loadHistory(currentSession.value);
+  if (currentSession.value) {
+    loadHistory(currentSession.value);
+  }
 });
 
 // 处理选择会话
@@ -113,7 +135,7 @@ const handleDeleteSession = async (sessionId) => {
 // 处理创建会话
 const handleCreateSession = (sessionId) => {
   store.addSession(sessionId);
-  store.clearSessionMessages(sessionId);
+  store.setCurrentSession(sessionId); // 创建后自动切换到新会话
 };
 
 // 处理发送消息
@@ -123,8 +145,12 @@ const handleSendMessage = async (content) => {
 
   try {
     store.setLoading(true);
-    // 调用API发送消息
-    const response = await api.chat(currentSession.value, content);
+    
+    // 功能2: 发送完整的对话历史到API
+    // messages.value 包含了刚刚添加的用户新消息
+    const conversationHistory = messages.value;
+    const response = await api.chat(currentSession.value, conversationHistory);
+    
     // 添加机器人回复到界面
     store.addMessage(currentSession.value, false, response.data.reply);
   } catch (err) {
@@ -225,5 +251,97 @@ const handleLogout = () => {
   gap: 0.5rem;
   margin: 1rem auto;
   color: var(--text-secondary);
+}
+
+/* 新增：消息气泡样式 */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  max-width: 85%;
+  align-items: flex-start;
+}
+
+.message-content {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.message-timestamp {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  padding: 0 0.5rem;
+}
+
+/* 用户消息样式 */
+.user-message {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.user-message .message-content {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-bottom-right-radius: 4px;
+}
+
+/* 机器人消息样式 */
+.bot-message {
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+/* 新增：Markdown 内容的深度样式 */
+/* 使用 :deep() 选择器来穿透 scoped CSS 的限制，为 v-html 渲染出的内容添加样式 */
+.bot-message .message-content :deep(p) {
+  margin-bottom: 0.5em;
+}
+.bot-message .message-content :deep(p):last-child {
+  margin-bottom: 0;
+}
+.bot-message .message-content :deep(ul),
+.bot-message .message-content :deep(ol) {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.bot-message .message-content :deep(pre) {
+  background-color: #2d2d2d; /* 暗色代码块背景 */
+  color: #f8f8f2; /* 亮色代码文本 */
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.bot-message .message-content :deep(code) {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  background-color: rgba(128, 128, 128, 0.15);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.bot-message .message-content :deep(pre) > code {
+  padding: 0;
+  background-color: transparent;
+  font-size: 1em;
+}
+.bot-message .message-content :deep(blockquote) {
+  border-left: 4px solid var(--border-color);
+  margin: 1em 0;
+  padding-left: 1em;
+  color: var(--text-secondary);
+}
+.bot-message .message-content :deep(a) {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+.bot-message .message-content :deep(a):hover {
+  text-decoration: underline;
 }
 </style>

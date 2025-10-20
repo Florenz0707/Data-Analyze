@@ -183,7 +183,7 @@ if __name__ == "__main__":
     # 初始化系统
     system = TopKLogSystem(
         log_path="./data/log",
-        llm="deepseek-r1:7b",
+        llm="deepseek-r1:1.5b",
         embedding_model="bge-large:latest"
     )
 

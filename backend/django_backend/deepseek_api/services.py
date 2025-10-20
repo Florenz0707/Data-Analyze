@@ -20,7 +20,7 @@ def deepseek_r1_api_call(prompt: str) -> str:
     from topklogsystem import TopKLogSystem
     system = TopKLogSystem(
         log_path="./data/log",
-        llm="deepseek-r1:7b",
+        llm="deepseek-r1:1.5b",
         embedding_model="bge-large:latest"
     )
 
