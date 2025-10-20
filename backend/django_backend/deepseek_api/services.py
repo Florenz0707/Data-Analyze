@@ -5,30 +5,38 @@ import hashlib
 from .models import APIKey, RateLimit, ConversationSession
 from django.conf import settings
 
-# 全局配置
-# API_KEY_LENGTH = 32
-# TOKEN_EXPIRY_SECONDS = 3600
-# RATE_LIMIT_MAX = 5  # 每分钟最大请求数
-# RATE_LIMIT_INTERVAL = 60
-
 # 线程锁用于速率限制
 rate_lock = threading.Lock()
 
-def deepseek_r1_api_call(prompt: str) -> str:
-    """模拟 DeepSeek-R1 API 调用函数"""
+# 与 TopKLogSystem 保持一致的生成流程：
+# - 复用同一个 TopKLogSystem 实例，避免每次请求重复构建索引
+# - 由 TopKLogSystem 内部读取配置与初始化 LLM/Embedding
+try:
     from topklogsystem import TopKLogSystem
-    system = TopKLogSystem(
-        log_path="./data/log",
-        llm="deepseek-r1:7b",
-        embedding_model="bge-large:latest"
+    SYSTEM = TopKLogSystem(
+        config_path="./config/llm_config.yaml",
     )
+except Exception as e:
+    # 如果初始化失败，延迟到第一次调用时再尝试
+    SYSTEM = None
 
-    query = prompt
-    result = system.query(query)
-    time.sleep(0.5)
 
-    print(result["response"])
-    return result["response"]
+def _get_system() -> "TopKLogSystem":
+    global SYSTEM
+    if SYSTEM is None:
+        from topklogsystem import TopKLogSystem
+        SYSTEM = TopKLogSystem(
+            config_path="./config/llm_config.yaml",
+        )
+    return SYSTEM
+
+
+def deepseek_r1_api_call(prompt: str) -> str:
+    """调用 TopKLogSystem，保持与 topklogsystem.py 一致的生成流程"""
+    system = _get_system()
+    result = system.query(prompt)
+    return result.get("response", "")
+
 
 def create_api_key(user: str) -> str:
     """创建 API Key 并保存到数据库"""
@@ -49,6 +57,7 @@ def create_api_key(user: str) -> str:
 
     return key
 
+
 def validate_api_key(key_str: str) -> bool:
     """验证 API Key 是否存在且未过期"""
     try:
@@ -61,12 +70,11 @@ def validate_api_key(key_str: str) -> bool:
     except APIKey.DoesNotExist:
         return False
 
+
 def check_rate_limit(key_str: str) -> bool:
     """检查 API Key 的请求频率是否超过限制"""
     with rate_lock:
         try:
-            # api_key = APIKey.objects.get(key=key_str)
-            # rate_limit = RateLimit.objects.get(api_key=api_key)
             rate_limit = RateLimit.objects.select_related('api_key').get(api_key__key=key_str)
 
             current_time = time.time()
@@ -95,14 +103,6 @@ def check_rate_limit(key_str: str) -> bool:
             except APIKey.DoesNotExist:
                 return False
 
-# def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
-    # """获取或创建会话，关联当前用户（通过API Key）"""
-    # session, created = ConversationSession.objects.get_or_create(
-        # session_id=session_id,
-        # user=user,  # 绑定用户
-        # defaults={'context': ''}
-    # )
-    # return session
 
 def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     """
@@ -121,10 +121,12 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     logger.info(f"会话 {session_id}（用户：{user.user}）{'创建新会话' if created else '加载旧会话'}")
     return session
 
+
 def get_cached_reply(prompt: str, session_id: str, user: APIKey) -> str | None:
     """缓存键包含 session_id 和 user，避免跨会话冲突"""
     cache_key = f"reply:{user.user}:{session_id}:{hash(prompt)}"
     return cache.get(cache_key)
+
 
 def set_cached_reply(prompt: str, reply: str, session_id: str, user: APIKey, timeout=3600):
     cache_key = f"reply:{user.user}:{session_id}:{hash(prompt)}"

@@ -26,7 +26,6 @@ except Exception:
 # langchain LLM backends
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
-from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline as hf_pipeline
 
 # llama-index & chroma
@@ -47,23 +46,65 @@ def _slugify(text: str) -> str:
     return ''.join(c if c.isalnum() else '_' for c in text)[:64]
 
 
+def _apply_proxies_from_cfg(cfg: Dict[str, Any]):
+    """根据配置设置进程代理环境变量，优先在模型下载/初始化前调用。"""
+    http_proxy = cfg.get("HTTP_PROXY") or cfg.get("http_proxy")
+    https_proxy = cfg.get("HTTPS_PROXY") or cfg.get("https_proxy")
+    all_proxy = cfg.get("ALL_PROXY") or cfg.get("all_proxy")
+    no_proxy = cfg.get("NO_PROXY") or cfg.get("no_proxy")
+
+    def _set_env(key: str, val: str | None):
+        if val:
+            os.environ[key] = val
+
+    # 同时设置大小写，兼容 requests/huggingface_hub 等
+    for key, val in (
+        ("HTTP_PROXY", http_proxy),
+        ("http_proxy", http_proxy),
+        ("HTTPS_PROXY", https_proxy),
+        ("https_proxy", https_proxy),
+        ("ALL_PROXY", all_proxy or http_proxy),
+        ("all_proxy", all_proxy or http_proxy),
+        ("NO_PROXY", no_proxy),
+        ("no_proxy", no_proxy),
+    ):
+        _set_env(key, val)
+
+
 class TopKLogSystem:
     def __init__(
             self,
-            log_path: str,
-            llm: str,
-            embedding_model: str,
+            config_path: str = "./config/llm_config.yaml",
     ) -> None:
+        """
+        通过配置文件初始化系统。
+        - config_path: YAML 配置文件路径，包含 provider、模型、代理、日志路径、系统提示与回答模板路径。
+        """
+        self.config_path = config_path
+
         # load provider config
-        with open("./config/llm_config.yaml", "r", encoding="utf-8") as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             env_cfg = yaml.safe_load(f) or {}
+
+        # 先应用代理，确保后续模型/权重下载、远程请求走代理
+        _apply_proxies_from_cfg(env_cfg)
+
         provider = (env_cfg.get("LLM_PROVIDER") or "ollama").lower()
+
+        # 从配置读取路径
+        self.log_path = env_cfg.get("LOG_PATH", "./data/log")
+        self.system_prompt_path = env_cfg.get("SYSTEM_PROMPT_PATH", "./config/system_prompt.yaml")
+        self.response_template_path = env_cfg.get("RESPONSE_TEMPLATE_PATH", "./config/response_template.md")
+
+        # 加载系统前置提示和回答模板
+        self.system_prompt = self._load_system_prompt(self.system_prompt_path)
+        self.response_template = self._load_response_template(self.response_template_path)
 
         # init models by provider
         self.provider = provider
         if provider == "transformers":
             tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
-            llm_model = tcfg.get("llm_model", llm)
+            llm_model = tcfg.get("llm_model")
             device_map = tcfg.get("device_map", "auto")
             torch_dtype = tcfg.get("torch_dtype", "auto")
             trust_remote_code = bool(tcfg.get("trust_remote_code", False))
@@ -73,7 +114,7 @@ class TopKLogSystem:
             repetition_penalty = float(tcfg.get("repetition_penalty", 1.1))
             do_sample = bool(tcfg.get("do_sample", True))
 
-            embedding_name = tcfg.get("embedding_model", embedding_model)
+            embedding_name = tcfg.get("embedding_model")
 
             # embeddings via HuggingFace
             hf_embed = HuggingFaceEmbeddings(model_name=embedding_name)
@@ -102,27 +143,58 @@ class TopKLogSystem:
             # register to llama-index via adapters
             Settings.llm = LangChainLLM(llm=hf_llm)
             Settings.embed_model = LangchainEmbedding(hf_embed)
-
-            self.llm = hf_llm
-            self.embedding_model = hf_embed
         else:
             # default ollama
             ocfg = env_cfg.get("OLLAMA_CONFIG", {})
-            llm_name = ocfg.get("model", llm)
-            embed_name = ocfg.get("embedding_model", embedding_model)
+            llm_name = ocfg.get("model")
+            embed_name = ocfg.get("embedding_model")
 
             self.embedding_model = OllamaEmbeddings(model=embed_name)
-            self.llm = OllamaLLM(model=llm_name, temperature=0.1)
+            ollama_llm = OllamaLLM(model=llm_name, temperature=0.1)
             self.collection_name = f"log_collection_ollama_{_slugify(embed_name)}"
 
             # register to llama-index via adapters as well
-            Settings.llm = LangChainLLM(llm=self.llm)
+            Settings.llm = LangChainLLM(llm=ollama_llm)
             Settings.embed_model = LangchainEmbedding(self.embedding_model)  # 全局设置
 
-        self.log_path = log_path
         self.log_index = None
         self.vector_store = None
         self._build_vectorstore()  # 直接构建
+
+    def _load_system_prompt(self, path: str) -> str:
+        """加载系统前置提示（YAML，包含 Role/Mission）。"""
+        try:
+            if path and os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = yaml.safe_load(f) or {}
+                    role = data.get('Role') or ''
+                    mission = data.get('Mission') or ''
+                    text = f"{role}\n{mission}".strip()
+                    if text:
+                        logger.info(f"已加载系统前置提示: {path}")
+                        return text
+        except Exception as e:
+            logger.warning(f"加载系统前置提示失败（{path}）：{e}，将使用默认。")
+        return "资深日志分析助手\n请按要求提供简洁且结构化的分析报告。"
+
+    def _load_response_template(self, path: str) -> str:
+        """加载回答模板（Markdown）。"""
+        try:
+            if path and os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    if content.strip():
+                        logger.info(f"已加载回答模板: {path}")
+                        return content
+        except Exception as e:
+            logger.warning(f"加载回答模板失败（{path}）：{e}，将使用默认模板。")
+        return (
+            "# 问题诊断\n1. \n2. \n3. \n\n"
+            "# 可能原因（按概率降序排序）\n1. \n2. \n3. \n\n"
+            "# 建议的排查步骤\n1. \n2. \n3. \n\n"
+            "# 临时缓解措施\n1. \n2. \n3. \n\n"
+            "# 最终修复建议\n1. \n2. \n3. \n"
+        )
 
     # 加载数据并构建索引
     def _build_vectorstore(self):
@@ -181,8 +253,7 @@ class TopKLogSystem:
                 logger.error(f"加载文档失败 {file_path}: {e}")
         return documents
 
-        # 检索相关日志
-
+    # 检索相关日志
     def retrieve_logs(self, query: str, top_k: int = 10) -> List[Dict]:
         if not self.log_index:
             return []
@@ -202,81 +273,113 @@ class TopKLogSystem:
             logger.error(f"日志检索失败: {e}")
             return []
 
-            # LLM 生成响应
-
+    # LLM 生成响应
     def generate_response(self, query: str, context: Dict) -> str:
         prompt = self._build_prompt_text(query, context)  # 构建提示词
 
         try:
-            response = self.llm.invoke(prompt)  # 调用LLM
-            return response
+            # 通过全局 Settings.llm 调用，避免依赖实例属性
+            resp = Settings.llm.complete(prompt)
+            text = getattr(resp, "text", str(resp))
+            return self._sanitize_output(text, query)
         except Exception as e:
             logger.error(f"LLM调用失败: {e}")
             return f"生成响应时出错: {str(e)}"
 
-            # 构建 prompt
-
     def _build_prompt_text(self, query: str, context: Dict) -> str:
-        # 构建日志上下文为纯文本，兼容 Ollama 与 transformers
-        log_context = "## 相关历史日志参考:\n"
-        for i, log in enumerate(context, 1):
-            content = log.get('content') if isinstance(log, dict) else str(log)
-            log_context += f"日志 {i}: {content}\n"
-
-        prompt = (
-            "你是一名资深日志分析助手，擅长阅读历史日志并给出精确、可操作的建议。\n\n"
-            f"{log_context}\n"
-            "## 当前需要分析的问题:\n"
-            f"{query}\n\n"
-            "请基于以上信息，提供简洁且结构化的分析报告：\n"
-            "第一部分 - 问题诊断\n"
-            "第二部分 - 可能原因（按概率排序）\n"
-            "第三部分 - 建议的排查步骤\n"
-            "第四部分 - 临时缓解措施\n"
-            "第五部分 - 最终修复建议\n\n"
-            "（每个部分最多分三点阐述，每一点不超过20字。你不需要给出任何代码。）\n"
+        # 构建日志上下文为纯文本
+        log_context = "\n".join(
+            f"日志 {i}: {(log.get('content') if isinstance(log, dict) else str(log))}"
+            for i, log in enumerate(context, 1)
         )
-        return prompt
+        # 组合系统前置提示 + 用户问题 + 回答模板
+        parts = [
+            f"{self.system_prompt}",
+            "",
+            "## 相关历史日志参考:",
+            log_context,
+            "",
+            "## 当前需要分析的问题:",
+            query,
+            "",
+            "请严格按照以下回答模板输出，不要回显上述提示或问题，仅填充内容：",
+            self.response_template,
+        ]
+        return "\n".join(parts)
 
-    def _build_prompt(self, query: str, context: Dict) -> List[Dict]:
-        # 系统消息 - 定义角色和任务
-        system_message = SystemMessagePromptTemplate.from_template("""
-            你是一名资深日志分析助手，擅长阅读历史日志并给出精确、可操作的建议。
-        """)
+    def _sanitize_output(self, text: str, query: str) -> str:
+        """
+        防止将提示词内容泄露给前端：
+        - 去除系统提示、日志上下文和“当前需要分析的问题”段落。
+        - 去除任何包含“不要回显/严格按照/提供简洁且结构化/不需要给出任何代码/严格遵守以上要求”等提示语的行。
+        - 若出现多次模板段落（如先回显模板再给答案），保留最后一个从“# 问题诊断”开始的段落。
+        - 去除模板占位符行（如“1. ......”）。
+        """
+        if not text:
+            return text
 
-        # 构建日志上下文
-        log_context = "## 相关历史日志参考:\n"
-        for i, log in enumerate(context, 1):
-            log_context += f"日志 {i} : {log['content']}"
+        lines = text.splitlines()
 
-            # 用户消息
-        user_message = HumanMessagePromptTemplate.from_template("""
-            {log_context}
-            ## 当前需要分析的问题:
-            {query}
+        # 先移除明显的指令性语句与上下文、问题段落
+        filtered: List[str] = []
+        skip_block = False
+        i = 0
+        while i < len(lines):
+            ln = lines[i]
+            s = ln.strip()
 
-            请基于以上信息，提供简洁且结构化的分析报告
-            第一部分 - 问题诊断
-            第二部分 - 可能原因（按概率排序）
-            第三部分 - 建议的排查步骤
-            第四部分 - 临时缓解措施
-            第五部分 - 最终修复建议
-            （每个部分最多分三点阐述，每一点不超过20字。你不需要给出任何代码。）
-        """)
+            # 指令性提示过滤关键词
+            instr_keywords = (
+                "不要回显",
+                "严格按照",
+                "提供简洁且结构化的分析报告",
+                "不需要给出任何代码",
+                "严格遵守以上要求",
+                "Role:",
+                "Mission:",
+                "资深日志分析助手",
+            )
+            if any(k in s for k in instr_keywords):
+                i += 1
+                continue
 
-        # 创建提示词
-        prompt = ChatPromptTemplate.from_messages([
-            system_message,
-            user_message
-        ])
+            # 过滤日志上下文块
+            if s.startswith("## 相关历史日志参考"):
+                i += 1
+                while i < len(lines) and (lines[i].strip() == "" or lines[i].strip().startswith("日志 ")):
+                    i += 1
+                continue
 
-        return prompt.format_prompt(
-            log_context=log_context,
-            query=query
-        ).to_messages()
+            # 过滤“当前需要分析的问题”与紧随的 query
+            if s.startswith("## 当前需要分析的问题"):
+                i += 1
+                if i < len(lines) and lines[i].strip() == query.strip():
+                    i += 1
+                while i < len(lines) and lines[i].strip() == "":
+                    i += 1
+                continue
 
-        # 执行查询
+            filtered.append(ln)
+            i += 1
 
+        # 如果出现多个“# 问题诊断”，保留最后一个开始的段落
+        header = "# 问题诊断"
+        idxs = [idx for idx, ln in enumerate(filtered) if ln.strip().startswith(header)]
+        if idxs:
+            start = idxs[-1]
+            filtered = filtered[start:]
+
+        # 去掉模板占位符行
+        cleaned = []
+        for ln in filtered:
+            s = ln.strip()
+            if s in {"1. ......", "2. ......", "3. ......"}:
+                continue
+            cleaned.append(ln)
+
+        return "\n".join(cleaned).strip()
+
+    # 执行查询
     def query(self, query: str) -> Dict:
         log_results = self.retrieve_logs(query)
         response = self.generate_response(query, log_results)  # 生成响应
@@ -286,15 +389,12 @@ class TopKLogSystem:
             "retrieval_stats": len(log_results)
         }
 
-    # 示例使用
 
-
+# 示例使用
 if __name__ == "__main__":
-    # 初始化系统
+    # 初始化系统（仅需提供配置文件路径）
     system = TopKLogSystem(
-        log_path="./data/log",
-        llm="deepseek-r1:7b",
-        embedding_model="bge-large:latest"
+        config_path="./config/llm_config.yaml",
     )
 
     # 执行查询

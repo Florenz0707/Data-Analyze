@@ -65,34 +65,26 @@ def chat(request, data: ChatIn):
     user = request.auth  # 从认证获取当前用户（APIKey对象）
     session = get_or_create_session(session_id, user)
 
-    # 4. 拼接上下文（历史记录 + 当前输入）→ 关键！
-    # 若 session.context 不为空，说明是旧会话（带历史）
-    # 从session获取纯净的对话历史（仅用户输入和回复）
-    pure_context = session.context
-    # 拼接prompt：纯历史 + 当前用户输入（不含时间戳）
-    prompt = pure_context + f"用户：{user_input}\n回复："
-    logger.info(f"传递给大模型的prompt：\n{prompt}")  # 调试日志
+    # 4. 直接使用用户问题作为查询，让 TopKLogSystem 使用模板与日志进行生成
+    query = user_input
+    logger.info(f"传递给TopKLogSystem的query：{query}")
 
-    # 5. 调用大模型（带完整上下文）
-    # 获取缓存时传入session_id和user
-    cached_reply = get_cached_reply(prompt, session_id, user)
+    # 5. 调用大模型（带缓存）
+    cached_reply = get_cached_reply(query, session_id, user)
     if cached_reply:
         reply = cached_reply
     else:
-        reply = deepseek_r1_api_call(prompt)
-        # 设置缓存时传入session_id和user
-        set_cached_reply(prompt, reply, session_id, user)
+        reply = deepseek_r1_api_call(query)
+        set_cached_reply(query, reply, session_id, user)
+    logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
     # 6. 保存上下文到会话（更新历史记录）
     session.context += f"用户：{user_input}\n回复：{reply}\n"
     session.save()  # 持久化到数据库
 
-    # session.update_context(user_input, reply)
-
+    # 返回与模式一致，仅返回 reply，避免将 prompt 或 query 回显给前端
     return {
         "reply": reply,
-        # 前端需要的时间戳由前端生成，后端可返回当前时间供参考
-        "timestamp": datetime.now().strftime("%H:%M:%S")
     }
 
 # 1. 修复 history 接口
