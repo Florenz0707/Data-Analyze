@@ -149,7 +149,7 @@ const handleSendMessage = async (content) => {
     // 功能2: 发送完整的对话历史到API
     // messages.value 包含了刚刚添加的用户新消息
     const conversationHistory = messages.value;
-    const response = await api.chat(currentSession.value, conversationHistory);
+    const response = await api.chat(currentSession.value, content);
     
     // 添加机器人回复到界面
     store.addMessage(currentSession.value, false, response.data.reply);
