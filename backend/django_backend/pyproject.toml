@@ -26,6 +26,7 @@ dependencies = [
     "llama-index-vector-stores-chroma>=0.5.3",
     "ollama>=0.6.0",
     "sentence-transformers>=5.1.1",
+    "setuptools>=80.9.0",
     "torch>=2.9.0",
     "transformers>=4.57.1",
 ]

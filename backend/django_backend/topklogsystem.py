@@ -527,5 +527,5 @@ if __name__ == "__main__":
     result = system.query(query)
 
     print("查询:", query)
-    print("响应:", result["response"])
+    print("响应:\n", result["response"])
     print("检索统计:", result["retrieval_stats"])

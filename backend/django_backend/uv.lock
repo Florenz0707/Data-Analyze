@@ -436,6 +436,7 @@ dependencies = [
     { name = "llama-index-vector-stores-chroma" },
     { name = "ollama" },
     { name = "sentence-transformers" },
+    { name = "setuptools" },
     { name = "torch" },
     { name = "transformers" },
 ]
@@ -460,6 +461,7 @@ requires-dist = [
     { name = "llama-index-vector-stores-chroma", specifier = ">=0.5.3" },
     { name = "ollama", specifier = ">=0.6.0" },
     { name = "sentence-transformers", specifier = ">=5.1.1" },
+    { name = "setuptools", specifier = ">=80.9.0" },
     { name = "torch", specifier = ">=2.9.0" },
     { name = "transformers", specifier = ">=4.57.1" },
 ]
