@@ -112,3 +112,9 @@ RATE_LIMIT_MAX = 5000  # 每分钟最大请求数
 RATE_LIMIT_INTERVAL = 60
 CACHE_MAX_SIZE = 200
 CACHE_EXPIRY = 300
+
+# LLM/model loading controls
+# Whether LLM features are enabled at all (controls if the model can be initialized)
+ENABLE_LLM = True
+# Whether to preload model and vector index on app startup
+PRELOAD_LLM_ON_STARTUP = True

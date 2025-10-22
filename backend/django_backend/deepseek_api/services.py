@@ -13,25 +13,36 @@ rate_lock = threading.Lock()
 # - 由 TopKLogSystem 内部读取配置与初始化 LLM/Embedding
 # 重要：不要在模块导入时实例化模型，避免在 manage.py 的其他命令下也加载模型
 SYSTEM = None
+_init_lock = threading.Lock()
 
 
 def _get_system() -> "TopKLogSystem":
     """Return a singleton TopKLogSystem instance.
     Only initialize when running the development server (runserver).
     """
-    import sys
     global SYSTEM
     if SYSTEM is None:
-        # 仅在 runserver 场景下加载大模型，避免其他管理命令加载
-        is_runserver = any(arg.startswith("runserver") for arg in sys.argv)
-        if not is_runserver:
-            # 如果在非 runserver 场景被调用，给出清晰错误，避免意外加载模型
-            raise RuntimeError("TopKLogSystem is only initialized during 'runserver'.")
-        from topklogsystem import TopKLogSystem
-        SYSTEM = TopKLogSystem(
-            config_path="./config/llm_config.yaml",
-        )
+        with _init_lock:
+            if SYSTEM is None:
+                # 基于 settings 控制是否允许初始化 LLM（适用于 runserver/gunicorn 等所有部署方式）
+                if not getattr(settings, 'ENABLE_LLM', True):
+                    raise RuntimeError("LLM is disabled by settings.ENABLE_LLM=False.")
+                from topklogsystem import TopKLogSystem
+                SYSTEM = TopKLogSystem(
+                    config_path="./config/llm_config.yaml",
+                )
     return SYSTEM
+
+
+def preload_system() -> None:
+    """Eagerly initialize the TopKLogSystem if in runserver context.
+    Safe to call multiple times (idempotent).
+    """
+    try:
+        _get_system()
+    except RuntimeError:
+        # Non-runserver context: ignore
+        pass
 
 
 def deepseek_r1_api_call(prompt: str) -> str:
