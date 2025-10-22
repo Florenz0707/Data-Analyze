@@ -10,6 +10,8 @@ import logging
 import warnings
 import yaml
 import pandas as pd
+import time
+import re
 from typing import Any, Dict, List, Tuple
 
 # silence specific pydantic warnings about 'validate_default'
@@ -90,6 +92,16 @@ class TopKLogSystem:
         _apply_proxies_from_cfg(env_cfg)
 
         provider = (env_cfg.get("LLM_PROVIDER") or "ollama").lower()
+
+        # 从配置读取生成鲁棒性设置
+        try:
+            self.generation_retries: int = int(env_cfg.get("LLM_GENERATION_RETRIES", 2))
+        except Exception:
+            self.generation_retries = 2
+        try:
+            self.min_output_chars: int = int(env_cfg.get("LLM_MIN_OUTPUT_CHARS", 50))
+        except Exception:
+            self.min_output_chars = 50
 
         # 从配置读取路径
         self.log_path = env_cfg.get("LOG_PATH", "./data/log")
@@ -349,18 +361,19 @@ class TopKLogSystem:
     # 检索相关日志
     def retrieve_logs(self, query: str, top_k: int = 10) -> List[Dict]:
         if not self.log_index:
+            logger.info("retrieve_logs: log_index is None, returning empty context")
             return []
 
         try:
             retriever = self.log_index.as_retriever(similarity_top_k=top_k)  # topK
             results = retriever.retrieve(query)
-
             formatted_results = []
             for result in results:
                 formatted_results.append({
                     "content": result.text,
                     "score": result.score
                 })
+            logger.info(f"retrieve_logs: top_k={top_k}, hits={len(formatted_results)}")
             return formatted_results
         except Exception as e:
             logger.error(f"日志检索失败: {e}")
@@ -370,14 +383,36 @@ class TopKLogSystem:
     def generate_response(self, query: str, context: Dict) -> str:
         prompt = self._build_prompt_text(query, context)  # 构建提示词
 
-        try:
-            # 通过全局 Settings.llm 调用，避免依赖实例属性
-            resp = Settings.llm.complete(prompt)
-            text = getattr(resp, "text", str(resp))
-            return self._sanitize_output(text, query)
-        except Exception as e:
-            logger.error(f"LLM调用失败: {e}")
-            return f"生成响应时出错: {str(e)}"
+        retries = max(0, int(getattr(self, 'generation_retries', 2)))
+        min_chars = max(1, int(getattr(self, 'min_output_chars', 50)))
+
+        last_err = None
+        for attempt in range(retries + 1):
+            try:
+                # 通过全局 Settings.llm 调用，避免依赖实例属性
+                resp = Settings.llm.complete(prompt)
+                text = getattr(resp, "text", str(resp))
+                raw = (text or "").strip()
+                logger.info(f"LLM raw output length: {len(raw)}")
+                logger.info(f"LLM raw output full:\n{"="*20}\n{raw}\n{"="*20}")
+                if raw:
+                    # 先做清洗；若清洗后仍为空，再重试
+                    cleaned = self._sanitize_output(raw, query)
+                    if cleaned and len(cleaned.strip()) >= min_chars:
+                        return cleaned
+                # 若输出过短或为空且还有重试机会
+                if attempt < retries:
+                    time.sleep(0.3 * (attempt + 1))
+                    continue
+                # 用最后一次的清洗或原始返回一个最好的结果（可能很短）
+                return cleaned if raw else "当前生成服务暂不可用，请稍后重试"
+            except Exception as e:
+                last_err = e
+                logger.error(f"LLM调用失败(尝试 {attempt+1}/{retries+1}): {e}")
+                if attempt < retries:
+                    time.sleep(0.3 * (attempt + 1))
+                    continue
+        return f"生成响应时出错: {str(last_err)}"
 
     def _build_prompt_text(self, query: str, context: Dict) -> str:
         # 构建日志上下文为纯文本
@@ -392,6 +427,11 @@ class TopKLogSystem:
         try:
             if has_lc or has_q:
                 sp = sp.format(log_context=log_context, query=query)
+            # 渲染数值型占位符（如 {MAX_PARTS_NUM}、{MAX_PART_LENGTH}）
+            sp = sp.format(
+                MAX_PARTS_NUM=self.max_parts_num,
+                MAX_PART_LENGTH=self.max_part_length,
+            )
         except Exception as e:
             logger.warning(f"渲染 system_prompt 占位符失败：{e}，使用未渲染文本")
 
@@ -452,6 +492,19 @@ class TopKLogSystem:
             st = ln.strip()
             if st.startswith('#'):
                 name = st.lstrip('#').strip()
+                # 标题别名映射，容忍模型输出的变体
+                alias_map = {
+                    "排查步骤": "建议的排查步骤",
+                    "诊断": "问题诊断",
+                    "修复建议": "最终修复建议",
+                    "原因分析": "可能原因（按概率降序排序）",
+                    "可能原因": "可能原因（按概率降序排序）",
+                }
+                # 统一别名
+                for alias, target in alias_map.items():
+                    if name.startswith(alias):
+                        name = target
+                        break
                 key = next((k for k in sections if name.startswith(k)), None)
                 current = key
                 continue
@@ -468,31 +521,44 @@ class TopKLogSystem:
             N = max(1, int(self.max_parts_num))
             max_len = max(10, int(self.max_part_length))
             norm: List[str] = []
-            # 提取候选：以 -, *, 数字., 中文数字等开头，或普通句子
+            seen: set[str] = set()
             for raw in items:
-                s = raw
-                # 去除 markdown 列表前缀
-                if s.startswith(('- ', '* ', '• ', '· ')):
-                    s = s[2:].strip()
-                # 去除有序列表前缀
-                if len(s) > 2 and (s[0].isdigit() and s[1] in ['.', '、']):
-                    s = s[2:].strip()
-                # 去除代码反引号
-                s = s.replace('`', '')
-                if s:
-                    norm.append(s)
-                if len(norm) >= N * 2:  # 收集多一些，后面再截取N
+                s = (raw or "").strip()
+                if not s:
+                    continue
+                # 去除 markdown 无序列表符号（可能重复出现）
+                s = re.sub(r"^\s*([\-\*•·]\s*)+", "", s)
+                # 去除有序列表前缀（支持多位数字与中文顿号/英文点），仅去掉最前面一段
+                s = re.sub(r"^\s*\d+[\.、]\s*", "", s)
+                # 再次去除可能的重复编号（出现 '1. 1. xxx' 的情况）
+                s = re.sub(r"^\s*\d+[\.、]\s*", "", s)
+                # Markdown 修饰符清洗：粗体/斜体/删除线/行内代码/链接/图片
+                s = re.sub(r"\*\*(.+?)\*\*", r"\1", s)
+                s = re.sub(r"__(.+?)__", r"\1", s)
+                s = re.sub(r"~~(.+?)~~", r"\1", s)
+                s = re.sub(r"`([^`]*)`", r"\1", s)
+                s = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", s)
+                s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)
+                # 去除水平线与多余空白
+                s = s.replace('---', ' ').strip()
+                s = re.sub(r"\s+", " ", s)
+                # 跳过纯编号或空白
+                if not s or re.fullmatch(r"\d+[\.、]?", s):
+                    continue
+                # 去重（按内容）
+                if s in seen:
+                    continue
+                seen.add(s)
+                norm.append(s)
+                if len(norm) >= N * 3:  # 收集更多候选后再截取
                     break
-            if not norm:
-                return [f"{i}. 待确认" for i in range(1, N+1)]
             # 截取前N并限制长度
             out: List[str] = []
             for idx, s in enumerate(norm[:N], start=1):
-                trimmed = s[:max_len]
-                out.append(f"{idx}. {trimmed}")
-            # 如不足N，补齐
+                out.append(f"{idx}. {s}")
+            # 如不足N，补齐空占位
             while len(out) < N:
-                out.append(f"{len(out)+1}. 待确认")
+                out.append(f"{len(out)+1}. ")
             return out
 
         result_lines: List[str] = []
