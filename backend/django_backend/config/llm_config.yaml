@@ -2,6 +2,8 @@ HTTP_PROXY: "http://127.0.0.1:7077"
 HTTPS_PROXY: "http://127.0.0.1:7077"
 
 LLM_PROVIDER: transformers
+LLM_GENERATION_RETRIES: 2
+LLM_MIN_OUTPUT_CHARS: 50
 
 LOG_PATH: "data/log"
 SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"
