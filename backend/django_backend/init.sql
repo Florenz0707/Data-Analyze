@@ -25,7 +25,7 @@ VALUES (
 -- NOTE: For Django ForeignKey fields, the DB column name is typically `<field>_id`.
 INSERT OR IGNORE INTO deepseek_api_ratelimit (api_key_id, count, reset_time)
 VALUES (
-  'demo_key',
+  1,
   0,
   CAST(strftime('%s','now') AS INTEGER) + 60
 );

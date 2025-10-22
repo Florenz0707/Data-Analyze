@@ -5,6 +5,8 @@ from .schemas import LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorRespon
 from .models import APIKey
 from .services import get_or_create_session, deepseek_r1_api_call, get_cached_reply, set_cached_reply
 from datetime import datetime
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 import logging
 logger = logging.getLogger(__name__)
 
@@ -31,23 +33,53 @@ def api_key_auth(request):
 
 router = Router(auth=api_key_auth)
 
-@api.post("/login", response={200: LoginOut, 400: ErrorResponse, 403: ErrorResponse})
-def login(request, data: LoginIn):
+@api.post("/register", response={200: LoginIn, 400: ErrorResponse, 409: ErrorResponse})
+def register(request, data: LoginIn):
     """
-    登录接口：接收用户名和密码，验证后返回 API Key
-    密码统一为"secret"，作为示例
+    注册接口：
+    1) username 和 password 不为空
+    2) username 不能重复
+    3) password 使用 Django 内置加密机制存储
+    4) 成功时返回 LoginIn 结构体（password 置空）
     """
-    username = data.username.strip()
-    password = data.password.strip()
+    username = (data.username or "").strip()
+    password = (data.password or "").strip()
 
     if not username or not password:
         return 400, {"error": "用户名和密码不能为空"}
 
-    if password != 'secret':
-        return 403, {"error": "密码错误"}
+    if User.objects.filter(username=username).exists():
+        return 409, {"error": "用户名已存在"}
+
+    # 创建用户（自动进行密码哈希）
+    User.objects.create_user(username=username, password=password)
+
+    # 成功返回 LoginIn 结构体，password 置空
+    return {"username": username, "password": ""}
+
+@api.post("/login", response={200: LoginOut, 400: ErrorResponse, 403: ErrorResponse})
+def login(request, data: LoginIn):
+    """
+    登录接口：接收用户名和密码，验证后返回 API Key。
+    - username/password 必填
+    - 使用 Django 认证体系进行密码校验（基于加密存储）
+    """
+    username = (data.username or "").strip()
+    password = (data.password or "").strip()
+
+    if not username or not password:
+        return 400, {"error": "用户名和密码不能为空"}
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        # 避免暴露用户名存在性，统一返回认证失败
+        return 403, {"error": "用户名或密码错误"}
+    if not getattr(user, "is_active", True):
+        return 403, {"error": "账号已被禁用"}
 
     key = services.create_api_key(username)
     return {"api_key": key, "expiry": settings.TOKEN_EXPIRY_SECONDS}
+
 
 @router.post("/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
 def chat(request, data: ChatIn):
