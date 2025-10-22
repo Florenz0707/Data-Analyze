@@ -11,19 +11,22 @@ rate_lock = threading.Lock()
 # 与 TopKLogSystem 保持一致的生成流程：
 # - 复用同一个 TopKLogSystem 实例，避免每次请求重复构建索引
 # - 由 TopKLogSystem 内部读取配置与初始化 LLM/Embedding
-try:
-    from topklogsystem import TopKLogSystem
-    SYSTEM = TopKLogSystem(
-        config_path="./config/llm_config.yaml",
-    )
-except Exception as e:
-    # 如果初始化失败，延迟到第一次调用时再尝试
-    SYSTEM = None
+# 重要：不要在模块导入时实例化模型，避免在 manage.py 的其他命令下也加载模型
+SYSTEM = None
 
 
 def _get_system() -> "TopKLogSystem":
+    """Return a singleton TopKLogSystem instance.
+    Only initialize when running the development server (runserver).
+    """
+    import sys
     global SYSTEM
     if SYSTEM is None:
+        # 仅在 runserver 场景下加载大模型，避免其他管理命令加载
+        is_runserver = any(arg.startswith("runserver") for arg in sys.argv)
+        if not is_runserver:
+            # 如果在非 runserver 场景被调用，给出清晰错误，避免意外加载模型
+            raise RuntimeError("TopKLogSystem is only initialized during 'runserver'.")
         from topklogsystem import TopKLogSystem
         SYSTEM = TopKLogSystem(
             config_path="./config/llm_config.yaml",

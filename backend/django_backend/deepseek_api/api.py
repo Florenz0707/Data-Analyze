@@ -49,7 +49,7 @@ def login(request, data: LoginIn):
     key = services.create_api_key(username)
     return {"api_key": key, "expiry": settings.TOKEN_EXPIRY_SECONDS}
 
-@router.post("/chat", response={200: ChatOut, 401: ErrorResponse})
+@router.post("/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
 def chat(request, data: ChatIn):
     # 1. 认证验证（确保用户已登录）
     if not request.auth:
@@ -74,8 +74,13 @@ def chat(request, data: ChatIn):
     if cached_reply:
         reply = cached_reply
     else:
-        reply = deepseek_r1_api_call(query)
-        set_cached_reply(query, reply, session_id, user)
+        # 调用大模型时做保护：如果非 runserver 模式，返回 503 而不是触发加载
+        try:
+            reply = deepseek_r1_api_call(query)
+            set_cached_reply(query, reply, session_id, user)
+        except RuntimeError as e:
+            # 由 services._get_system 在非 runserver 下抛出
+            return 503, {"error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"}
     logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
     # 6. 保存上下文到会话（更新历史记录）
