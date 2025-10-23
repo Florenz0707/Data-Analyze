@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
-from django.db import connection
 from pathlib import Path
+
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+from django.db import connection
+
 
 class Command(BaseCommand):
     help = "Initialize the SQLite database: run migrations and seed data from init.sql if present."

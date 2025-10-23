@@ -1,12 +1,13 @@
+import logging
+import random
+import string
+import time
+
 from django.db import models
 from django.db.models import F
-import string
-import random
-import time
-import logging
+
 logger = logging.getLogger(__name__)
 
-from django.db.models import indexes
 
 class APIKey(models.Model):
     key = models.CharField(max_length=32, unique=True)
@@ -87,3 +88,14 @@ class ConversationSession(models.Model):
 
     def __str__(self):
         return self.session_id
+
+
+class UserLLMPreference(models.Model):
+    """存储用户选择的 LLM 提供方/模型。未设置时按配置默认插入。"""
+    user = models.OneToOneField(APIKey, on_delete=models.CASCADE, related_name='llm_pref')
+    provider = models.CharField(max_length=64)  # transformers|ollama|openai_compat|dashscope
+    model = models.CharField(max_length=256, blank=True, default="")  # 可选：具体模型名
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.user}:{self.provider}:{self.model}"

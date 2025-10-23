@@ -1,7 +1,9 @@
-from django.apps import AppConfig
 import logging
 
+from django.apps import AppConfig
+
 logger = logging.getLogger(__name__)
+
 
 class DeepseekApiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -15,7 +17,8 @@ class DeepseekApiConfig(AppConfig):
             import os
             if getattr(settings, 'PRELOAD_LLM_ON_STARTUP', False) and getattr(settings, 'ENABLE_LLM', True):
                 # 避免 Django autoreloader 导致的双次加载：仅在子进程中预加载
-                is_reloader_child = os.environ.get('RUN_MAIN') == 'true' or os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
+                is_reloader_child = os.environ.get('RUN_MAIN') == 'true' or os.environ.get(
+                    'WERKZEUG_RUN_MAIN') == 'true'
                 if is_reloader_child or not getattr(settings, 'DEBUG', False):
                     from .services import preload_system
                     preload_system()

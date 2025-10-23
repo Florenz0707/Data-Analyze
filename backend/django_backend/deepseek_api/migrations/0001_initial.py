@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -30,7 +29,8 @@ class Migration(migrations.Migration):
                 ('context', models.TextField(blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sessions', to='deepseek_api.apikey')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sessions',
+                                           to='deepseek_api.apikey')),
             ],
             options={
                 'unique_together': {('session_id', 'user')},
@@ -42,7 +42,8 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('count', models.IntegerField(default=0)),
                 ('reset_time', models.IntegerField()),
-                ('api_key', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rate_limits', to='deepseek_api.apikey', to_field='key')),
+                ('api_key', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rate_limits',
+                                              to='deepseek_api.apikey', to_field='key')),
             ],
             options={
                 'indexes': [models.Index(fields=['api_key', 'reset_time'], name='deepseek_ap_api_key_14d050_idx')],

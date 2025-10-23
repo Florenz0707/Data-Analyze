@@ -1,13 +1,21 @@
-from ninja import NinjaAPI, Router
-from . import services
+import logging
+
 from django.conf import settings
-from .schemas import LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorResponse
-from .models import APIKey
-from .services import get_or_create_session, deepseek_r1_api_call, get_cached_reply, set_cached_reply
-from datetime import datetime
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-import logging
+from ninja import NinjaAPI, Router
+
+from . import services
+from .models import APIKey
+from .schemas import (
+    LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorResponse,
+    ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
+)
+from .services import (
+    get_or_create_session, get_cached_reply, set_cached_reply,
+    get_allowed_providers, get_local_models, set_user_pref, generate_with_user_llm,
+)
+
 logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.0.1")
@@ -31,9 +39,11 @@ def api_key_auth(request):
     except (ValueError, APIKey.DoesNotExist):
         return None  # 解析失败或Key不存在，认证失败
 
+
 router = Router(auth=api_key_auth)
 
-@api.post("/register", response={200: LoginIn, 400: ErrorResponse, 409: ErrorResponse})
+
+@api.post("/users/register", response={200: LoginIn, 400: ErrorResponse, 409: ErrorResponse})
 def register(request, data: LoginIn):
     """
     注册接口：
@@ -57,7 +67,8 @@ def register(request, data: LoginIn):
     # 成功返回 LoginIn 结构体，password 置空
     return {"username": username, "password": ""}
 
-@api.post("/login", response={200: LoginOut, 400: ErrorResponse, 403: ErrorResponse})
+
+@api.post("/users/login", response={200: LoginOut, 400: ErrorResponse, 403: ErrorResponse})
 def login(request, data: LoginIn):
     """
     登录接口：接收用户名和密码，验证后返回 API Key。
@@ -81,7 +92,7 @@ def login(request, data: LoginIn):
     return {"api_key": key, "expiry": settings.TOKEN_EXPIRY_SECONDS}
 
 
-@router.post("/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
+@router.post("/llm/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
 def chat(request, data: ChatIn):
     # 1. 认证验证（确保用户已登录）
     if not request.auth:
@@ -101,31 +112,27 @@ def chat(request, data: ChatIn):
     query = user_input
     logger.info(f"传递给TopKLogSystem的query：{query}")
 
-    # 5. 调用大模型（带缓存）
+    # 5. 调用大模型（带缓存）。此处使用用户绑定的 LLM（若未设置，则自动创建默认偏好）。
     cached_reply = get_cached_reply(query, session_id, user)
     if cached_reply:
         reply = cached_reply
     else:
-        # 调用大模型时做保护：如果非 runserver 模式，返回 503 而不是触发加载
         try:
-            reply = deepseek_r1_api_call(query)
+            reply = generate_with_user_llm(user, query)
             set_cached_reply(query, reply, session_id, user)
         except RuntimeError as e:
-            # 由 services._get_system 在非 runserver 下抛出
             return 503, {"error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"}
     logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
     # 6. 保存上下文到会话（更新历史记录）
     session.context += f"用户：{user_input}\n回复：{reply}\n"
-    session.save()  # 持久化到数据库
+    session.save()
 
-    # 返回与模式一致，仅返回 reply，避免将 prompt 或 query 回显给前端
-    return {
-        "reply": reply,
-    }
+    return {"reply": reply}
+
 
 # 1. 修复 history 接口
-@router.get("/history", response={200: HistoryOut})
+@router.get("/sessions/history", response={200: HistoryOut})
 def history(request, session_id: str = "default_session"):
     """查看对话历史接口：根据session_id返回对话历史"""
     # 直接使用 session_id 参数，无需通过 data
@@ -136,7 +143,7 @@ def history(request, session_id: str = "default_session"):
 
 
 # 2. 修复 clear_history 接口
-@router.delete("/history", response={200: dict})
+@router.delete("/sessions/history", response={200: dict})
 def clear_history(request, session_id: str = "default_session"):
     """清空对话历史接口"""
     # 直接使用 session_id 参数，无需通过 data
@@ -145,6 +152,34 @@ def clear_history(request, session_id: str = "default_session"):
     session = services.get_or_create_session(processed_session_id, request.auth)
     session.clear_context()
     return {"message": "历史记录已清空"}
+
+
+@router.get("/llm/providers", response={200: ProvidersOut, 401: ErrorResponse})
+def get_llm_providers(request):
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    return {"providers": get_allowed_providers()}
+
+
+@router.get("/llm/local_models", response={200: LocalModelsOut, 401: ErrorResponse})
+def get_llm_local_models(request):
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    models = get_local_models()
+    return {"hf": models.get("hf", []), "ollama": models.get("ollama", [])}
+
+
+@router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})
+def select_llm(request, data: SelectLLMIn):
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    allowed = set(get_allowed_providers())
+    provider = (data.provider or "").lower()
+    if provider not in allowed:
+        return 400, {"error": f"不允许的 provider: {provider}. 仅允许: {sorted(allowed)}"}
+    pref = set_user_pref(request.auth, provider, data.model)
+    return {"provider": pref.provider, "model": pref.model or None}
+
 
 # 将路由添加到API
 api.add_router("", router)

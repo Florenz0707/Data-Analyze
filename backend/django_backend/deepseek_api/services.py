@@ -1,9 +1,14 @@
-import time
-import threading
-from django.core.cache import cache
 import hashlib
-from .models import APIKey, RateLimit, ConversationSession
+import os
+import threading
+import time
+from typing import List, Dict, Tuple
+
+import yaml
 from django.conf import settings
+from django.core.cache import cache
+
+from .models import APIKey, RateLimit, ConversationSession, UserLLMPreference
 
 # 线程锁用于速率限制
 rate_lock = threading.Lock()
@@ -46,10 +51,132 @@ def preload_system() -> None:
 
 
 def deepseek_r1_api_call(prompt: str) -> str:
-    """调用 TopKLogSystem，保持与 topklogsystem.py 一致的生成流程"""
+    """调用 TopKLogSystem，保持与 topklogsystem.py 一致的生成流程（全局默认 LLM）。"""
     system = _get_system()
     result = system.query(prompt)
     return result.get("response", "")
+
+
+# ===== LLM 动态配置（仅 LLM，Embedding 固定）=====
+
+def _load_env_cfg() -> Dict:
+    cfg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "llm_config.yaml")
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+
+def get_allowed_providers() -> List[str]:
+    """对外暴露的可选 LLM provider。
+    规则：始终包含本地可用的基础后端（transformers、ollama），
+    若配置文件中设置了其他后端（openai_compat/dashscope），也一并返回。
+    """
+    cfg = _load_env_cfg()
+    base = ["transformers", "ollama"]
+    p = (cfg.get("LLM_PROVIDER") or "").lower()
+    extra = [p] if p and p not in base else []
+    # 去重并保持顺序：基础优先
+    seen = set()
+    providers: List[str] = []
+    for x in base + extra:
+        if x and x not in seen:
+            seen.add(x)
+            providers.append(x)
+    return providers
+
+
+def get_local_models() -> Dict[str, List[str]]:
+    """本地可用模型列表（仅供本地管理 API）：HF 缓存模型 + Ollama 列表。"""
+    # HF 缓存
+    hf_list: List[str] = []
+    try:
+        from huggingface_hub import scan_cache
+        import os
+        cache_dir = os.getenv("HF_HOME") or os.path.expanduser("~/.cache/huggingface")
+        info = scan_cache(cache_dir=cache_dir)
+        for repo in info.repos:
+            rid = f"{repo.repo_owner}/{repo.repo_name}" if repo.repo_owner else repo.repo_name
+            if repo.repo_type == "model":
+                hf_list.append(rid)
+    except Exception:
+        pass
+
+    # Ollama 模型
+    ollama_list: List[str] = []
+    try:
+        import requests
+        cfg = _load_env_cfg()
+        ocfg = cfg.get("OLLAMA_CONFIG", {})
+        host = ocfg.get("host", "http://localhost:11434").rstrip("/")
+        url = f"{host}/api/tags"
+        r = requests.get(url, timeout=3)
+        if r.ok:
+            data = r.json() or {}
+            for m in data.get("models", []):
+                name = m.get("name")
+                if name:
+                    ollama_list.append(name)
+    except Exception:
+        pass
+
+    return {"hf": sorted(set(hf_list)), "ollama": sorted(set(ollama_list))}
+
+
+def _get_default_provider_model() -> Tuple[str, str | None]:
+    cfg = _load_env_cfg()
+    provider = (cfg.get("LLM_PROVIDER") or "").lower()
+    model = None
+    if provider == "transformers":
+        model = (cfg.get("TRANSFORMERS_CONFIG", {}) or {}).get("llm_model")
+    elif provider == "ollama":
+        model = (cfg.get("OLLAMA_CONFIG", {}) or {}).get("model")
+    elif provider == "openai_compat":
+        model = (cfg.get("OPENAI_COMPAT_CONFIG", {}) or {}).get("model")
+    elif provider == "dashscope":
+        model = (cfg.get("DASHSCOPE_CONFIG", {}) or {}).get("chat_model")
+    return provider, model
+
+
+def get_or_create_user_pref(user: APIKey) -> "UserLLMPreference":
+    pref = getattr(user, "llm_pref", None)
+    if pref:
+        return pref
+    provider, model = _get_default_provider_model()
+    pref = UserLLMPreference.objects.create(user=user, provider=provider or "", model=model or "")
+    return pref
+
+
+def set_user_pref(user: APIKey, provider: str, model: str | None = None) -> "UserLLMPreference":
+    pref = get_or_create_user_pref(user)
+    pref.provider = (provider or "").lower()
+    pref.model = model or ""
+    pref.save()
+    return pref
+
+
+def build_llm_for_provider(provider: str):
+    from llm_provider_factory import build_llm_by
+    cfg = _load_env_cfg()
+    return build_llm_by(provider, cfg)
+
+
+def generate_with_user_llm(user: APIKey, prompt: str) -> str:
+    """在请求级上下文中覆盖 Settings.llm，避免并发用户串台。"""
+    system = _get_system()
+    pref = get_or_create_user_pref(user)
+    try:
+        llm = build_llm_for_provider(pref.provider)
+    except Exception:
+        # 回退到默认
+        provider, _ = _get_default_provider_model()
+        llm = build_llm_for_provider(provider)
+    from llama_index.llms.langchain import LangChainLLM
+    from llama_index.core import Settings as LISettings
+    with LISettings.as_context(llm=LangChainLLM(llm=llm)):
+        result = system.query(prompt)
+        return result.get("response", "")
 
 
 def create_api_key(user: str) -> str:
@@ -126,7 +253,7 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     """
     session, created = ConversationSession.objects.get_or_create(
         session_id=session_id,  # 匹配会话ID
-        user=user,              # 匹配当前用户（关键！避免跨用户会话冲突）
+        user=user,  # 匹配当前用户（关键！避免跨用户会话冲突）
         defaults={'context': ''}
     )
     # 调试日志：确认是否创建新会话（created=True 表示新会话）

@@ -61,5 +61,6 @@ htmlcov/
 
 # Others
 data/vector_stores/*
+config/llm_config.yaml
 db.sqlite3
 api_key.env
