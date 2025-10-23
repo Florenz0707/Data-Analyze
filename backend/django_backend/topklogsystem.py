@@ -25,10 +25,7 @@ except Exception:
         category=Warning,
     )
 
-# langchain LLM backends
-from langchain_ollama import OllamaLLM, OllamaEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline as hf_pipeline
+# provider 初始化由工厂封装，不在此直接依赖具体后端
 
 # llama-index & chroma
 import chromadb
@@ -42,10 +39,6 @@ from llama_index.embeddings.langchain import LangchainEmbedding
 # 日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def _slugify(text: str) -> str:
-    return ''.join(c if c.isalnum() else '_' for c in text)[:64]
 
 
 def _apply_proxies_from_cfg(cfg: Dict[str, Any]):
@@ -119,62 +112,13 @@ class TopKLogSystem:
         self.system_prompt = self._load_system_prompt(self.system_prompt_path)
         self.response_template = self._load_response_template(self.response_template_path)
 
-        # init models by provider
+        # init models by provider via factory
+        from llm_provider_factory import build_providers
         self.provider = provider
-        if provider == "transformers":
-            tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
-            llm_model = tcfg.get("llm_model")
-            device_map = tcfg.get("device_map", "auto")
-            torch_dtype = tcfg.get("torch_dtype", "auto")
-            trust_remote_code = bool(tcfg.get("trust_remote_code", False))
-            max_new_tokens = int(tcfg.get("max_new_tokens", 512))
-            temperature = float(tcfg.get("temperature", 0.7))
-            top_p = float(tcfg.get("top_p", 0.95))
-            repetition_penalty = float(tcfg.get("repetition_penalty", 1.1))
-            do_sample = bool(tcfg.get("do_sample", True))
-
-            embedding_name = tcfg.get("embedding_model")
-
-            # embeddings via HuggingFace
-            hf_embed = HuggingFaceEmbeddings(model_name=embedding_name)
-            self.collection_name = f"log_collection_transformers_{_slugify(embedding_name)}"
-
-            # LLM via transformers pipeline
-            tokenizer = AutoTokenizer.from_pretrained(llm_model, trust_remote_code=trust_remote_code)
-            model = AutoModelForCausalLM.from_pretrained(
-                llm_model,
-                device_map=device_map,
-                torch_dtype=None if torch_dtype == "auto" else torch_dtype,
-                trust_remote_code=trust_remote_code,
-            )
-            gen_pipe = hf_pipeline(
-                task="text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                repetition_penalty=repetition_penalty,
-                do_sample=do_sample,
-            )
-            hf_llm = HuggingFacePipeline(pipeline=gen_pipe)
-
-            # register to llama-index via adapters
-            Settings.llm = LangChainLLM(llm=hf_llm)
-            Settings.embed_model = LangchainEmbedding(hf_embed)
-        else:
-            # default ollama
-            ocfg = env_cfg.get("OLLAMA_CONFIG", {})
-            llm_name = ocfg.get("model")
-            embed_name = ocfg.get("embedding_model")
-
-            self.embedding_model = OllamaEmbeddings(model=embed_name)
-            ollama_llm = OllamaLLM(model=llm_name, temperature=0.1)
-            self.collection_name = f"log_collection_ollama_{_slugify(embed_name)}"
-
-            # register to llama-index via adapters as well
-            Settings.llm = LangChainLLM(llm=ollama_llm)
-            Settings.embed_model = LangchainEmbedding(self.embedding_model)  # 全局设置
+        prov = build_providers(env_cfg)
+        Settings.llm = LangChainLLM(llm=prov["llm"])  # 注册到 llama-index
+        Settings.embed_model = LangchainEmbedding(prov["embedding"])  # 全局 embedding
+        self.collection_name = prov.get("collection_name", "log_collection_default")
 
         self.log_index = None
         self.vector_store = None

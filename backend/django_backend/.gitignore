@@ -62,3 +62,4 @@ htmlcov/
 # Others
 data/vector_stores/*
 db.sqlite3
+api_key.env

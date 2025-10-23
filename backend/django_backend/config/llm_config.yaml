@@ -10,9 +10,15 @@ HTTPS_PROXY: "http://127.0.0.1:7077"
 
 # 模型提供方：
 # 可选值：
-# - ollama        通过本地 OLLAMA 服务运行模型
-# - transformers  通过 Hugging Face transformers 在本地加载模型
-LLM_PROVIDER: transformers
+# - ollama         通过本地 OLLAMA 服务运行模型
+# - transformers   通过 Hugging Face transformers 在本地加载模型
+# - openai_compat  通过“OpenAI 兼容协议”调用云端（如 OpenAI/DeepSeek/自建兼容网关）
+# - dashscope      通过阿里云百炼（Chat 走 OpenAI 兼容；Embeddings 走专用适配）
+LLM_PROVIDER: dashscope
+
+# 可选：单独指定向量模型提供方；默认跟随 LLM_PROVIDER
+# 可选值：auto | hf | ollama | openai_compat | dashscope
+EMBEDDING_PROVIDER: hf
 
 # 生成鲁棒性与输出限制
 LLM_GENERATION_RETRIES: 2     # 生成失败重试次数（调用异常或输出过短时会重试）
@@ -38,6 +44,7 @@ OLLAMA_CONFIG:
 # 当 LLM_PROVIDER: transformers 时，以下配置生效
 TRANSFORMERS_CONFIG:
   # 文本生成模型（Hugging Face 仓库ID或本地路径）
+  # 例如：Qwen/Qwen2.5-1.5B-Instruct | Qwen/Qwen2.5-7B-Instruct | Deepseek-ai/DeepSeek-R1
   llm_model: "Qwen/Qwen2.5-1.5B-Instruct"
 
   # 设备与精度设置
@@ -57,6 +64,37 @@ TRANSFORMERS_CONFIG:
   use_flash_attention_2: false    # 若你的 torch 与 GPU 支持，可尝试开启
 
   # 向量模型（用于检索/RAG）
-  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  # 可用值：sentence-transformers/all-MiniLM-L6-v2 |
+  embedding_model: "google/embeddinggemma-300m"
   embedding_device: "auto"        # 可选："cuda" | "cpu" | "auto"
   embedding_batch_size: 32        # 向量化批大小
+
+# OpenAI 兼容协议配置（当 LLM_PROVIDER: openai_compat 时生效）
+# 适用于 OpenAI 官方、DeepSeek（OpenAI兼容端点）、或自建 OpenAI 兼容网关
+OPENAI_COMPAT_CONFIG:
+  base_url: "https://api.openai.com/v1"
+  api_key_env_name: "OPENAI_API_KEY"  # api_key.env 中的变量名
+  organization: ""                    # 可选，OpenAI 可用
+  timeout: 60                         # 请求超时秒数
+  max_retries: 2                      # 单次调用内部重试次数
+
+  # 文本生成模型
+  model: "gpt-4o-mini"                # 例如：gpt-4o-mini, gpt-4o, deepseek-chat 等
+
+  # 向量检索模型
+  embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072          # OpenAI t-e-3-large 默认 3072，第三方兼容端点按需调整
+
+# 阿里云百炼 DashScope 配置（当 LLM_PROVIDER: dashscope 时生效）
+DASHSCOPE_CONFIG:
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # 北京地域，星加坡用 https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  api_key_env_name: "DASHSCOPE_API_KEY"   # api_key.env 中的变量名
+  timeout: 60
+  max_retries: 2
+
+  # Chat 模型（走 OpenAI 兼容 Chat 接口）
+  chat_model: "qwen-turbo"   # 例如：qwen-turbo/qwen-plus/qwen-max 等
+
+  # Embedding 模型（走专用适配器，避免兼容模式差异）
+  embedding_model: "text-embedding-v4"   # 例如：text-embedding-v4
+  embedding_dimensions: 1024              # v4 常见为 1024，如有变化按官方文档调整
