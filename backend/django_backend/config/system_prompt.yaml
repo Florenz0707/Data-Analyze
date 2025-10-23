@@ -13,7 +13,3 @@ Style: "简洁且结构化"
 Tone: "专业、简洁、清晰"
 
 OutputLanguage: "简体中文"
-
-MAX_PARTS_NUM: 3
-
-MAX_PART_LENGTH: 100

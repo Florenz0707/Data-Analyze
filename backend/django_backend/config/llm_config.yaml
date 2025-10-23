@@ -1,45 +1,62 @@
+# LLM 系统全局配置（@llm_config.yaml）
+# 说明：
+# - 本文件主要用于控制模型提供方、生成参数、日志与模板路径、以及格式约束等。
+# - 你可以通过调整此文件来切换不同的模型后端（如 OLLAMA 或 Hugging Face transformers）。
+# - 其中 LLM_MAX_PARTS_NUM 与 LLM_MAX_PART_LENGTH 会影响生成结果的条目数量与单条长度。
+
+# （可选）网络代理设置：若需走代理以下载模型或访问远端服务，请在此设置。
 HTTP_PROXY: "http://127.0.0.1:7077"
 HTTPS_PROXY: "http://127.0.0.1:7077"
 
+# 模型提供方：
+# 可选值：
+# - ollama        通过本地 OLLAMA 服务运行模型
+# - transformers  通过 Hugging Face transformers 在本地加载模型
 LLM_PROVIDER: transformers
-LLM_GENERATION_RETRIES: 2
-LLM_MIN_OUTPUT_CHARS: 50
 
-LOG_PATH: "data/log"
-SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"
-RESPONSE_TEMPLATE_PATH: "config/response_template.md"
+# 生成鲁棒性与输出限制
+LLM_GENERATION_RETRIES: 2     # 生成失败重试次数（调用异常或输出过短时会重试）
+LLM_MIN_OUTPUT_CHARS: 50      # 最小输出字符数（清洗后，若不足则尝试重试）
+LLM_MAX_PARTS_NUM: 3          # 最大分析点数（清洗输出时保留的条目数量上限）
+LLM_MAX_PART_LENGTH: 70       # 最大分析点长度（每条分析点的最大字符数，中文按字符截断）
 
+# 基础路径配置
+LOG_PATH: "data/log"                                  # 日志文件目录
+SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"       # 系统提示词（模板）路径
+RESPONSE_TEMPLATE_PATH: "config/response_template.md" # 回答模板（Markdown）路径
+
+# OLLAMA 本地推理服务配置（当 LLM_PROVIDER=ollama 时生效）
 OLLAMA_CONFIG:
-  model: deepseek-r1:7b
-  embedding_model: bge-large:latest
-  host: http://localhost:11434
-  port: 11434
-  api_key: ollama
+  model: deepseek-r1:7b               # LLM 模型名称（需已在 OLLAMA 中可用）
+  embedding_model: bge-large:latest   # 向量化模型名称
+  host: http://localhost:11434        # OLLAMA 服务地址
+  port: 11434                         # OLLAMA 端口
+  api_key: ollama                     # 如有鉴权可在此配置
   api_key_secret: ollama
 
-# Configuration block for running models via Hugging Face transformers
-# Switch to this by setting LLM_PROVIDER: transformers
+# Hugging Face transformers 配置
+# 当 LLM_PROVIDER: transformers 时，以下配置生效
 TRANSFORMERS_CONFIG:
-  # Text generation model (Hugging Face repo id or local path)
+  # 文本生成模型（Hugging Face 仓库ID或本地路径）
   llm_model: "Qwen/Qwen2.5-1.5B-Instruct"
 
-  # Device / precision settings
-  device: "cuda"            # "cuda" | "cpu" | "auto"
-  device_map: "auto"        # for accelerate-style loading; use "auto" for best fit
-  torch_dtype: "auto"       # "float16" | "bfloat16" | "auto"
-  trust_remote_code: false   # set true if model repo requires custom code
+  # 设备与精度设置
+  device: "cuda"              # 可选："cuda" | "cpu" | "auto"
+  device_map: "auto"          # accelerate 风格的 device map；通常用 "auto"
+  torch_dtype: "auto"         # 可选："float16" | "bfloat16" | "auto"
+  trust_remote_code: false    # 某些模型仓库需要自定义代码时需置为 true
 
-  # Generation parameters (defaults; can be overridden per-call)
-  max_new_tokens: 600
-  temperature: 0.7
-  top_p: 0.95
-  repetition_penalty: 1.1
-  do_sample: true
+  # 生成参数（默认值；可在调用时覆盖）
+  max_new_tokens: 600         # 生成最大新标记数
+  temperature: 0.7            # 采样温度
+  top_p: 0.95                 # nucleus sampling 截断阈值
+  repetition_penalty: 1.1     # 重复惩罚
+  do_sample: true             # 是否启用采样
 
-  # Performance tweaks
-  use_flash_attention_2: false  # enable if your torch build and GPU support it
+  # 性能优化开关（按需开启，需硬件/编译环境支持）
+  use_flash_attention_2: false    # 若你的 torch 与 GPU 支持，可尝试开启
 
-  # Embedding model (for RAG/retrieval)
+  # 向量模型（用于检索/RAG）
   embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
-  embedding_device: "auto"     # "cuda" | "cpu" | "auto"
-  embedding_batch_size: 32
+  embedding_device: "auto"        # 可选："cuda" | "cpu" | "auto"
+  embedding_batch_size: 32        # 向量化批大小

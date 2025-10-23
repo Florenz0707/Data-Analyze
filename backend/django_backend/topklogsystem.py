@@ -108,11 +108,14 @@ class TopKLogSystem:
         self.system_prompt_path = env_cfg.get("SYSTEM_PROMPT_PATH", "./config/system_prompt.yaml")
         self.response_template_path = env_cfg.get("RESPONSE_TEMPLATE_PATH", "./config/response_template.md")
 
-        # 默认格式控制（可被 system_prompt.yaml 覆盖）
+        # 默认格式控制（可被 @llm_config.yaml 覆盖；兼容旧 system_prompt.yaml 中的同名键）
         self.max_parts_num: int = 3
         self.max_part_length: int = 50
 
-        # 加载系统前置提示和回答模板
+        # 从全局配置加载新的 LLM_* 限制项
+        self._load_llm_format_limits(env_cfg)
+
+        # 加载系统前置提示和回答模板（兼容旧版从 system_prompt.yaml 读取 MAX_*）
         self.system_prompt = self._load_system_prompt(self.system_prompt_path)
         self.response_template = self._load_response_template(self.response_template_path)
 
@@ -178,7 +181,7 @@ class TopKLogSystem:
         self._build_vectorstore()  # 直接构建
 
     def _extract_format_limits(self, data: Dict[str, Any]) -> Tuple[int, int]:
-        """从 system_prompt.yaml 的字典中提取 MAX_PARTS_NUM 与 MAX_PART_LENGTH。"""
+        """从 system_prompt.yaml 的字典中提取旧键 MAX_PARTS_NUM 与 MAX_PART_LENGTH（兼容旧版）。"""
         parts = data.get('MAX_PARTS_NUM')
         length = data.get('MAX_PART_LENGTH')
         try:
@@ -191,6 +194,22 @@ class TopKLogSystem:
                 self.max_part_length = max(10, min(200, int(length)))
         except Exception:
             pass
+        return self.max_parts_num, self.max_part_length
+
+    def _load_llm_format_limits(self, env_cfg: Dict[str, Any]) -> Tuple[int, int]:
+        """优先从 @llm_config.yaml 中读取新键 LLM_MAX_PARTS_NUM 与 LLM_MAX_PART_LENGTH。"""
+        parts = env_cfg.get('LLM_MAX_PARTS_NUM')
+        length = env_cfg.get('LLM_MAX_PART_LENGTH')
+        try:
+            if parts is not None:
+                self.max_parts_num = max(1, min(10, int(parts)))
+        except Exception:
+            logger.warning(f"LLM_MAX_PARTS_NUM 无法解析: {parts}")
+        try:
+            if length is not None:
+                self.max_part_length = max(10, min(200, int(length)))
+        except Exception:
+            logger.warning(f"LLM_MAX_PART_LENGTH 无法解析: {length}")
         return self.max_parts_num, self.max_part_length
 
     def _load_system_prompt(self, path: str) -> str:
@@ -542,6 +561,9 @@ class TopKLogSystem:
                 # 去除水平线与多余空白
                 s = s.replace('---', ' ').strip()
                 s = re.sub(r"\s+", " ", s)
+                # 限制单条长度
+                if len(s) > max_len:
+                    s = s[:max_len].rstrip()
                 # 跳过纯编号或空白
                 if not s or re.fullmatch(r"\d+[\.、]?", s):
                     continue
@@ -552,7 +574,7 @@ class TopKLogSystem:
                 norm.append(s)
                 if len(norm) >= N * 3:  # 收集更多候选后再截取
                     break
-            # 截取前N并限制长度
+            # 截取前N
             out: List[str] = []
             for idx, s in enumerate(norm[:N], start=1):
                 out.append(f"{idx}. {s}")
