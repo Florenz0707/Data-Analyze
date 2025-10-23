@@ -87,7 +87,7 @@ OPENAI_COMPAT_CONFIG:
 
 # 阿里云百炼 DashScope 配置（当 LLM_PROVIDER: dashscope 时生效）
 DASHSCOPE_CONFIG:
-  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # 北京地域，星加坡用 https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   api_key_env_name: "DASHSCOPE_API_KEY"   # api_key.env 中的变量名
   timeout: 60
   max_retries: 2
