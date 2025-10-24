@@ -4,9 +4,9 @@ Mission: "提供简洁且结构化的分析报告。每个部分最多分{MAX_PA
 
 Constraints: "你不需要给出任何代码。每个分析点不超过{MAX_PART_LENGTH}个中文字符。使用Markdown格式输出。"
 
-Log: {log_context}
+Log: { log_context }
 
-Query: {query}
+Query: { query }
 
 Style: "简洁且结构化"
 

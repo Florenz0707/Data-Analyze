@@ -2,7 +2,7 @@ import hashlib
 import os
 import threading
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 import yaml
 from django.conf import settings
@@ -57,15 +57,160 @@ def deepseek_r1_api_call(prompt: str) -> str:
     return result.get("response", "")
 
 
+# ===== 对话历史与相似度选择 =====
+
+def get_history_cfg() -> Dict:
+    cfg = _load_env_cfg()
+    return {
+        "mode": (cfg.get("HISTORY_MODE") or "auto").lower(),
+        "max_turns": int(cfg.get("HISTORY_MAX_TURNS", 8)),
+        "top_k": int(cfg.get("HISTORY_TOP_K", 3)),
+        "sim_threshold": float(cfg.get("HISTORY_SIM_THRESHOLD", 0.25)),
+        "max_tokens": int(cfg.get("HISTORY_MAX_TOKENS", 1000)),
+    }
+
+
+def parse_session_context(context: str) -> List[Tuple[str, str]]:
+    """将 ConversationSession.context 解析为 [(user, reply)] 列表。"""
+    if not context:
+        return []
+    lines = context.splitlines()
+    turns: List[Tuple[str, str]] = []
+    cur_u: Optional[str] = None
+    cur_a: Optional[str] = None
+    for line in lines:
+        if line.startswith("用户："):
+            if cur_u is not None and cur_a is not None:
+                turns.append((cur_u, cur_a))
+            cur_u = line[len("用户："):].strip()
+            cur_a = None
+        elif line.startswith("回复："):
+            cur_a = line[len("回复："):].strip()
+        else:
+            # 续行处理：追加到最近的非空段
+            if cur_a is not None:
+                cur_a += "\n" + line
+            elif cur_u is not None:
+                cur_u += "\n" + line
+    if cur_u is not None and cur_a is not None:
+        turns.append((cur_u, cur_a))
+    return turns
+
+
+def _get_embed_model():
+    """从 llama_index Settings 取 embed_model（TopKLogSystem 初始化时应已配置）。"""
+    try:
+        from llama_index.core import Settings as LISettings
+        return getattr(LISettings, "embed_model", None)
+    except Exception:
+        return None
+
+
+def _embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
+    model = _get_embed_model()
+    if not model or not texts:
+        return None
+    try:
+        # 大多数组件支持 .get_text_embedding_batch
+        if hasattr(model, "get_text_embedding_batch"):
+            return model.get_text_embedding_batch(texts)
+        # 兜底：逐条
+        if hasattr(model, "get_text_embedding"):
+            return [model.get_text_embedding(t) for t in texts]
+    except Exception:
+        return None
+    return None
+
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    import math
+    if not a or not b:
+        return 0.0
+    s = sum(x*y for x, y in zip(a, b))
+    na = math.sqrt(sum(x*x for x in a))
+    nb = math.sqrt(sum(y*y for y in b))
+    if na == 0 or nb == 0:
+        return 0.0
+    return s / (na * nb)
+
+
+def _overlap_score(a: str, b: str) -> float:
+    """简单启发式：按去停用词后的词集合重叠率计算分数。"""
+    import re
+    tok = lambda s: set(re.findall(r"[\w\u4e00-\u9fa5]+", (s or "").lower()))
+    A, B = tok(a), tok(b)
+    if not A or not B:
+        return 0.0
+    inter = len(A & B)
+    return inter / max(len(A), len(B))
+
+
+def select_history_by_similarity(query: str, turns: List[Tuple[str, str]], cfg: Dict) -> List[Tuple[str, str]]:
+    if not turns:
+        return []
+    # 只取最近 N 轮作为候选
+    candidates = turns[-int(cfg.get("max_turns", 8)) :]
+    # 优先使用 embedding 相似度
+    embed_inputs = [query] + [u + "\n" + a for (u, a) in candidates]
+    embs = _embed_texts(embed_inputs)
+    scores: List[Tuple[float, Tuple[str, str]]] = []
+    if embs and len(embs) == 1 + len(candidates):
+        qv = embs[0]
+        for i, turn in enumerate(candidates, start=1):
+            scores.append((_cosine(qv, embs[i]), turn))
+    else:
+        # 回退重叠率
+        for turn in candidates:
+            scores.append((_overlap_score(query, turn[0] + "\n" + turn[1]), turn))
+    # 过滤阈值
+    thr = float(cfg.get("sim_threshold", 0.25))
+    filtered = [(s, t) for (s, t) in scores if s >= thr]
+    # 排序取 top_k
+    filtered.sort(key=lambda x: x[0], reverse=True)
+    k = int(cfg.get("top_k", 3))
+    selected = [t for (_, t) in filtered[:k]]
+    return selected
+
+
+def _truncate_by_chars(text: str, max_tokens: int) -> str:
+    # 粗略估算 1 token ~= 0.75 汉字/英文词片段，取保守比例
+    max_chars = max(200, int(max_tokens * 4 / 3))
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "..."
+
+
+def compose_prompt_with_history(selected: List[Tuple[str, str]], user_input: str, cfg: Dict) -> str:
+    if not selected:
+        return user_input
+    budget = int(cfg.get("max_tokens", 1000))
+    # 历史拼装（从旧到新）
+    lines: List[str] = []
+    lines.append("以下为相关的对话历史片段（如无关请忽略）：")
+    for (u, a) in selected:
+        frag = f"用户：{u}\n助手：{a}"
+        frag = _truncate_by_chars(frag, max_tokens=max(200, budget // max(1, len(selected))))
+        lines.append(frag)
+        lines.append("---")
+    lines.append("当前用户问题：")
+    lines.append(user_input)
+    lines.append("请在必要时参考上面的历史，否则以当前问题为准，给出准确、简洁的回答。")
+    return "\n".join(lines)
+
+
 # ===== LLM 动态配置（仅 LLM，Embedding 固定）=====
 
 def _load_env_cfg() -> Dict:
     cfg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "llm_config.yaml")
     try:
         with open(cfg_path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+            cfg = yaml.safe_load(f) or {}
     except Exception:
         return {}
+    # 兼容旧字段：TOP_K -> RESPONSE_TOP_K
+    if "RESPONSE_TOP_K" not in cfg and "TOP_K" in cfg:
+        cfg["RESPONSE_TOP_K"] = cfg.get("TOP_K")
+    return cfg
 
 
 def get_allowed_providers() -> List[str]:

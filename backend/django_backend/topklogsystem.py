@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Tuple
 # silence specific pydantic warnings about 'validate_default'
 try:
     from pydantic._internal._generate_schema import UnsupportedFieldAttributeWarning
+
     warnings.filterwarnings("ignore", category=UnsupportedFieldAttributeWarning)
 except Exception:
     warnings.filterwarnings(
@@ -54,14 +55,14 @@ def _apply_proxies_from_cfg(cfg: Dict[str, Any]):
 
     # 同时设置大小写，兼容 requests/huggingface_hub 等
     for key, val in (
-        ("HTTP_PROXY", http_proxy),
-        ("http_proxy", http_proxy),
-        ("HTTPS_PROXY", https_proxy),
-        ("https_proxy", https_proxy),
-        ("ALL_PROXY", all_proxy or http_proxy),
-        ("all_proxy", all_proxy or http_proxy),
-        ("NO_PROXY", no_proxy),
-        ("no_proxy", no_proxy),
+            ("HTTP_PROXY", http_proxy),
+            ("http_proxy", http_proxy),
+            ("HTTPS_PROXY", https_proxy),
+            ("https_proxy", https_proxy),
+            ("ALL_PROXY", all_proxy or http_proxy),
+            ("all_proxy", all_proxy or http_proxy),
+            ("NO_PROXY", no_proxy),
+            ("no_proxy", no_proxy),
     ):
         _set_env(key, val)
 
@@ -387,7 +388,7 @@ class TopKLogSystem:
                 text = getattr(resp, "text", str(resp))
                 raw = (text or "").strip()
                 logger.info(f"LLM raw output length: {len(raw)}")
-                logger.info(f"LLM raw output full:\n{"="*20}\n{raw}\n{"="*20}")
+                logger.info(f"LLM raw output full:\n{"=" * 20}\n{raw}\n{"=" * 20}")
                 if raw:
                     # 先做清洗；若清洗后仍为空，再重试
                     cleaned = self._sanitize_output(raw, query)
@@ -401,7 +402,7 @@ class TopKLogSystem:
                 return cleaned if raw else "当前生成服务暂不可用，请稍后重试"
             except Exception as e:
                 last_err = e
-                logger.error(f"LLM调用失败(尝试 {attempt+1}/{retries+1}): {e}")
+                logger.error(f"LLM调用失败(尝试 {attempt + 1}/{retries + 1}): {e}")
                 if attempt < retries:
                     time.sleep(0.3 * (attempt + 1))
                     continue
@@ -554,7 +555,7 @@ class TopKLogSystem:
                 out.append(f"{idx}. {s}")
             # 如不足N，补齐空占位
             while len(out) < N:
-                out.append(f"{len(out)+1}. ")
+                out.append(f"{len(out) + 1}. ")
             return out
 
         result_lines: List[str] = []

@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List, Tuple
 
+
 # 延迟导入，按需依赖，避免环境缺少某些后端时报错
 
 def _maybe_load_dotenv():
@@ -83,7 +84,8 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         model = cfg.get("model", "gpt-4o-mini")
-        return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, organization=organization, timeout=timeout, max_retries=max_retries)
+        return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, organization=organization, timeout=timeout,
+                          max_retries=max_retries)
 
     if p == "dashscope":
         _maybe_load_dotenv()
@@ -97,7 +99,8 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         chat_model = cfg.get("chat_model", "qwen-turbo")
-        return ChatOpenAI(model=chat_model, api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries)
+        return ChatOpenAI(model=chat_model, api_key=api_key, base_url=base_url, timeout=timeout,
+                          max_retries=max_retries)
 
     raise ValueError(f"不支持的 LLM provider: {provider}")
 
@@ -168,11 +171,13 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
             def __init__(self, model: str, api_key: str, base_url: str, timeout: int, max_retries: int):
                 self.model = model
                 self.client = OpenAIClient(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries)
+
             def embed_documents(self, texts: List[str], **kwargs) -> List[List[float]]:
                 if not texts:
                     return []
                 resp = self.client.embeddings.create(model=self.model, input=texts)
                 return [item.embedding for item in resp.data]
+
             def embed_query(self, text: str, **kwargs) -> List[float]:
                 resp = self.client.embeddings.create(model=self.model, input=text)
                 return resp.data[0].embedding

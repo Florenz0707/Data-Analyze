@@ -16,6 +16,8 @@ class LoginOut(Schema):
 class ChatIn(Schema):
     session_id: str = "default_session"
     user_input: str
+    # 是否使用历史：auto|on|off，若未提供则读取配置 HISTORY_MODE
+    use_history: Optional[str] = None
 
 
 class ChatOut(Schema):

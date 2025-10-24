@@ -3,7 +3,7 @@ name = "data-analyze"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Florenz",email = "florenz@tju.edu.cn"}
+    { name = "Florenz", email = "florenz@tju.edu.cn" }
 ]
 readme = "README.md"
 requires-python = ">=3.13"

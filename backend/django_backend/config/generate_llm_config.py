@@ -18,8 +18,8 @@
 """
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 TEMPLATE = """# LLM 系统全局配置（@llm_config.yaml）
 # 说明：
@@ -50,7 +50,15 @@ LLM_MAX_PARTS_NUM: 3          # 最大分析点数（清洗输出时保留的条
 LLM_MAX_PART_LENGTH: 70       # 最大分析点长度（每条分析点的最大字符数，中文按字符截断）
 
 # 检索配置
-TOP_K: 10                      # 默认检索返回的TopK条数（可按需调整）
+RESPONSE_TOP_K: 10              # 默认回答组织时的TopK条数（由系统使用）
+# 兼容老配置：如仍存在 TOP_K，将被视作 RESPONSE_TOP_K 的别名（建议迁移后删除）
+
+# 会话历史相关配置（控制是否、以及如何注入历史）
+HISTORY_MODE: "auto"              # auto|on|off（默认 auto：按相似度判定是否使用历史）
+HISTORY_MAX_TURNS: 8              # 候选历史的最近N轮
+HISTORY_TOP_K: 3                  # 通过相似度挑选进入提示词的历史条数
+HISTORY_SIM_THRESHOLD: 0.25       # 余弦相似度阈值（低于该值视为不相关）
+HISTORY_MAX_TOKENS: 1000          # 历史片段在提示词中允许的最大token预算（超出则摘要/截断）
 
 # 基础路径配置
 LOG_PATH: "data/log"                                  # 日志文件目录
@@ -136,7 +144,8 @@ def write_content(path: Path, content: str, force: bool = False) -> None:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="生成 llm_config.yaml 模板（带注释与默认值）")
-    parser.add_argument("--output", "-o", type=str, default="config/llm_config.yaml", help="输出文件路径（默认：config/llm_config.yaml）")
+    parser.add_argument("--output", "-o", type=str, default="config/llm_config.yaml",
+                        help="输出文件路径（默认：config/llm_config.yaml）")
     parser.add_argument("--force", "-f", action="store_true", help="若目标存在则覆盖写入")
     parser.add_argument("--print", "-p", action="store_true", help="仅打印模板到标准输出，不写文件")
     args = parser.parse_args(argv)

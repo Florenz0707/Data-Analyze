@@ -1,6 +1,7 @@
 # 项目环境配置
 
 ## 使用uv包管理器
+
 ```
 pip install uv --upgrade    # 下载uv
 uv venv --python=3.13       # 创建虚拟环境
@@ -23,6 +24,7 @@ print(torch.cuda.is_available())
 ```
 
 ## 使用conda
+
 ```
 conda create venv_name      # 创建虚拟环境，venv_name为环境名
 conda activate venv_name    # 激活虚拟环境

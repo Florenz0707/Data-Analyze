@@ -14,6 +14,7 @@ from .schemas import (
 from .services import (
     get_or_create_session, get_cached_reply, set_cached_reply,
     get_allowed_providers, get_local_models, set_user_pref, generate_with_user_llm,
+    get_history_cfg, parse_session_context, select_history_by_similarity, compose_prompt_with_history,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,9 +109,20 @@ def chat(request, data: ChatIn):
     user = request.auth  # 从认证获取当前用户（APIKey对象）
     session = get_or_create_session(session_id, user)
 
-    # 4. 直接使用用户问题作为查询，让 TopKLogSystem 使用模板与日志进行生成
-    query = user_input
-    logger.info(f"传递给TopKLogSystem的query：{query}")
+    # 4. 依据配置/入参决定是否注入历史
+    hist_cfg = get_history_cfg()
+    use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
+    turns = parse_session_context(session.context)
+    selected = []
+    if use_history_mode == "on":
+        # 强制纳入最近 max_turns 轮，但仍受 token 预算限制（compose 时截断）
+        selected = turns[-int(hist_cfg.get("max_turns", 8)) :]
+    elif use_history_mode == "auto":
+        selected = select_history_by_similarity(user_input, turns, hist_cfg)
+    else:  # off
+        selected = []
+    query = compose_prompt_with_history(selected, user_input, hist_cfg)
+    logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
 
     # 5. 调用大模型（带缓存）。此处使用用户绑定的 LLM（若未设置，则自动创建默认偏好）。
     cached_reply = get_cached_reply(query, session_id, user)

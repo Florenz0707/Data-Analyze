@@ -28,6 +28,7 @@
 }
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -47,7 +48,8 @@ def _import_hf_scan():
             raise RuntimeError("未找到 huggingface_hub 扫描函数，请安装/升级 huggingface-hub") from e
 
 
-def _gather_transformers(scan_func, mode: str, preferred_root: Optional[str] = None, verbose: bool = False) -> Tuple[List[str], Optional[str]]:
+def _gather_transformers(scan_func, mode: str, preferred_root: Optional[str] = None, verbose: bool = False) -> Tuple[
+    List[str], Optional[str]]:
     candidates: List[Optional[str]] = []
     if preferred_root:
         candidates.append(preferred_root)
