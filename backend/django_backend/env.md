@@ -26,7 +26,7 @@ print(torch.cuda.is_available())
 ```
 conda create venv_name      # 创建虚拟环境，venv_name为环境名
 conda activate venv_name    # 激活虚拟环境
-pip install .               # 下载依赖
+pip install .               # 下载依赖（在requirements.txt同级目录下）
 
 # 同上步骤检查cuda
 ```

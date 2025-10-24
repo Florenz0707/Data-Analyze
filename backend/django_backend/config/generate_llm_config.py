@@ -49,6 +49,9 @@ LLM_MIN_OUTPUT_CHARS: 50      # 最小输出字符数（清洗后，若不足则
 LLM_MAX_PARTS_NUM: 3          # 最大分析点数（清洗输出时保留的条目数量上限）
 LLM_MAX_PART_LENGTH: 70       # 最大分析点长度（每条分析点的最大字符数，中文按字符截断）
 
+# 检索配置
+TOP_K: 10                      # 默认检索返回的TopK条数（可按需调整）
+
 # 基础路径配置
 LOG_PATH: "data/log"                                  # 日志文件目录
 SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"       # 系统提示词（模板）路径

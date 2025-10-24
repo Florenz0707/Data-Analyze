@@ -198,7 +198,9 @@ def build_providers(env_cfg: Dict[str, Any]) -> Dict[str, Any]:
     llm = build_llm_by(llm_provider, env_cfg)
     embedding, emb_model_name = build_embedding_by(emb_provider, env_cfg)
 
-    collection_name = f"log_collection_{_slugify(emb_provider)}_{_slugify(emb_model_name)}"
+    # 允许通过配置显式指定集合名；否则按提供方与模型名生成隔离后的默认集合名
+    # 使用嵌入模型名派生集合名，弃用外部覆盖参数，确保同模型自动复用
+    collection_name = f"log_collection_{_slugify(emb_model_name)}"
 
     return {
         "llm": llm,

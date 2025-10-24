@@ -95,6 +95,11 @@ class TopKLogSystem:
             self.min_output_chars: int = int(env_cfg.get("LLM_MIN_OUTPUT_CHARS", 50))
         except Exception:
             self.min_output_chars = 50
+        # 从配置读取检索TopK
+        try:
+            self.default_top_k: int = int(env_cfg.get("TOP_K", 10))
+        except Exception:
+            self.default_top_k = 10
 
         # 从配置读取路径
         self.log_path = env_cfg.get("LOG_PATH", "./data/log")
@@ -282,13 +287,37 @@ class TopKLogSystem:
         # 构建 log 库 index
         log_vector_store = ChromaVectorStore(chroma_collection=log_collection)
         log_storage_context = StorageContext.from_defaults(vector_store=log_vector_store)
-        if log_documents := self._load_documents(self.log_path):
-            self.log_index = VectorStoreIndex.from_documents(
-                log_documents,
+
+        # 若集合已存在并且含有向量，则直接使用现有索引；否则写入并新建索引
+        existing_count = 0
+        try:
+            # chromadb Collection 支持 count() 获取条目数
+            existing_count = int(log_collection.count())
+        except Exception:
+            existing_count = 0
+
+        if existing_count > 0:
+            # 仅包装已有向量为 Index，不再重建/重复写入
+            self.log_index = VectorStoreIndex.from_vector_store(
+                vector_store=log_vector_store,
                 storage_context=log_storage_context,
-                show_progress=True,
             )
-            logger.info(f"日志库索引构建完成，共 {len(log_documents)} 条日志")
+            logger.info(f"复用已存在的向量集合 '{collection_name}', 向量数: {existing_count}")
+        else:
+            if log_documents := self._load_documents(self.log_path):
+                self.log_index = VectorStoreIndex.from_documents(
+                    log_documents,
+                    storage_context=log_storage_context,
+                    show_progress=True,
+                )
+                logger.info(f"新建向量集合 '{collection_name}' 并完成索引构建，共 {len(log_documents)} 条日志")
+            else:
+                # 即便没有文档，也创建空索引包装，便于后续增量写入
+                self.log_index = VectorStoreIndex.from_vector_store(
+                    vector_store=log_vector_store,
+                    storage_context=log_storage_context,
+                )
+                logger.info(f"已创建空集合 '{collection_name}'，当前无可写入的日志文档")
 
     @staticmethod
     # 加载文档数据
@@ -322,11 +351,12 @@ class TopKLogSystem:
         return documents
 
     # 检索相关日志
-    def retrieve_logs(self, query: str, top_k: int = 10) -> List[Dict]:
+    def retrieve_logs(self, query: str, top_k: int | None = None) -> List[Dict]:
         if not self.log_index:
             logger.info("retrieve_logs: log_index is None, returning empty context")
             return []
 
+        top_k = int(top_k) if top_k is not None else int(getattr(self, 'default_top_k', 10))
         try:
             retriever = self.log_index.as_retriever(similarity_top_k=top_k)  # topK
             results = retriever.retrieve(query)
