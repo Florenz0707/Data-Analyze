@@ -1,0 +1,8 @@
+{
+  "transformers": [
+    "Qwen/Qwen2.5-1.5B-Instruct"
+  ],
+  "ollama": [
+    "deepseek-r1:7b"
+  ]
+}

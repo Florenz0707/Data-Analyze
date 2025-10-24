@@ -166,7 +166,8 @@ def get_llm_local_models(request):
     if not request.auth:
         return 401, {"error": "未授权"}
     models = get_local_models()
-    return {"hf": models.get("hf", []), "ollama": models.get("ollama", [])}
+    # 统一使用 transformers/ollama 键名
+    return {"transformers": models.get("transformers", []), "ollama": models.get("ollama", [])}
 
 
 @router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})

@@ -21,7 +21,7 @@ SYSTEM = None
 _init_lock = threading.Lock()
 
 
-def _get_system() -> "TopKLogSystem":
+def _get_system():
     """Return a singleton TopKLogSystem instance.
     Only initialize when running the development server (runserver).
     """
@@ -88,40 +88,34 @@ def get_allowed_providers() -> List[str]:
 
 
 def get_local_models() -> Dict[str, List[str]]:
-    """本地可用模型列表（仅供本地管理 API）：HF 缓存模型 + Ollama 列表。"""
-    # HF 缓存
-    hf_list: List[str] = []
+    """返回本地可用模型的静态配置。
+    - 读取 config/available_local_models.json
+    - 统一以 transformers/ollama 为键名
+    - 文件不存在或解析失败时返回空结构
+    JSON 示例：
+    {
+      "transformers": ["Qwen/Qwen2.5-1.5B-Instruct"],
+      "ollama": ["qwen2.5:0.5b"]
+    }
+    """
+    import json
+    import os
+    base_dir = os.path.dirname(os.path.dirname(__file__))  # django_backend
+    cfg_path = os.path.join(base_dir, "config", "available_local_models.json")
+    transformers: List[str] = []
+    ollama: List[str] = []
     try:
-        from huggingface_hub import scan_cache
-        import os
-        cache_dir = os.getenv("HF_HOME") or os.path.expanduser("~/.cache/huggingface")
-        info = scan_cache(cache_dir=cache_dir)
-        for repo in info.repos:
-            rid = f"{repo.repo_owner}/{repo.repo_name}" if repo.repo_owner else repo.repo_name
-            if repo.repo_type == "model":
-                hf_list.append(rid)
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            data = json.load(f) or {}
+            t = data.get("transformers") or []
+            o = data.get("ollama") or []
+            if isinstance(t, list):
+                transformers = [str(x) for x in t if isinstance(x, (str, int))]
+            if isinstance(o, list):
+                ollama = [str(x) for x in o if isinstance(x, (str, int))]
     except Exception:
         pass
-
-    # Ollama 模型
-    ollama_list: List[str] = []
-    try:
-        import requests
-        cfg = _load_env_cfg()
-        ocfg = cfg.get("OLLAMA_CONFIG", {})
-        host = ocfg.get("host", "http://localhost:11434").rstrip("/")
-        url = f"{host}/api/tags"
-        r = requests.get(url, timeout=3)
-        if r.ok:
-            data = r.json() or {}
-            for m in data.get("models", []):
-                name = m.get("name")
-                if name:
-                    ollama_list.append(name)
-    except Exception:
-        pass
-
-    return {"hf": sorted(set(hf_list)), "ollama": sorted(set(ollama_list))}
+    return {"transformers": sorted(set(transformers)), "ollama": sorted(set(ollama))}
 
 
 def _get_default_provider_model() -> Tuple[str, str | None]:
@@ -174,9 +168,14 @@ def generate_with_user_llm(user: APIKey, prompt: str) -> str:
         llm = build_llm_for_provider(provider)
     from llama_index.llms.langchain import LangChainLLM
     from llama_index.core import Settings as LISettings
-    with LISettings.as_context(llm=LangChainLLM(llm=llm)):
+    # 某些版本的 llama_index 不提供 Settings.as_context，这里采用手动覆盖并回滚
+    old_llm = getattr(LISettings, "llm", None)
+    try:
+        LISettings.llm = LangChainLLM(llm=llm)
         result = system.query(prompt)
         return result.get("response", "")
+    finally:
+        LISettings.llm = old_llm
 
 
 def create_api_key(user: str) -> str:

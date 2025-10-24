@@ -36,7 +36,7 @@ class ProvidersOut(Schema):
 
 
 class LocalModelsOut(Schema):
-    hf: List[str]
+    transformers: List[str]
     ollama: List[str]
 
 
