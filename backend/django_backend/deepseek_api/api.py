@@ -116,7 +116,7 @@ def chat(request, data: ChatIn):
     selected = []
     if use_history_mode == "on":
         # 强制纳入最近 max_turns 轮，但仍受 token 预算限制（compose 时截断）
-        selected = turns[-int(hist_cfg.get("max_turns", 8)) :]
+        selected = turns[-int(hist_cfg.get("max_turns", 8)):]
     elif use_history_mode == "auto":
         selected = select_history_by_similarity(user_input, turns, hist_cfg)
     else:  # off

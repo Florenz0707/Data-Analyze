@@ -1,14 +1,11 @@
 import os
+from dotenv import load_dotenv
 from typing import Any, Dict, List, Tuple
 
 
 # 延迟导入，按需依赖，避免环境缺少某些后端时报错
 
 def _maybe_load_dotenv():
-    try:
-        from dotenv import load_dotenv
-    except Exception:
-        return
     # 优先加载项目根目录下的 api_key.env（不报错）
     if os.path.exists("api_key.env"):
         load_dotenv("api_key.env")

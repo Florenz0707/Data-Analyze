@@ -126,9 +126,9 @@ def _cosine(a: List[float], b: List[float]) -> float:
     import math
     if not a or not b:
         return 0.0
-    s = sum(x*y for x, y in zip(a, b))
-    na = math.sqrt(sum(x*x for x in a))
-    nb = math.sqrt(sum(y*y for y in b))
+    s = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
     if na == 0 or nb == 0:
         return 0.0
     return s / (na * nb)
@@ -149,7 +149,7 @@ def select_history_by_similarity(query: str, turns: List[Tuple[str, str]], cfg: 
     if not turns:
         return []
     # 只取最近 N 轮作为候选
-    candidates = turns[-int(cfg.get("max_turns", 8)) :]
+    candidates = turns[-int(cfg.get("max_turns", 8)):]
     # 优先使用 embedding 相似度
     embed_inputs = [query] + [u + "\n" + a for (u, a) in candidates]
     embs = _embed_texts(embed_inputs)
