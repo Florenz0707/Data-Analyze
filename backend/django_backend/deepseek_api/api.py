@@ -6,10 +6,11 @@ from django.contrib.auth.models import User
 from ninja import NinjaAPI, Router
 
 from . import services
-from .models import APIKey
+from .models import APIKey, ConversationSession
 from .schemas import (
     LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorResponse,
     ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
+    SessionIn, SessionOut, SessionListOut,
 )
 from .services import (
     get_or_create_session, get_cached_reply, set_cached_reply,
@@ -180,6 +181,53 @@ def get_llm_local_models(request):
     models = get_local_models()
     # 统一使用 transformers/ollama 键名
     return {"transformers": models.get("transformers", []), "ollama": models.get("ollama", [])}
+
+
+# ----- 会话管理 -----
+@router.post("/sessions", response={201: SessionOut, 400: ErrorResponse, 401: ErrorResponse, 409: ErrorResponse})
+def create_session(request, data: SessionIn):
+    """显式创建新会话，若已存在则返回 409。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    session_id = (data.session_id or "").strip()
+    if not session_id:
+        return 400, {"error": "session_id 不能为空"}
+    user = request.auth  # APIKey 实例
+    # 判断是否已存在
+    if ConversationSession.objects.filter(session_id=session_id, user=user).exists():
+        return 409, {"error": "会话已存在"}
+    ConversationSession.objects.create(session_id=session_id, user=user, context="")
+    return 201, {"session_id": session_id}
+
+
+@router.delete("/sessions", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse})
+def delete_session(request, data: SessionIn):
+    """显式删除会话。如果不存在返回 404。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    session_id = (data.session_id or "").strip()
+    if not session_id:
+        return 400, {"error": "session_id 不能为空"}
+    user = request.auth
+    qs = ConversationSession.objects.filter(session_id=session_id, user=user)
+    if not qs.exists():
+        return 404, {"error": "会话不存在"}
+    qs.delete()
+    return {"message": "会话已删除"}
+
+
+@router.get("/sessions", response={200: SessionListOut, 401: ErrorResponse})
+def list_sessions(request):
+    """根据 api_key 列出该用户的全部会话 ID，按最近更新时间倒序。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    user = request.auth
+    session_ids = list(
+        ConversationSession.objects.filter(user=user)
+        .order_by("-updated_at")
+        .values_list("session_id", flat=True)
+    )
+    return {"sessions": session_ids}
 
 
 @router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})

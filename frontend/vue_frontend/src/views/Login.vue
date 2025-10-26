@@ -2,11 +2,12 @@
   <div class="login-container">
     <div class="login-card">
       <h1 class="title">DeepSeek-KAI 客户端</h1>
-      <p class="subtitle">请登录以继续</p>
+      <p class="subtitle">{{ isRegisterMode ? '创建新账户' : '请登录以继续' }}</p>
 
       <div v-if="error" class="error-message">{{ error }}</div>
+      <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleSubmit" class="login-form">
         <div class="form-group">
           <label for="username">用户名</label>
           <input
@@ -25,15 +26,21 @@
             id="password"
             v-model="password"
             required
-            placeholder="输入密码 (默认: secret)"
+            :placeholder="isRegisterMode ? '输入新密码' : '输入密码 (默认: secret)'"
           />
         </div>
 
         <button type="submit" class="primary login-button" :disabled="loading">
           <span v-if="loading" class="loading"></span>
-          <span v-else>登录</span>
+          <span v-else>{{ isRegisterMode ? '注册' : '登录' }}</span>
         </button>
       </form>
+
+      <div class="toggle-mode">
+        <button class="link-button" @click="toggleMode">
+          {{ isRegisterMode ? '已有账户？点击登录' : '没有账户？点击注册' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -48,20 +55,38 @@ const username = ref('');
 const password = ref('');
 const loading = ref(false);
 const error = ref('');
+const successMessage = ref(''); // 用于显示注册成功消息
+const isRegisterMode = ref(false); // 切换登录/注册
 
 const router = useRouter();
 const store = useStore();
 
-const handleLogin = async () => {
+const toggleMode = () => {
+  isRegisterMode.value = !isRegisterMode.value;
+  error.value = '';
+  successMessage.value = '';
+};
+
+const handleSubmit = async () => {
   loading.value = true;
   error.value = '';
+  successMessage.value = '';
 
   try {
-    const response = await api.login(username.value, password.value);
-    store.setApiKey(response.data.api_key);
-    router.push('/');
+    if (isRegisterMode.value) {
+      // 注册逻辑
+      await api.register(username.value, password.value);
+      successMessage.value = '注册成功！请使用您的新账户登录。';
+      isRegisterMode.value = false; // 切换回登录模式
+      password.value = ''; // 清空密码
+    } else {
+      // 登录逻辑
+      const response = await api.login(username.value, password.value);
+      store.setApiKey(response.data.api_key);
+      router.push('/');
+    }
   } catch (err) {
-    error.value = err.response?.data?.error || '登录失败，请检查用户名和密码';
+    error.value = err.response?.data?.error || (isRegisterMode.value ? '注册失败' : '登录失败，请检查用户名和密码');
   } finally {
     loading.value = false;
   }
@@ -94,6 +119,16 @@ const handleLogin = async () => {
   margin-bottom: 2rem;
 }
 
+/* 成功消息样式 */
+.success-message {
+  background-color: #dff0d8;
+  color: #3c763d;
+  border: 1px solid #d6e9c6;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -120,5 +155,22 @@ const handleLogin = async () => {
 .loading {
   margin-right: 0.5rem;
   vertical-align: middle;
+}
+
+.toggle-mode {
+  margin-top: 1.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.link-button:hover {
+  text-decoration: underline;
 }
 </style>

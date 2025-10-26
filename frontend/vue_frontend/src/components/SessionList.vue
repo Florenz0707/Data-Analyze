@@ -18,7 +18,7 @@
         <div class="session-name">{{ session }}</div>
         <button
           class="delete-btn"
-          @click.stop="deleteSession(session)"
+          @click.stop="promptDelete(session)"
           title="删除会话"
         >
           <trash-icon class="icon" />
@@ -27,7 +27,7 @@
     </div>
 
     <!-- 新建会话对话框 -->
-    <div v-if="showNewSessionDialog" class="dialog-overlay">
+    <div v-if="showNewSessionDialog" class="dialog-overlay" @click.self="showNewSessionDialog = false">
       <div class="dialog">
         <h3>新建会话</h3>
         <input
@@ -38,10 +38,23 @@
         />
         <div class="dialog-buttons">
           <button class="secondary" @click="showNewSessionDialog = false">取消</button>
-          <button class="primary" @click="createSession">创建</button>
+          <button class="primary" @click="createSession" :disabled="!newSessionName.trim()">创建</button>
         </div>
       </div>
     </div>
+
+    <!-- (新) 删除确认对话框 -->
+    <div v-if="showDeleteConfirm" class="dialog-overlay" @click.self="showDeleteConfirm = false">
+      <div class="dialog">
+        <h3>确认删除</h3>
+        <p>确定要删除会话 "<strong>{{ sessionToDelete }}</strong>" 吗？此操作无法撤销。</p>
+        <div class="dialog-buttons">
+          <button class="secondary" @click="showDeleteConfirm = false">取消</button>
+          <button class="danger" @click="confirmDelete">删除</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -65,14 +78,27 @@ const emits = defineEmits(['select', 'delete', 'create']);
 const showNewSessionDialog = ref(false);
 const newSessionName = ref('');
 
+// (新) 删除确认状态
+const showDeleteConfirm = ref(false);
+const sessionToDelete = ref(null);
+
 const selectSession = (session) => {
   emits('select', session);
 };
 
-const deleteSession = (session) => {
-  if (confirm(`确定要删除会话 "${session}" 吗？`)) {
-    emits('delete', session);
+// (新) 步骤1: 弹出确认框
+const promptDelete = (session) => {
+  sessionToDelete.value = session;
+  showDeleteConfirm.value = true;
+};
+
+// (新) 步骤2: 确认删除
+const confirmDelete = () => {
+  if (sessionToDelete.value) {
+    emits('delete', sessionToDelete.value);
   }
+  showDeleteConfirm.value = false;
+  sessionToDelete.value = null;
 };
 
 const createSession = () => {
@@ -156,6 +182,7 @@ const createSession = () => {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+/* 对话框通用样式 */
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -175,11 +202,19 @@ const createSession = () => {
   padding: 1.5rem;
   width: 100%;
   max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .dialog h3 {
+  margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1.25rem;
+}
+
+.dialog p {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .dialog input {

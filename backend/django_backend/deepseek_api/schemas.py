@@ -32,7 +32,6 @@ class ErrorResponse(Schema):
     error: str
 
 
-# LLM provider/model 相关的入参/出参结构（paramIn/paramOut）
 class ProvidersOut(Schema):
     providers: List[str]
 
@@ -50,3 +49,15 @@ class SelectLLMIn(Schema):
 class SelectLLMOut(Schema):
     provider: str
     model: Optional[str] = None
+
+
+class SessionIn(Schema):
+    session_id: str = "default_session"
+
+
+class SessionOut(Schema):
+    session_id: str
+
+
+class SessionListOut(Schema):
+    sessions: List[str]
