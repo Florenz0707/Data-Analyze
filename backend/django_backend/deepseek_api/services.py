@@ -323,37 +323,81 @@ def generate_with_user_llm(user: APIKey, prompt: str) -> str:
         LISettings.llm = old_llm
 
 
-def create_api_key(user: str) -> str:
-    """创建 API Key 并保存到数据库"""
-    key = APIKey.generate_key()
-    expiry = time.time() + settings.TOKEN_EXPIRY_SECONDS
+def create_api_key(user: str) -> APIKey:
+    """为用户创建或复用 API Key。
+    - 若存在未过期的 APIKey，则刷新其 expiry_time 并返回该对象（不生成新 key）
+    - 否则创建新的 APIKey，并生成 refresh_token（新的 refresh_token 仅在创建时生成）
+    """
+    now = int(time.time())
+    expiry_seconds = int(settings.TOKEN_EXPIRY_SECONDS)
+    refresh_expiry_seconds = int(getattr(settings, 'REFRESH_TOKEN_EXPIRY_SECONDS', 30*24*3600))
 
+    # 清理已过期的 key
+    APIKey.objects.filter(user=user, expiry_time__lt=now).delete()
+
+    # 复用未过期 key
+    existing = APIKey.objects.filter(user=user, expiry_time__gte=now).order_by('-created_at').first()
+    if existing:
+        # 刷新 access token 的有效期，并轮换 refresh_token（旧值失效）
+        existing.refresh_validity(expiry_seconds)
+        existing.refresh_token = APIKey.generate_refresh_token(length=96)
+        existing.refresh_expiry_time = now + refresh_expiry_seconds
+        existing.save(update_fields=["refresh_token", "refresh_expiry_time"])
+        return existing
+
+    # 创建新 key + refresh_token
+    key = APIKey.generate_key(length=64)
+    refresh_token = APIKey.generate_refresh_token(length=96)
     api_key = APIKey.objects.create(
         key=key,
         user=user,
-        expiry_time=expiry
+        expiry_time=now + expiry_seconds,
+        refresh_token=refresh_token,
+        refresh_expiry_time=now + refresh_expiry_seconds,
     )
 
     # 创建对应的速率限制记录
     RateLimit.objects.create(
         api_key=api_key,
-        reset_time=time.time() + settings.RATE_LIMIT_INTERVAL
+        reset_time=now + int(settings.RATE_LIMIT_INTERVAL)
     )
 
-    return key
+    return api_key
 
 
 def validate_api_key(key_str: str) -> bool:
-    """验证 API Key 是否存在且未过期"""
+    """验证 API Key 是否存在且未过期（若过期则删除）。"""
     try:
         api_key = APIKey.objects.get(key=key_str)
         if api_key.is_valid():
             return True
-        else:
-            api_key.delete()  # 删除过期key
-            return False
+        api_key.delete()  # 删除过期key
+        return False
     except APIKey.DoesNotExist:
         return False
+
+
+def refresh_access_token(refresh_token: str) -> Optional[APIKey]:
+    """使用 refresh_token 刷新访问令牌有效期。
+    - 找到对应 APIKey
+    - 若 refresh_token 已过期，则删除该记录并返回 None
+    - 否则仅刷新 access token 的 expiry_time，不更换 access_token/refresh_token
+    """
+    now = int(time.time())
+    try:
+        api_key = APIKey.objects.get(refresh_token=refresh_token)
+    except APIKey.DoesNotExist:
+        return None
+
+    # 检查 refresh token 过期
+    if api_key.refresh_expiry_time is None or now >= int(api_key.refresh_expiry_time):
+        api_key.delete()
+        return None
+
+    # 刷新 access token 的有效期
+    api_key.expiry_time = now + int(settings.TOKEN_EXPIRY_SECONDS)
+    api_key.save(update_fields=["expiry_time"])
+    return api_key
 
 
 def check_rate_limit(key_str: str) -> bool:
@@ -394,16 +438,18 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     获取或创建用户的专属会话：
     - 若用户+session_id已存在 → 加载旧会话（保留历史）
     - 若不存在 → 创建新会话（空历史）
+    注意：会话与 username 关联。
     """
+    username = user.user
     session, created = ConversationSession.objects.get_or_create(
         session_id=session_id,  # 匹配会话ID
-        user=user,  # 匹配当前用户（关键！避免跨用户会话冲突）
+        user=username,  # 与用户名关联
         defaults={'context': ''}
     )
     # 调试日志：确认是否创建新会话（created=True 表示新会话）
     import logging
     logger = logging.getLogger(__name__)
-    logger.info(f"会话 {session_id}（用户：{user.user}）{'创建新会话' if created else '加载旧会话'}")
+    logger.info(f"会话 {session_id}（用户：{username}）{'创建新会话' if created else '加载旧会话'}")
     return session
 
 

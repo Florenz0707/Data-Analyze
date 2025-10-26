@@ -10,10 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class APIKey(models.Model):
-    key = models.CharField(max_length=32, unique=True)
-    user = models.CharField(max_length=100)
+    key = models.CharField(max_length=64, unique=True)
+    user = models.CharField(max_length=100, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expiry_time = models.IntegerField()  # 过期时间戳
+    refresh_token = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    refresh_expiry_time = models.IntegerField(null=True, blank=True)
 
     @classmethod
     def generate_key(cls, length=32):
@@ -21,9 +23,18 @@ class APIKey(models.Model):
         characters = string.ascii_letters + string.digits
         return ''.join(random.choice(characters) for _ in range(length))
 
+    @classmethod
+    def generate_refresh_token(cls, length=64):
+        characters = string.ascii_letters + string.digits
+        return ''.join(random.choice(characters) for _ in range(length))
+
     def is_valid(self):
         """检查 API Key 是否未过期"""
         return time.time() < self.expiry_time
+
+    def refresh_validity(self, ttl_seconds: int):
+        self.expiry_time = int(time.time()) + int(ttl_seconds)
+        self.save(update_fields=["expiry_time"])
 
     def __str__(self):
         return f"{self.user} - {self.key}"
@@ -53,12 +64,8 @@ class RateLimit(models.Model):
 
 class ConversationSession(models.Model):
     session_id = models.CharField(max_length=100)
-    # 正确的外键定义：关联 APIKey 的 id（默认）
-    user = models.ForeignKey(
-        APIKey,
-        on_delete=models.CASCADE,
-        related_name='sessions'
-    )
+    # 修改为与 username 关联，而不是 APIKey
+    user = models.CharField(max_length=100, db_index=True)
     context = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -76,10 +83,6 @@ class ConversationSession(models.Model):
         ).update(context=F('context') + new_entry)
         # 刷新实例，获取更新后的值
         self.refresh_from_db()
-
-        # import logging
-        # logger = logging.getLogger(__name__)
-        # logger.info(f"更新会话 {self.session_id}（用户：{self.user.key}）：{new_entry}")
 
     def clear_context(self):
         """清空对话上下文"""

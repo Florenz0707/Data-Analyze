@@ -91,6 +91,12 @@ CORS_ALLOW_HEADERS = [
     "authorization",
     "content-type",
 ]
+# 允许跨域携带 Cookie（以使用 HttpOnly Refresh Token）
+CORS_ALLOW_CREDENTIALS = True
+# 允许前端读取响应头中的 Authorization（便于拿到新的 access token）
+CORS_EXPOSE_HEADERS = [
+    "Authorization",
+]
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -107,6 +113,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 自定义配置
 API_KEY_LENGTH = 32
 TOKEN_EXPIRY_SECONDS = 360000
+REFRESH_TOKEN_EXPIRY_SECONDS = 2592000  # 30 days
 RATE_LIMIT_MAX = 5000  # 每分钟最大请求数
 RATE_LIMIT_INTERVAL = 60
 CACHE_MAX_SIZE = 200

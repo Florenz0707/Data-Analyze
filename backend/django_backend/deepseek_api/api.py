@@ -8,7 +8,7 @@ from ninja import NinjaAPI, Router
 from . import services
 from .models import APIKey, ConversationSession
 from .schemas import (
-    LoginIn, LoginOut, ChatIn, ChatOut, HistoryOut, ErrorResponse,
+    LoginIn, ChatIn, ChatOut, HistoryOut, ErrorResponse,
     ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
     SessionIn, SessionOut, SessionListOut,
 )
@@ -20,32 +20,37 @@ from .services import (
 
 logger = logging.getLogger(__name__)
 
-api = NinjaAPI(title="DeepSeek-KAI API", version="0.0.1")
+api = NinjaAPI(title="DeepSeek-KAI API", version="0.1.0")
 
 
 def api_key_auth(request):
-    """验证请求头中的API Key"""
+    """验证请求头中的API Key，并进行过期校验：
+    - 若已过期，删除记录并拒绝
+    - 若有效，返回 APIKey 实例
+    """
     auth_header = request.headers.get("Authorization")
     if not auth_header:
-        return None  # 未提供认证信息，返回None表示认证失败
-
+        return None
     try:
-        # 解析格式：Bearer <api_key>
         scheme, key = auth_header.split()
         if scheme.lower() != "bearer":
-            return None  # 认证方案错误
-
-        # 验证API Key是否存在
+            return None
         api_key = APIKey.objects.get(key=key)
-        return api_key  # 认证成功，返回APIKey对象
+        # 过期校验
+        import time
+        if int(time.time()) >= int(api_key.expiry_time or 0):
+            # 删除过期 key
+            api_key.delete()
+            return None
+        return api_key
     except (ValueError, APIKey.DoesNotExist):
-        return None  # 解析失败或Key不存在，认证失败
+        return None
 
 
 router = Router(auth=api_key_auth)
 
 
-@api.post("/users/register", response={200: LoginIn, 400: ErrorResponse, 409: ErrorResponse})
+@api.post("/users/register", response={200: dict, 400: ErrorResponse, 409: ErrorResponse})
 def register(request, data: LoginIn):
     """
     注册接口：
@@ -67,15 +72,16 @@ def register(request, data: LoginIn):
     User.objects.create_user(username=username, password=password)
 
     # 成功返回 LoginIn 结构体，password 置空
-    return {"username": username, "password": ""}
+    return {"message": "注册成功"}
 
 
-@api.post("/users/login", response={200: LoginOut, 400: ErrorResponse, 403: ErrorResponse})
+@api.post("/users/login", response={200: dict, 400: ErrorResponse, 403: ErrorResponse})
 def login(request, data: LoginIn):
     """
-    登录接口：接收用户名和密码，验证后返回 API Key。
-    - username/password 必填
-    - 使用 Django 认证体系进行密码校验（基于加密存储）
+    登录接口：
+    - 若该用户名存在未过期 api_key，则刷新其有效期并发放同一 key
+    - 否则创建新的 api_key 与 refresh_token
+    - 同时返回 refresh_token（其有效期固定，不随刷新延长）
     """
     username = (data.username or "").strip()
     password = (data.password or "").strip()
@@ -85,13 +91,28 @@ def login(request, data: LoginIn):
 
     user = authenticate(request, username=username, password=password)
     if user is None:
-        # 避免暴露用户名存在性，统一返回认证失败
         return 403, {"error": "用户名或密码错误"}
     if not getattr(user, "is_active", True):
         return 403, {"error": "账号已被禁用"}
 
-    key = services.create_api_key(username)
-    return {"api_key": key, "expiry": settings.TOKEN_EXPIRY_SECONDS}
+    api_key_obj = services.create_api_key(username)
+    payload = {
+        "message": "登录成功",
+    }
+    response = api.create_response(request, payload, status=200)
+    # 将 access token 放在响应头（便于前端从 header 读取）
+    response["Authorization"] = f"Bearer {api_key_obj.key}"
+    # 将 refresh_token 写入 HttpOnly Cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=api_key_obj.refresh_token or "",
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite="Lax",
+        max_age=getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", None),
+        path="/",
+    )
+    return response
 
 
 @router.post("/llm/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
@@ -180,7 +201,8 @@ def get_llm_local_models(request):
         return 401, {"error": "未授权"}
     models = get_local_models()
     # 统一使用 transformers/ollama 键名
-    return {"transformers": models.get("transformers", []), "ollama": models.get("ollama", [])}
+    return {"transformers": models.get("transformers", []),
+            "ollama": models.get("ollama", [])}
 
 
 # ----- 会话管理 -----
@@ -192,11 +214,11 @@ def create_session(request, data: SessionIn):
     session_id = (data.session_id or "").strip()
     if not session_id:
         return 400, {"error": "session_id 不能为空"}
-    user = request.auth  # APIKey 实例
+    username = request.auth.user  # 使用用户名
     # 判断是否已存在
-    if ConversationSession.objects.filter(session_id=session_id, user=user).exists():
+    if ConversationSession.objects.filter(session_id=session_id, user=username).exists():
         return 409, {"error": "会话已存在"}
-    ConversationSession.objects.create(session_id=session_id, user=user, context="")
+    ConversationSession.objects.create(session_id=session_id, user=username, context="")
     return 201, {"session_id": session_id}
 
 
@@ -208,8 +230,8 @@ def delete_session(request, data: SessionIn):
     session_id = (data.session_id or "").strip()
     if not session_id:
         return 400, {"error": "session_id 不能为空"}
-    user = request.auth
-    qs = ConversationSession.objects.filter(session_id=session_id, user=user)
+    username = request.auth.user
+    qs = ConversationSession.objects.filter(session_id=session_id, user=username)
     if not qs.exists():
         return 404, {"error": "会话不存在"}
     qs.delete()
@@ -218,12 +240,12 @@ def delete_session(request, data: SessionIn):
 
 @router.get("/sessions", response={200: SessionListOut, 401: ErrorResponse})
 def list_sessions(request):
-    """根据 api_key 列出该用户的全部会话 ID，按最近更新时间倒序。"""
+    """根据 username 列出该用户的全部会话 ID，按最近更新时间倒序。"""
     if not request.auth:
         return 401, {"error": "未授权"}
-    user = request.auth
+    username = request.auth.user
     session_ids = list(
-        ConversationSession.objects.filter(user=user)
+        ConversationSession.objects.filter(user=username)
         .order_by("-updated_at")
         .values_list("session_id", flat=True)
     )
@@ -241,6 +263,34 @@ def select_llm(request, data: SelectLLMIn):
     pref = set_user_pref(request.auth, provider, data.model)
     return {"provider": pref.provider, "model": pref.model or None}
 
+
+@api.post("/refresh", response={200: dict, 400: ErrorResponse, 403: ErrorResponse})
+def refresh(request):
+    token = (request.COOKIES.get("refresh_token") or "").strip()
+    if not token:
+        return 400, {"error": "refresh_token 不能为空"}
+
+    api_key = services.refresh_access_token(token)
+    if not api_key:
+        return 403, {"error": "refresh_token 无效或已过期"}
+
+    payload = {
+        "message": "刷新成功"
+    }
+    response = api.create_response(request, payload, status=200)
+    # 在响应头设置新的 Authorization，便于前端拿到新的 access token
+    response["Authorization"] = f"Bearer {api_key.key}"
+    # 将现有 refresh_token 继续写入 HttpOnly Cookie（不更换，且不延长有效期）
+    response.set_cookie(
+        key="refresh_token",
+        value=api_key.refresh_token or "",
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite="Lax",
+        max_age=getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", None),
+        path="/",
+    )
+    return response
 
 # 将路由添加到API
 api.add_router("", router)
