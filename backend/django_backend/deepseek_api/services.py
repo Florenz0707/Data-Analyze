@@ -2,7 +2,7 @@ import hashlib
 import os
 import threading
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 import yaml
 from django.conf import settings
