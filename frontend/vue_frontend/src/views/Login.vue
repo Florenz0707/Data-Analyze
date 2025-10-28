@@ -74,19 +74,30 @@ const handleSubmit = async () => {
 
   try {
     if (isRegisterMode.value) {
-      // 注册逻辑
       await api.register(username.value, password.value);
       successMessage.value = '注册成功！请使用您的新账户登录。';
-      isRegisterMode.value = false; // 切换回登录模式
-      password.value = ''; // 清空密码
+      isRegisterMode.value = false;
+      password.value = '';
     } else {
-      // 登录逻辑
       const response = await api.login(username.value, password.value);
-      store.setApiKey(response.data.api_key);
-      router.push('/');
+      const authHeader = response.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        store.setApiKey(token);
+        router.push('/'); 
+
+      } else {
+        console.error("登录响应头:", response.headers);
+        throw new Error('登录凭据无效或未收到 Token');
+      }
     }
   } catch (err) {
-    error.value = err.response?.data?.error || (isRegisterMode.value ? '注册失败' : '登录失败，请检查用户名和密码');
+    if (err.response && err.response.status === 401) {
+      error.value = '用户名或密码错误';
+    } else {
+      error.value = err.response?.data?.error || err.message || (isRegisterMode.value ? '注册失败' : '登录失败，请稍后再试');
+    }
   } finally {
     loading.value = false;
   }
@@ -174,3 +185,4 @@ const handleSubmit = async () => {
   text-decoration: underline;
 }
 </style>
+

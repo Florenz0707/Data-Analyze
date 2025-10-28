@@ -9,7 +9,7 @@
         @create="handleCreateSession"
       />
 
-      <!-- (新) 模型选择 -->
+      <!-- 模型选择 -->
       <div class="model-selection">
         <h3>模型选择</h3>
         <div class="form-group">
@@ -63,7 +63,7 @@
       <div v-if="error" class="error-message">{{ error }}</div>
 
       <div class="messages-container" ref="messagesContainerRef">
-        <div v-if="messages.length === 0" class="empty-state">
+        <div v-if="messages.length === 0 && !loading" class="empty-state">
           开始与 DeepSeek-KAI.v.0.0.1 的对话吧！
         </div>
 
@@ -89,7 +89,7 @@
       />
     </div>
 
-    <!-- (新) 清空历史确认对话框 -->
+    <!-- 清空历史确认对话框 -->
     <div v-if="showClearConfirm" class="dialog-overlay" @click.self="showClearConfirm = false">
       <div class="dialog">
         <h3>确认清空</h3>
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <!-- (新) 退出登录确认对话框 -->
+    <!-- 退出登录确认对话框 -->
     <div v-if="showLogoutConfirm" class="dialog-overlay" @click.self="showLogoutConfirm = false">
       <div class="dialog">
         <h3>确认退出</h3>
@@ -125,7 +125,6 @@ import SessionList from '../components/SessionList.vue';
 import ChatInput from '../components/ChatInput.vue';
 import markdownit from 'markdown-it';
 
-// 初始化 markdown-it
 const md = markdownit({
   html: true,
   linkify: true,
@@ -135,7 +134,6 @@ const md = markdownit({
 const store = useStore();
 const router = useRouter();
 
-// 聊天消息
 const messagesContainerRef = ref(null);
 const sessions = computed(() => store.sessions);
 const currentSession = computed(() => store.currentSession);
@@ -143,26 +141,23 @@ const messages = computed(() => store.messages[currentSession.value] || []);
 const loading = computed(() => store.loading);
 const error = computed(() => store.error);
 
-// (新) 模型选择状态
 const providers = ref([]);
-const localModels = ref({ hf: [], ollama: [] });
+// (FIXED) 保持 hf, 尽管 api 返回 transformers
+const localModels = ref({ hf: [], ollama: [] }); 
 const selectedProvider = ref(null);
 const selectedModel = ref(null);
-const currentModelInfo = ref(null); // { provider: 'xx', model: 'xx' }
+const currentModelInfo = ref(null); 
 const modelSelectLoading = ref(false);
 
-// (新) 确认对话框状态
 const showClearConfirm = ref(false);
 const showLogoutConfirm = ref(false);
 
 // --- 计算属性 ---
 
-// (新) 检查所选 provider 是否为本地
 const isLocalProvider = computed(() => {
   return selectedProvider.value === 'hf' || selectedProvider.value === 'ollama';
 });
 
-// (新) 根据所选 provider动态获取可用模型列表
 const availableModels = computed(() => {
   if (selectedProvider.value === 'hf') {
     return localModels.value.hf;
@@ -170,7 +165,6 @@ const availableModels = computed(() => {
   if (selectedProvider.value === 'ollama') {
     return localModels.value.ollama;
   }
-  // 远程提供方没有模型列表
   return [];
 });
 
@@ -180,7 +174,6 @@ const renderMarkdown = (content) => {
   return md.render(content || '');
 };
 
-// 滚动到底部
 const scrollToBottom = async () => {
   await nextTick();
   const container = messagesContainerRef.value;
@@ -189,23 +182,25 @@ const scrollToBottom = async () => {
   }
 };
 
-// 加载会话历史
 const loadHistory = async (sessionId) => {
   if (!sessionId) return;
+  // (FIXED) 仅在 store 中没有消息时才加载
+  if (store.messages[sessionId] && store.messages[sessionId].length > 0) {
+    scrollToBottom();
+    return;
+  }
+  
   try {
     store.setLoading(true);
     store.setError('');
     const response = await api.getHistory(sessionId);
-    // 假设 response.data.history 是一个 JSON 字符串数组
     let historyMessages = [];
     try {
-      // 后端返回的 history 是一个字符串，需要解析
       const parsedHistory = JSON.parse(response.data.history || '[]'); 
       historyMessages = parsedHistory.map(item => ({
         content: item.content,
         isUser: item.role === 'user',
-        // 假设 store.addMessage 会自动添加时间戳, 否则需要从 item 中获取
-        timestamp: new Date().toLocaleString() // 暂时使用当前时间
+        timestamp: new Date().toLocaleString() // 假设
       }));
     } catch (e) {
       console.error("解析历史记录失败:", e);
@@ -220,14 +215,17 @@ const loadHistory = async (sessionId) => {
   }
 };
 
-// (新) 加载模型提供方
 const loadProviders = async () => {
   try {
     store.setError('');
     const response = await api.getProviders();
     providers.value = response.data.providers || [];
+    // (FIXED) API schema 中 hf 叫 transformers, 但前端统一用 hf
+    // providers.value = response.data.providers.map(p => p === 'transformers' ? 'hf' : p) || [];
+    // ^^^ 修正: providers 列表应该就是 providers, hf/transformers 的转换在 local_models
+    
     // 默认选择第一个
-    if (providers.value.length > 0) {
+    if (providers.value.length > 0 && !selectedProvider.value) {
       selectedProvider.value = providers.value[0];
     }
   } catch (err) {
@@ -235,29 +233,26 @@ const loadProviders = async () => {
   }
 };
 
-// (新) 加载本地模型
 const loadLocalModels = async () => {
   try {
     store.setError('');
     const response = await api.getLocalModels();
-    localModels.value = response.data || { hf: [], ollama: [] };
+    // (FIXED) 将 API 的 'transformers' 映射到本地的 'hf'
+    localModels.value.hf = response.data.transformers || [];
+    localModels.value.ollama = response.data.ollama || [];
   } catch (err) {
     store.setError(err.response?.data?.error || '加载本地模型失败');
   }
 };
 
-// (新) 加载当前选择的模型 (假设 /llm/select POST 成功后返回当前选择)
-// 我们在 handleSelectModel 中设置 currentModelInfo
-// 也许应该在 onMounted 时尝试获取当前模型？
-// OpenAPI 没有提供 "get current model" 的 GET 接口, 
-// 所以我们假定刚加载时 currentModelInfo 为 null, 
-// 或者我们可以默认选择第一个 provider 并调用 select
 const selectDefaultModel = async () => {
   await loadProviders();
   await loadLocalModels();
 
-  if (providers.value.length > 0) {
-    const defaultProvider = providers.value[0];
+  // (FIXED) 检查 provider 列表是否包含 'hf' 或 'ollama'
+  const defaultProvider = providers.value.includes('hf') ? 'hf' : (providers.value.includes('ollama') ? 'ollama' : providers.value[0]);
+  
+  if (defaultProvider) {
     let defaultModel = null;
     
     if (defaultProvider === 'hf' && localModels.value.hf.length > 0) {
@@ -269,57 +264,48 @@ const selectDefaultModel = async () => {
     selectedProvider.value = defaultProvider;
     selectedModel.value = defaultModel;
     
-    // 自动应用默认模型
     await handleSelectModel();
   }
 };
 
-// 挂载时
-onMounted(() => {
-  // (新) 步骤1: 初始化用户会话
-  // store.apiKey 是从 localStorage 同步加载的, 所以这里是安全的
-  store.initializeUserStore();
-
-  // (新) 步骤2: 检查是否已登录 (apiKey) 和 store 是否已初始化
-  if (store.isInitialized && store.apiKey) {
-    // 优先加载模型, 因为聊天可能需要
-    selectDefaultModel().then(() => {
-      // 然后加载当前会话历史
-      // currentSession 现在由 store.initializeUserStore() 设置
-      if (currentSession.value) {
-        loadHistory(currentSession.value);
-      }
-    });
-  } else if (!store.apiKey) {
-    // (新) 如果没有 apiKey (未登录), 强制跳转到登录页
+// (已修改) onMounted 改为 async
+onMounted(async () => {
+  // (NEW) 1. 检查 apiKey, 没有则跳转
+  if (!store.apiKey) {
     router.push('/login');
+    return;
+  }
+
+  // (NEW) 2. 异步初始化用户 Store (从 API 获取会话)
+  await store.initializeUserStore();
+
+  // (NEW) 3. store 初始化后, 加载模型并加载历史
+  if (store.isInitialized) {
+    await selectDefaultModel();
+    if (currentSession.value) {
+      await loadHistory(currentSession.value);
+    }
   }
 });
 
-// 监听消息变化, 自动滚动
 watch(messages, () => {
   scrollToBottom();
 }, { deep: true });
 
 // --- 事件处理 ---
 
-// (新) Provider 变化时, 重置 Model
 const onProviderChange = () => {
   selectedModel.value = null;
-  // 自动选择新 provider 列表的第一个模型
   if (availableModels.value.length > 0) {
     selectedModel.value = availableModels.value[0];
   }
 };
 
-// (新) 处理选择模型
 const handleSelectModel = async () => {
   if (!selectedProvider.value) return;
 
-  // 远程 provider 且没有可用模型列表时, model 传 null
   const modelToSelect = isLocalProvider.value ? selectedModel.value : null;
 
-  // 即使是本地 provider, 也可能没有选择模型 (例如列表为空)
   if (isLocalProvider.value && !modelToSelect) {
      store.setError('请为本地提供方选择一个模型');
      return;
@@ -328,8 +314,16 @@ const handleSelectModel = async () => {
   modelSelectLoading.value = true;
   store.setError('');
   try {
-    const response = await api.selectModel(selectedProvider.value, modelToSelect);
-    currentModelInfo.value = response.data; // { provider: 'xx', model: 'xx' }
+    // (FIXED) 如果 provider 是 'hf', 发送 'transformers' 给 API
+    const providerToSend = selectedProvider.value === 'hf' ? 'transformers' : selectedProvider.value;
+    const response = await api.selectModel(providerToSend, modelToSelect);
+    
+    // (FIXED) API 返回 'transformers', 存为 'hf'
+    currentModelInfo.value = {
+      provider: response.data.provider === 'transformers' ? 'hf' : response.data.provider,
+      model: response.data.model
+    };
+
   } catch (err) {
     store.setError(err.response?.data?.error || '选择模型失败');
   } finally {
@@ -337,49 +331,48 @@ const handleSelectModel = async () => {
   }
 };
 
-// 处理选择会话
 const handleSelectSession = async (sessionId) => {
   store.setCurrentSession(sessionId);
   await loadHistory(sessionId);
 };
 
-// 处理删除会话
+// (已修改) 处理删除会话, 增加 deleteSession API 调用
 const handleDeleteSession = async (sessionId) => {
   try {
     store.setError('');
-    await api.clearHistory(sessionId); // 同时清空后端历史
-    store.removeSession(sessionId);
-    // store.clearSessionMessages(sessionId); // removeSession 应该已经处理了
+    // (NEW) 1. 从后端删除会话
+    await api.deleteSession(sessionId);
+    // 2. 清空后端历史 (也许 deleteSession 会自动做这个, 但以防万一)
+    await api.clearHistory(sessionId); 
+    // 3. 从 store 移除
+    store.removeSession(sessionId); 
+    // 4. (NEW) 切换到新会话后加载其历史
+    if(currentSession.value) {
+      await loadHistory(currentSession.value);
+    }
   } catch (err) {
     store.setError(err.response?.data?.error || '删除会话失败');
   }
 };
 
-// 处理创建会话
-const handleCreateSession = (sessionId) => {
-  store.addSession(sessionId);
-  store.setCurrentSession(sessionId);
+// (已修改) 处理创建会话, store.addSession 现在是 async
+const handleCreateSession = async (sessionId) => {
+  await store.addSession(sessionId); // 内部已调用 setCurrentSession
   // 新会话, messages 自动为空, 无需调用 loadHistory
 };
 
-// 处理发送消息
 const handleSendMessage = async (content) => {
   if (!currentModelInfo.value) {
     store.setError('请先选择一个模型再开始聊天');
     return;
   }
   
-  // 添加用户消息到界面
   store.addMessage(currentSession.value, true, content);
 
   try {
     store.setLoading(true);
     store.setError('');
-    
-    // OpenAPI ChatIn 只需要 session_id 和 user_input
     const response = await api.chat(currentSession.value, content);
-    
-    // 添加机器人回复到界面
     store.addMessage(currentSession.value, false, response.data.reply);
   } catch (err) {
     store.setError(err.response?.data?.error || '发送消息失败');
@@ -388,7 +381,6 @@ const handleSendMessage = async (content) => {
   }
 };
 
-// (新) 处理清空历史
 const executeClearHistory = async () => {
   showClearConfirm.value = false;
   try {
@@ -400,7 +392,6 @@ const executeClearHistory = async () => {
   }
 };
 
-// (新) 处理退出登录
 const executeLogout = () => {
   showLogoutConfirm.value = false;
   store.clearApiKey();
@@ -422,7 +413,6 @@ const executeLogout = () => {
   border-right: 1px solid var(--border-color);
 }
 
-/* (新) 模型选择区域 */
 .model-selection {
   padding: 1rem;
   border-top: 1px solid var(--border-color);
@@ -463,7 +453,7 @@ const executeLogout = () => {
 }
 
 .user-info {
-  margin-top: auto; /* 将用户信息推到底部 */
+  margin-top: auto; 
   padding: 1rem;
   border-top: 1px solid var(--border-color);
 }
@@ -523,6 +513,7 @@ const executeLogout = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  /* (FIXED) Aligned to center */
   margin: 1rem auto;
   color: var(--text-secondary);
 }
@@ -569,7 +560,6 @@ const executeLogout = () => {
   border-bottom-left-radius: 4px;
 }
 
-/* (新) 对话框通用样式 */
 .dialog-overlay {
   position: fixed;
   top: 0;

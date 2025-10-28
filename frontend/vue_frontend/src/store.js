@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
+import api from './api'; // (NEW) 引入 api
 
-// (新) 辅助函数：获取当前用户的 localStorage key
+// 辅助函数：获取当前用户的 localStorage key
 const getUserKey = (key, apiKey) => {
   if (!apiKey) {
     console.error("尝试在没有 apiKey 的情况下获取用户key");
-    return null; // 或者返回一个默认值，但最好是报错
+    return null; 
   }
   return `${key}_${apiKey}`;
 };
@@ -13,49 +14,75 @@ export const useStore = defineStore('main', {
   state: () => ({
     apiKey: localStorage.getItem('apiKey') || null,
     
-    // (已修改) 状态不再从 localStorage 初始化，等待 initializeUserStore
     currentSession: null,
     sessions: [],
     messages: {}, 
     
     loading: false,
     error: null,
-    isInitialized: false, // (新) 跟踪 store 是否已为当前用户初始化
+    isInitialized: false, 
   }),
 
   actions: {
-    // (新) 初始化用户专有的 Store
-    // 必须在 setApiKey 之后或页面加载时（如果 apiKey 已存在）调用
-    initializeUserStore() {
+    // (已修改) 初始化用户专有的 Store, 现在从 API 获取会话
+    async initializeUserStore() {
       if (!this.apiKey) {
         this.isInitialized = false;
         return;
       }
 
-      const userSessionsKey = getUserKey('sessions', this.apiKey);
-      const userCurrentSessionKey = getUserKey('currentSession', this.apiKey);
+      this.isInitialized = false;
+      this.setLoading(true);
+      try {
+        // (NEW) 1. 从 API 获取会话列表
+        const response = await api.getSessionList();
+        let apiSessions = response.data.sessions || [];
 
-      const userSessions = JSON.parse(localStorage.getItem(userSessionsKey) || '["default_session"]');
-      const userCurrentSession = localStorage.getItem(userCurrentSessionKey) || userSessions[0];
+        // (NEW) 2. 如果 API 没有会话, 创建一个默认会话
+        if (apiSessions.length === 0) {
+          // addSession 现在是 async 并且会调用 API
+          await this.addSession('default_session'); 
+          // addSession 内部会更新 this.sessions
+        } else {
+          // 如果 API 有会话, 同步到 state 和 localStorage
+          this.sessions = apiSessions;
+          localStorage.setItem(getUserKey('sessions', this.apiKey), JSON.stringify(this.sessions));
+        }
 
-      this.sessions = userSessions;
-      this.currentSession = userCurrentSession;
-      this.messages = {}; // 清空可能残留的上一用户的消息
-      this.isInitialized = true;
+        // (NEW) 3. 加载并验证 currentSession
+        const userCurrentSessionKey = getUserKey('currentSession', this.apiKey);
+        let userCurrentSession = localStorage.getItem(userCurrentSessionKey);
+
+        // 检查 localStroage 的 session 是否在 (新的) session 列表中
+        if (!userCurrentSession || !this.sessions.includes(userCurrentSession)) {
+          userCurrentSession = this.sessions[0]; // 默认
+          localStorage.setItem(userCurrentSessionKey, userCurrentSession);
+        }
+
+        this.currentSession = userCurrentSession;
+        this.messages = {}; // 清空可能残留的上一用户的消息
+        this.isInitialized = true;
+
+      } catch (error) {
+        this.setError('加载会话列表失败');
+        console.error("initializeUserStore 失败:", error);
+        // (NEW) 即使失败了, 也设置一个本地的, 避免应用卡死
+        this.sessions = JSON.parse(localStorage.getItem(getUserKey('sessions', this.apiKey)) || '["default_session"]');
+        this.currentSession = localStorage.getItem(getUserKey('currentSession', this.apiKey)) || this.sessions[0];
+        this.isInitialized = true; // 标记为已初始化, 即使是回退状态
+      } finally {
+        this.setLoading(false);
+      }
     },
 
-    // 保存API Key
     setApiKey(key) {
       this.apiKey = key;
       localStorage.setItem('apiKey', key);
-      
-      // (新) 设置 key 后，立即初始化该用户的 store
-      this.initializeUserStore();
+      this.initializeUserStore(); // 自动初始化
     },
 
-    // 清除API Key（退出登录）
     clearApiKey() {
-      const oldKey = this.apiKey; // 获取旧 key 以清除数据
+      const oldKey = this.apiKey; 
       
       this.apiKey = null;
       this.currentSession = null;
@@ -65,63 +92,67 @@ export const useStore = defineStore('main', {
 
       localStorage.removeItem('apiKey');
       
-      // (新) 清除特定于该用户的数据
       if (oldKey) {
         localStorage.removeItem(getUserKey('sessions', oldKey));
         localStorage.removeItem(getUserKey('currentSession', oldKey));
       }
     },
 
-    // 添加新会话
-    addSession(sessionId) {
+    // (已修改) 添加新会话, 现在会调用 API
+    async addSession(sessionId) {
       if (!this.sessions.includes(sessionId)) {
-        this.sessions.push(sessionId);
-        // (已修改) 使用用户专有的 key
-        localStorage.setItem(getUserKey('sessions', this.apiKey), JSON.stringify(this.sessions));
+        try {
+          // (NEW) 1. 先通知后端创建
+          await api.createSession(sessionId);
+          
+          // (NEW) 2. 成功后再更新本地状态
+          this.sessions.push(sessionId);
+          localStorage.setItem(getUserKey('sessions', this.apiKey), JSON.stringify(this.sessions));
+        
+        } catch (error) {
+          this.setError('创建会话失败');
+          console.error("addSession 失败:", error);
+          return; // (NEW) 失败则不继续
+        }
       }
       this.setCurrentSession(sessionId);
     },
 
-    // 设置当前会话
     setCurrentSession(sessionId) {
       this.currentSession = sessionId;
-      // (已修改) 使用用户专有的 key
       localStorage.setItem(getUserKey('currentSession', this.apiKey), sessionId);
     },
 
-    // 删除会话
+    // (已修改) 删除会话, API 调用移至 Chat.vue, store 只负责本地状态
     removeSession(sessionId) {
       this.sessions = this.sessions.filter(id => id !== sessionId);
-      // (已修改) 使用用户专有的 key
       localStorage.setItem(getUserKey('sessions', this.apiKey), JSON.stringify(this.sessions));
 
       if (sessionId === this.currentSession) {
-        const newSession = this.sessions.length > 0 ? this.sessions[0] : 'default_session';
-        // (新) 如果 default_session 不在了, 确保它被加回去
-        if (this.sessions.length === 0) {
-          this.addSession(newSession);
-        } else {
+        const newSession = this.sessions.length > 0 ? this.sessions[0] : null;
+        
+        if (newSession) {
           this.setCurrentSession(newSession);
+        } else {
+          // (NEW) 如果没有会话了, 异步创建一个
+          this.addSession('default_session');
         }
       }
     },
 
-    // 保存消息到状态
     addMessage(sessionId, isUser, content) {
       if (!this.messages[sessionId]) {
         this.messages[sessionId] = [];
       }
 
       this.messages[sessionId].push({
-        id: Date.now() + Math.random(), // 增加一点随机性避免key冲突
+        id: Date.now() + Math.random(), 
         isUser,
         content,
-        timestamp: new Date().toLocaleString(), // 转换为可读字符串
+        timestamp: new Date().toLocaleString(), 
       });
     },
 
-    // (已修改) 从历史记录加载消息
-    // 这个 action 现在接收一个由 Chat.vue 解析好的消息对象数组
     loadHistory(sessionId, historyMessages) {
       if (!Array.isArray(historyMessages)) {
         console.error("loadHistory 接收到的不是一个数组:", historyMessages);
@@ -131,27 +162,23 @@ export const useStore = defineStore('main', {
 
       this.messages[sessionId] = historyMessages.map((msg, index) => ({
         ...msg,
-        id: `${sessionId}_history_${index}`, // 提供一个稳定的 ID
+        id: `${sessionId}_history_${index}`, 
         isUser: msg.isUser,
         content: msg.content,
         timestamp: msg.timestamp || new Date().toLocaleString()
       }));
     },
 
-    // 清空会话消息
     clearSessionMessages(sessionId) {
       this.messages[sessionId] = [];
     },
 
-    // 设置加载状态
     setLoading(state) {
       this.loading = state;
     },
 
-    // 设置错误信息
     setError(message) {
       this.error = message;
-      // 3秒后自动清除错误信息
       if (this.errorTimer) clearTimeout(this.errorTimer);
       this.errorTimer = setTimeout(() => {
         this.error = null;
