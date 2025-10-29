@@ -55,3 +55,19 @@ class SessionOut(Schema):
 
 class SessionListOut(Schema):
     sessions: List[str]
+
+
+# ===== External API Schemas =====
+class APIIn(Schema):
+    base_url: str
+    model_name: str
+    api_key: str
+    alias: Optional[str] = None
+
+
+class ModelsListOut(Schema):
+    models_list: List[str]
+
+
+class ModelIn(Schema):
+    model_name: str

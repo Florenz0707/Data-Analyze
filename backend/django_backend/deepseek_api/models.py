@@ -102,3 +102,26 @@ class UserLLMPreference(models.Model):
 
     def __str__(self):
         return f"{self.user.user}:{self.provider}:{self.model}"
+
+
+class ExternalLLMAPI(models.Model):
+    """用户自定义的 OpenAI 兼容接口配置。与用户名关联。"""
+    user = models.CharField(max_length=100, db_index=True)
+    base_url = models.CharField(max_length=512)
+    model_name = models.CharField(max_length=128)
+    api_key = models.CharField(max_length=256)
+    alias = models.CharField(max_length=128, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "model_name")
+        indexes = [
+            models.Index(fields=["user", "model_name"]),
+        ]
+
+    def display_name(self) -> str:
+        return (self.alias or self.model_name).strip()
+
+    def __str__(self):
+        return f"{self.user}:{self.display_name()}"
