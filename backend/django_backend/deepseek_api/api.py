@@ -252,6 +252,14 @@ def list_sessions(request):
     return {"sessions": session_ids}
 
 
+@router.get("/llm/my", response={200: SelectLLMOut, 401: ErrorResponse})
+def get_my_llm(request):
+    """返回当前用户选择的 LLM 配置（通过 Bearer token 识别用户）。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    pref = services.get_or_create_user_pref(request.auth)
+    return {"provider": pref.provider, "model": pref.model or None}
+
 @router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})
 def select_llm(request, data: SelectLLMIn):
     if not request.auth:
