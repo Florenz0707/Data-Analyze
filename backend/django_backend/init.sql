@@ -8,18 +8,6 @@
 PRAGMA foreign_keys = ON;
 BEGIN;
 
-INSERT OR IGNORE INTO USER (username, password)
-VALUES ('user', 'secret');
-
-
--- Seed a demo API key (32 chars). Update or remove as needed.
--- Will not duplicate if it already exists.
-INSERT OR IGNORE INTO deepseek_api_apikey (key, user, created_at, expiry_time)
-VALUES ('demo_key',
-        'demo',
-        CURRENT_TIMESTAMP,
-        CAST(strftime('%s', 'now') AS INTEGER) + 360000 -- expiry in seconds
-       );
 
 -- Ensure a corresponding rate limit row exists for the demo key.
 -- NOTE: For Django ForeignKey fields, the DB column name is typically `<field>_id`.
