@@ -1,0 +1,91 @@
+服务,级别,错误,消息,组件,原因
+PythonScriptService,ERROR,SyntaxError,invalid syntax,ScriptParser,代码中存在语法错误，可能是拼写错误、缺少标点符号或者使用了不正确的语法结构。
+PythonScriptService,ERROR,IndentationError,unexpected indent,ScriptParser,代码缩进不正确，Python 使用缩进来表示代码块，缩进不一致会导致此错误。
+PythonScriptService,ERROR,NameError,name 'x' is not defined,VariableResolver,使用了未定义的变量或函数名。
+PythonScriptService,ERROR,TypeError,unsupported operand type(s) for +: 'int' and 'str',OperatorHandler,操作或函数应用于不兼容的数据类型，例如对整数和字符串进行加法运算。
+PythonScriptService,ERROR,IndexError,list index out of range,ListAccessor,尝试访问列表、元组或其他序列类型中不存在的索引。
+PythonScriptService,ERROR,KeyError,key 'non_existent_key' not found,DictAccessor,尝试访问字典中不存在的键。
+PythonScriptService,ERROR,FileNotFoundError,No such file or directory: 'nonexistent_file.txt',FileReader,尝试打开或操作不存在的文件。
+PythonScriptService,ERROR,ZeroDivisionError,division by zero,MathOperator,在数学运算中，尝试除以零。
+PythonScriptService,ERROR,AttributeError,'module' object has no attribute 'non_existent_attribute',AttributeResolver,尝试访问对象不存在的属性或方法。
+PythonScriptService,ERROR,ImportError,No module named 'non_existent_module',ModuleImporter,尝试导入不存在的模块，或者模块路径设置不正确。
+PythonScriptService,ERROR,SyntaxError,invalid syntax,ScriptParser,代码中存在语法错误，可能是拼写错误、缺少标点符号或者使用了不正确的语法结构。
+PythonScriptService,ERROR,IndentationError,unexpected indent,ScriptParser,代码缩进不正确，Python 使用缩进来表示代码块，缩进不一致会导致此错误。
+PythonScriptService,ERROR,NameError,name 'x' is not defined,VariableResolver,使用了未定义的变量或函数名。
+PythonScriptService,ERROR,TypeError,unsupported operand type(s) for +: 'int' and 'str',OperatorHandler,操作或函数应用于不兼容的数据类型，例如对整数和字符串进行加法运算。
+PythonScriptService,ERROR,IndexError,list index out of range,ListAccessor,尝试访问列表、元组或其他序列类型中不存在的索引。
+PythonScriptService,ERROR,KeyError,key 'non_existent_key' not found,DictAccessor,尝试访问字典中不存在的键。
+PythonScriptService,ERROR,FileNotFoundError,No such file or directory: 'nonexistent_file.txt',FileReader,尝试打开或操作不存在的文件。
+PythonScriptService,ERROR,ZeroDivisionError,division by zero,MathOperator,在数学运算中，尝试除以零。
+PythonScriptService,ERROR,AttributeError,'module' object has no attribute 'non_existent_attribute',AttributeResolver,尝试访问对象不存在的属性或方法。
+PythonScriptService,ERROR,ImportError,No module named 'non_existent_module',ModuleImporter,尝试导入不存在的模块，或者模块路径设置不正确。
+PyTorchService,ERROR,CUDAOutOfMemoryError,CUDA out of memory. Tried to allocate 256.00 MiB (GPU 0; 8.00 GiB total capacity; 6.00 GiB already allocated; 128.00 MiB free; 6.50 GiB reserved in total by PyTorch),ModelTrainer,在使用 GPU 进行 PyTorch 计算时，所需的显存超过了 GPU 的可用显存。
+PyTorchService,ERROR,RuntimeError,"Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument mat1 in method wrapper_addmm)",ModelEvaluator,在进行张量运算时，参与运算的张量位于不同的设备（如 GPU 和 CPU）上。
+PyTorchService,ERROR,RuntimeError,"size mismatch, m1: [32 x 100], m2: [200 x 50] at /pytorch/aten/src/TH/generic/THTensorMath.cpp:41",ModelForwardPass,在进行矩阵乘法等操作时，矩阵的维度不匹配。
+PyTorchService,ERROR,ModuleNotFoundError,No module named 'torchvision',DataLoader,尝试使用 torchvision 模块，但该模块未安装。
+PyTorchService,ERROR,TypeError,apply() got an unexpected keyword argument 'non_existent_arg',ModelTransformer,调用函数或方法时传入了未定义的关键字参数。
+NumpyService,ERROR,ValueError,"operands could not be broadcast together with shapes (3,4) and (4,)",ArrayOperation,在进行 numpy 数组的广播操作时，数组的形状不兼容。
+NumpyService,ERROR,IndexError,index 5 is out of bounds for axis 0 with size 3,ArrayIndexer,尝试访问 numpy 数组中超出范围的索引。
+PandasService,ERROR,KeyError,['non_existent_column'] not in index,DataFrameColumnAccessor,尝试访问 pandas DataFrame 中不存在的列。
+PandasService,ERROR,TypeError,can only append a dict if ignore_index=True,DataFrameAppender,在向 pandas DataFrame 中追加字典时，未设置 ignore_index=True 导致类型错误。
+ScikitLearnService,ERROR,ValueError,"Expected 2D array, got 1D array instead",ModelFitter,在使用 scikit - learn 的模型进行拟合时，传入的特征数据应为二维数组，但实际传入了一维数组。
+ScikitLearnService,ERROR,ModuleNotFoundError,No module named'sklearn.some_non_existent_module',ModelImporter,尝试导入 scikit - learn 中不存在的模块。
+TensorFlowService,ERROR,tf.errors.ResourceExhaustedError,"OOM when allocating tensor with shape [1000, 1000] and type float32",GraphExecutor,在 TensorFlow 计算图执行时，由于内存不足导致无法分配所需的张量。
+TensorFlowService,ERROR,ValueError,"Shapes (None, 10) and (None, 20) are incompatible",ModelCompiler,在编译 TensorFlow 模型时，模型的输入和输出形状不兼容。
+FlaskService,ERROR,werkzeug.routing.BuildError,Could not build url for endpoint 'non_existent_endpoint' with values {},RouteBuilder,在 Flask 应用中尝试构建一个不存在的路由端点的 URL。
+FlaskService,ERROR,ImportError,No module named 'flask_some_non_existent_extension',ExtensionImporter,尝试导入 Flask 中不存在的扩展模块。
+DjangoService,ERROR,django.core.exceptions.ImproperlyConfigured,The SECRET_KEY setting must not be empty.,AppConfig,在 Django 应用配置中，SECRET_KEY 设置不能为空，但实际为空。
+DjangoService,ERROR,django.urls.exceptions.NoReverseMatch,Reverse for 'non_existent_view' not found. 'non_existent_view' is not a valid view function or pattern name.,URLResolver,在 Django 中尝试反向解析一个不存在的视图名称或 URL 模式。
+FastAPIService,ERROR,fastapi.exceptions.RequestValidationError,"1 validation error for Request\nbody -> some_field\n  field required (type=value_error.missing)",RequestValidator,在 FastAPI 中处理请求时，发现请求体中缺少必需的字段。
+FastAPIService,ERROR,ImportError,No module named 'fastapi_some_non_existent_dependency',DependencyImporter,尝试导入 FastAPI 依赖的不存在的模块。
+BeautifulSoupService,ERROR,AttributeError,'NoneType' object has no attribute 'find_all',HTMLParser,在使用 BeautifulSoup 解析 HTML 时，尝试在一个 None 对象上调用 find_all 方法，可能是解析失败导致。
+SeleniumService,ERROR,selenium.common.exceptions.NoSuchElementException,"no such element: Unable to locate element: {""method"":""css selector"",""selector"":""non_existent_selector""}",ElementLocator,在使用 Selenium 定位网页元素时，指定的选择器未能找到对应的元素。
+SeleniumService,ERROR,selenium.common.exceptions.WebDriverException,unknown error: cannot find Chrome binary,DriverInitializer,在初始化 Selenium WebDriver 时，无法找到 Chrome 浏览器的二进制文件。
+PillowService,ERROR,IOError,cannot identify image file 'non_existent_image.jpg',ImageOpener,在使用 Pillow 库打开图片时，指定的图片文件不存在或文件格式不被识别。
+PillowService,ERROR,ValueError,unknown resampling filter (99),ImageResampler,在使用 Pillow 进行图片重采样时，指定了不识别的重采样滤波器。
+MatplotlibService,ERROR,ValueError,"x and y must have same first dimension, but have shapes (10,) and (20,)",Plotter,在使用 Matplotlib 绘图时，x 和 y 数据的第一维长度不一致。
+MatplotlibService,ERROR,RuntimeError,Invalid DISPLAY variable,BackendInitializer,在使用 Matplotlib 的某些后端时，DISPLAY 变量设置无效，通常在无图形界面环境下绘图时会出现。
+PyechartsService,ERROR,TypeError,add_xaxis() got an unexpected keyword argument 'non_existent_arg',ChartBuilder,在使用 Pyecharts 构建图表时，调用 add_xaxis 方法传入了未定义的关键字参数。
+PyechartsService,ERROR,ImportError,No module named 'pyecharts_some_non_existent_chart_type',ChartImporter,尝试导入 Pyecharts 中不存在的图表类型模块。
+SQLAlchemyService,ERROR,sqlalchemy.exc.OperationalError,(sqlite3.OperationalError) no such table: non_existent_table,TableAccessor,在使用 SQLAlchemy 访问数据库表时，指定的表不存在。
+SQLAlchemyService,ERROR,sqlalchemy.exc.InvalidRequestError,Entity '<class '__main__.NonExistentModel'>' has no property 'non_existent_column',ModelPropertyAccessor,在使用 SQLAlchemy 的模型访问属性时，指定的模型或属性不存在。
+PymongoService,ERROR,pymongo.errors.ServerSelectionTimeoutError,Timeout while connecting to MongoDB server,MongoDBConnector,在尝试连接 MongoDB 服务器时，连接超时。
+PymongoService,ERROR,KeyError,Key 'non_existent_key' not found in document,DocumentAccessor,在访问 MongoDB 文档时，尝试获取不存在的键。
+ParamikoService,ERROR,paramiko.ssh_exception.AuthenticationException,Authentication failed.,SSHAuthenticator,使用 Paramiko 进行 SSH 连接时，认证失败。
+ParamikoService,ERROR,paramiko.ssh_exception.NoValidConnectionsError,Unable to connect to port 22 on some_server,SSHConnector,使用 Paramiko 尝试连接 SSH 服务器时，无法建立有效的连接。
+TwilioService,ERROR,twilio.base.exceptions.TwilioRestException,401 Unauthorized: [HTTP 401] Unable to authenticate,TwilioAuthenticator,在使用 Twilio 服务时，认证失败。
+TwilioService,ERROR,twilio.base.exceptions.TwilioRestException,400 Bad Request: [HTTP 400] The 'To' number +1234567890 is not a valid phone number.,TwilioMessageSender,在使用 Twilio 发送消息时，指定的手机号码无效。
+StripeService,ERROR,stripe.error.CardError,Your card's expiration year is invalid.,CardProcessor,在使用 Stripe 处理信用卡支付时，信用卡的过期年份无效。
+StripeService,ERROR,stripe.error.AuthenticationError,No API key provided. (HINT: set your API key using'stripe.api_key = <API-KEY>'.,StripeAuthenticator,在使用 Stripe 服务时，未提供 API 密钥。
+OpenCVService,ERROR,cv2.error,(-215:Assertion failed) size.width>0 && size.height>0 in function 'imshow',ImageDisplayer,在使用 OpenCV 显示图像时，图像的尺寸无效（宽度或高度小于等于 0）。
+OpenCVService,ERROR,cv2.error,(-215:Assertion failed)!_src.empty() in function 'cvtColor',ColorConverter,在使用 OpenCV 进行颜色转换时，输入的源图像为空。
+NLTKService,ERROR,LookupError,Resource 'tokenizers/punkt/PY3/english.pickle' not found.,Tokenizer,在使用 NLTK 的分词器时，所需的语言资源未下载。
+NLTKService,ERROR,AttributeError,'NoneType' object has no attribute 'pos_tag',POSTagger,在尝试使用 NLTK 的词性标注器时，可能由于未正确初始化或资源缺失导致对象为 None。
+GensimService,ERROR,ValueError,"You must specify either total_examples or total_words, or both.",Word2VecTrainer,在训练 Gensim 的 Word2Vec 模型时，未正确指定训练样本数量或总词数。
+GensimService,ERROR,KeyError,word 'non_existent_word' not in vocabulary,WordEmbeddingLookup,在使用 Gensim 的词向量模型查找单词时，单词不在词汇表中。
+PyPDF2Service,ERROR,PyPDF2.utils.PdfReadError,EOF marker not found,PDFReader,在使用 PyPDF2 读取 PDF 文件时，未找到文件结束标记，可能是文件损坏。
+PyPDF2Service,ERROR,AttributeError,'NoneType' object has no attribute 'getObject',PDFObjectAccessor,在访问 PDF 对象时，由于对象未正确加载或为空导致无法调用 getObject 方法。
+RequestsService,ERROR,requests.exceptions.ConnectionError,"HTTPConnectionPool(host='some_host', port=80): Max retries exceeded with url: /some_path (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f...>: Failed to establish a new connection: [Errno 111] Connection refused'))",HTTPRequester,在使用 Requests 库发送 HTTP 请求时，无法建立与目标服务器的连接。
+RequestsService,ERROR,requests.exceptions.HTTPError,404 Client Error: Not Found for url: https://some_url,HTTPResponseHandler,在使用 Requests 库发送 HTTP 请求后，服务器返回 404 错误，表示请求的资源未找到。
+ScrapyService,ERROR,scrapy.exceptions.CloseSpider,Spider closed: some_reason,SpiderController,Scrapy 爬虫由于某种原因被关闭。
+ScrapyService,ERROR,AttributeError,'Response' object has no attribute 'non_existent_attribute',ResponseProcessor,在处理 Scrapy 的响应对象时，尝试访问不存在的属性。
+TqdmService,ERROR,TypeError,tqdm() got an unexpected keyword argument 'non_existent_arg',ProgressBarInitializer,在初始化 tqdm 进度条时，传入了未定义的关键字参数。
+TqdmService,ERROR,ValueError,n (100) cannot be greater than total (50),ProgressBarUpdater,在更新 tqdm 进度条时，指定的当前进度值大于总进度值。
+XlsxWriterService,ERROR,xlsxwriter.exceptions.FileCreateError,Error creating file: 'non_existent_path/non_existent_file.xlsx',ExcelFileCreator,在使用 XlsxWriter 创建 Excel 文件时，由于路径不存在或权限不足等原因无法创建文件。
+XlsxWriterService,ERROR,TypeError,unsupported operand type(s) for +: 'int' and 'str' in write_number(),ExcelCellWriter,在使用 XlsxWriter 向单元格写入数字时，传入了不兼容的数据类型。
+Boto3Service,ERROR,botocore.exceptions.NoCredentialsError,Unable to locate credentials,AWSCredentialResolver,在使用 Boto3 访问 AWS 服务时，未找到有效的 AWS 凭证。
+Boto3Service,ERROR,botocore.exceptions.ClientError,An error occurred (AccessDenied) when calling the ListBuckets operation: Access Denied,S3BucketLister,在使用 Boto3 调用 AWS S3 的 ListBuckets 操作时，由于权限不足被拒绝访问。
+AirflowService,ERROR,airflow.exceptions.AirflowException,Task instance <TaskInstance: some_dag.some_task...> failed to execute,TaskExecutor,在 Airflow 中执行任务实例时，任务执行失败。
+AirflowService,ERROR,airflow.exceptions.AirflowConfigException,The configuration option 'non_existent_option' in section 'non_existent_section' does not exist.,ConfigReader,在读取 Airflow 配置时，尝试访问不存在的配置选项或配置节。
+PytestService,ERROR,ImportError,No module named 'tests.some_non_existent_test_module',TestModuleImporter,在运行 pytest 测试时，尝试导入不存在的测试模块。
+PytestService,ERROR,AssertionError,assert 1 == 2,TestCaseRunner,在运行 pytest 测试用例时，断言失败。
+BehaveService,ERROR,behave.runner.ScenarioFailed,Scenario failed: Step 'Given some_step' failed,ScenarioRunner,在运行 Behave 测试场景时，某个步骤失败导致整个场景失败。
+BehaveService,ERROR,ImportError,No module named 'features.steps.some_non_existent_steps_module',StepsModuleImporter,在运行 Behave 测试时，尝试导入不存在的步骤模块。
+HypothesisService,ERROR,hypothesis.errors.FailedHealthCheck,Data generation is extremely slow: Only produced 1 valid example in 1.00 seconds (on average). Try decreasing size bounds or increasing max_examples.,DataGenerator,在使用 Hypothesis 进行数据生成时，数据生成速度过慢，可能需要调整参数。
+HypothesisService,ERROR,hypothesis.errors.InvalidArgument,The 'non_existent_arg' argument is not valid for this function.,FunctionCaller,在使用 Hypothesis 调用函数时，传入了无效的参数。
+Pymc3Service,ERROR,pymc3.errors.DimensionalityMismatchError,"Observed data has shape (10,) but model variable has shape (20,).",ModelFitter,在使用 PyMC3 拟合模型时，观测数据和模型变量的维度不匹配。
+Pymc3Service,ERROR,ImportError,No module named 'pymc3.some_non_existent_distribution',DistributionImporter,在使用 PyMC3 时，尝试导入不存在的分布模块。
+LightGBMService,ERROR,LightGBMError,The number of feature names does not match the number of features.,ModelTrainer,在训练 LightGBM 模型时，特征名称的数量与特征数量不匹配。
+LightGBMService,ERROR,LightGBMError,Tree learner is not supported on GPU.,ModelInitializer,在尝试在 GPU 上使用不支持的树学习器初始化 LightGBM 模型时出现错误。
+CatBoostService,ERROR,catboost.CatBoostError,All input features should have the same length.,ModelDataPreparer,在为 CatBoost 模型准备数据时，所有输入特征的长度不一致。
+CatBoostService,ERROR,catboost.CatBoostError,"Invalid parameter: depth. Expected value in range [1, 16], got 20.",ModelParameterSetter,在设置 CatBoost 模型参数时，指定的深度参数超出了有效范围。

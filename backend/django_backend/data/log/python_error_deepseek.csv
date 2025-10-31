@@ -1,0 +1,410 @@
+服务,级别,错误,消息,组件,原因
+PyApp,ERROR,KeyboardInterrupt,程序被用户中断（Ctrl+C）,SignalHandler,用户主动终止程序执行
+PyApp,FATAL,MemoryError,无法分配 512 MB 内存,MemoryManager,系统内存不足或程序内存泄漏
+PyApp,ERROR,ZeroDivisionError,division by zero,MathEngine,除数为零导致数学运算异常
+PyApp,WARN,FileNotFoundError,[Errno 2] No such file or directory: 'config.yaml',FileLoader,配置文件路径错误或文件未创建
+PyApp,ERROR,ImportError,No module named 'pandas',ModuleLoader,未安装依赖库或环境路径错误
+PyApp,FATAL,RecursionError,maximum recursion depth exceeded,RecursionGuard,递归层数超过系统限制
+PyApp,ERROR,KeyError,'user_id' not found in dict,DictAccessor,字典中不存在指定键
+PyApp,WARN,AttributeError,'NoneType' object has no attribute 'name',ObjectAccessor,对象为None时访问其属性
+PyApp,ERROR,TypeError,unsupported operand type(s) for +: 'int' and 'str',TypeChecker,类型不匹配的操作
+PyApp,FATAL,SystemExit,Program exited with code 1,ExitHandler,调用sys.exit()或发生致命错误
+PyApp,ERROR,IndexError,list index out of range,ListAccessor,列表索引超出范围
+PyApp,WARN,PermissionError,[Errno 13] Permission denied: '/etc/hosts',FileWriter,无权限写入系统文件
+PyApp,ERROR,TimeoutError,Connection timed out after 10s,NetworkClient,网络请求超时
+PyApp,FATAL,OSError,[Errno 28] No space left on device,DiskManager,磁盘空间不足
+PyApp,ERROR,ValueError,invalid literal for int() with base 10: 'abc',Parser,字符串转换为数字时格式错误
+PyApp,WARN,UnicodeDecodeError,'utf-8' codec can't decode byte 0xff,Encoder,文件编码格式不匹配
+PyApp,ERROR,AssertionError,assert len(users) > 0,Validator,断言条件不满足
+PyApp,FATAL,NotImplementedError,Method not implemented,AbstractBase,抽象方法未实现
+PyApp,WARN,DeprecationWarning,use of deprecated function 'old_func',Compatibility,使用已弃用的函数或类
+PyApp,ERROR,RuntimeError,generator raised StopIteration,Generator,生成器异常终止
+PyTorch,FATAL,CUDA_OUT_OF_MEMORY,CUDA out of memory,GPUManager,GPU显存不足，尝试减小batch_size或清理缓存
+PyTorch,ERROR,GRAD_CHECKPOINT_FAIL,Gradient checkpointing failed,MemoryOptimizer,梯度检查点配置错误
+PyTorch,WARN,UNUSED_PARAMETER,Unused parameter in model,ParameterValidator,模型存在未使用的参数
+TensorFlow,ERROR,UNKNOWN_SHAPE,Unknown shape for tensor,ShapeInferencer,动态图模式下形状推断失败
+TensorFlow,FATAL,PLACEMENT_ERROR,Could not place operation on device,DevicePlacer,设备分配冲突
+Pandas,ERROR,KEY_ERROR,Key 'column_x' not found,DataFrameIndexer,数据框中不存在指定列名
+Pandas,WARN,DATA_TRUNCATION,Data truncated due to size limit,DataLoader,数据超出内存限制被截断
+NumPy,ERROR,VALUE_ERROR,All inputs must be same shape,Broadcaster,数组形状不匹配无法广播
+NumPy,WARN,DEPRECATION_WARNING,np.float is deprecated,Compatibility,使用了已弃用的数据类型
+PyTorch,ERROR,AUTOGRAD_FAIL,Function 'Backward' returned nan,AutogradEngine,梯度计算出现NaN值
+PyTorch,FATAL,DDP_SYNC_FAIL,AllReduce synchronization failed,DistributedTrainer,分布式训练同步失败
+TensorFlow,ERROR,LOSS_NAN,Loss became NaN during training,LossMonitor,训练过程中损失值变为NaN
+TensorFlow,WARN,MIXED_PRECISION,Mixed precision may cause instability,PrecisionManager,混合精度训练可能导致数值不稳定
+Pandas,ERROR,DTYPE_CONFLICT,Dtype conflict in merge operation,Merger,合并操作中数据类型冲突
+Pandas,WARN,PERFORMANCE_WARNING,Iterating over DataFrame is slow,PerformanceAdvisor,应使用向量化操作代替循环
+PyTorch,ERROR,CUDA_KERNEL_FAIL,CUDA kernel failed to launch,KernelLauncher,CUDA内核启动失败
+PyTorch,WARN,GRAD_CLIP_FAIL,Gradient clipping skipped due to norm,GradientClipper,梯度范数为零，跳过裁剪
+TensorFlow,FATAL,METRIC_RESET_FAIL,Metric reset failed during eval,MetricManager,评估时指标重置失败
+TensorFlow,ERROR,SAVE_MODEL_FAIL,Could not save model to h5,ModelSaver,H5格式保存失败，尝试其他格式
+Pandas,ERROR,READ_CSV_FAIL,Error tokenizing data,CSVReader,CSV文件格式错误或分隔符不匹配
+NumPy,ERROR,MEMORY_ERROR,Unable to allocate array,MemoryAllocator,数组过大，内存分配失败
+PyTorch,FATAL,DATA_LOADER_STUCK,DataLoader worker stuck,DataLoader,数据加载进程卡死，检查数据路径
+PyTorch,ERROR,OPTIMIZER_STEP,Optimizer step skipped due to nan,Optimizer,梯度包含NaN值，跳过参数更新
+TensorFlow,WARN,TENSOR_SHAPE,Tensor shape incompatible with layer,LayerValidator,张量形状与层不兼容
+TensorFlow,ERROR,DECODE_IMAGE,Failed to decode image,ImageProcessor,图像解码失败，文件可能损坏
+Pandas,WARN,CHAINED_ASSIGNMENT,Chained assignment detected,AssignmentChecker,链式赋值可能导致意外行为
+Pandas,ERROR,MULTI_INDEX_ERROR,MultiIndex level not found,MultiIndexHandler,多级索引中找不到指定层级
+NumPy,WARN,DIVIDE_BY_ZERO,Division by zero encountered,MathValidator,除零操作产生inf或nan
+PyTorch,ERROR,ACTIVATION_NAN,Activation output contains NaN,ActivationMonitor,激活函数输出NaN
+PyTorch,FATAL,CHECKPOINT_LOAD,Checkpoint loading failed,CheckpointManager,模型检查点加载失败
+TensorFlow,ERROR,CUSTOM_GRADIENT,Custom gradient function error,GradientRegistry,自定义梯度函数实现错误
+TensorFlow,WARN,KERAS_MIXED_API,Mixing Keras functional and sequential,KerasAdapter,混合使用Keras不同API风格
+Pandas,ERROR,GROUP_BY_KEY,GroupBy key does not exist,Grouper,分组键在数据框中不存在
+Pandas,WARN,FUTURE_WARNING,Method will change in future version,FutureWarning,方法在未来版本中行为会改变
+NumPy,ERROR,AXIS_ERROR,Axis out of bounds for array,AxisValidator,轴参数超出数组维度
+PyTorch,ERROR,DATA_PARALLEL_FAIL,DataParallel forward failed,ParallelEngine,数据并行前向传播失败
+PyTorch,WARN,LEARNING_RATE,Loss not decreasing with current LR,LR_Scheduler,学习率可能过高或过低
+TensorFlow,FATAL,TENSORBOARD_WRITE,TensorBoard write failed,SummaryWriter,TensorBoard日志写入失败
+TensorFlow,ERROR,BATCH_NORM,BatchNorm in inference mode,BatchNormValidator,推理模式下批归一化配置错误
+Pandas,ERROR,MERGE_CONFLICT,Merge conflict on duplicate keys,MergeResolver,合并键存在重复值
+Pandas,WARN,MEMORY_USAGE,High memory usage detected,MemoryMonitor,数据操作内存使用过高
+NumPy,ERROR,SLICE_ERROR,Slice index out of bounds,Slicer,切片索引超出数组边界
+PyTorch,FATAL,DISTRIBUTED_HANG,Distributed training hang,DistributedCoordinator,分布式训练进程挂起
+PyTorch,ERROR,JIT_COMPILE,TorchScript compilation failed,JIT_Compiler,TorchScript编译失败
+TensorFlow,WARN,VARIABLE_REUSE,Variable reuse in different scope,VariableManager,变量在不同作用域中被重复使用
+TensorFlow,ERROR,ESTIMATOR_HOOK,Estimator hook execution failed,HookExecutor,Estimator钩子执行失败
+Pandas,ERROR,PIVOT_TABLE,Pivot table creation failed,PivotBuilder,数据透视表创建失败
+Pandas,WARN,DATETIME_CONVERSION,DateTime conversion warning,DateTimeConverter,日期时间转换可能不准确
+NumPy,ERROR,FFT_ERROR,FFT computation failed,FFT_Engine,快速傅里叶变换计算失败
+PyTorch,ERROR,QUANTIZATION,Quantization aware training failed,Quantizer,量化训练过程出错
+PyTorch,WARN,PROFILER_SLOW,Profiler slowing down execution,Profiler,性能分析器显著降低执行速度
+TensorFlow,FATAL,TPU_INIT,TPU initialization failed,TPU_Manager,TPU初始化失败
+TensorFlow,ERROR,CUSTOM_LAYER,Custom layer serialization failed,LayerSerializer,自定义层序列化失败
+Pandas,ERROR,RESAMPLE_FAIL,Time series resampling failed,Resampler,时间序列重采样失败
+Pandas,WARN,COPY_WARNING,SettingWithCopyWarning detected,CopyChecker,可能意外修改了数据视图
+NumPy,ERROR,LINALG_ERROR,Matrix is singular,LinearAlgebraSolver,矩阵为奇异矩阵，无法求逆
+PyTorch,FATAL,ONNX_EXPORT,ONNX export failed,ONNX_Exporter,模型导出为ONNX格式失败
+PyTorch,ERROR,DISTRIBUTED_BARRIER,Distributed barrier timeout,BarrierManager,分布式屏障超时
+TensorFlow,WARN,OPTIMIZATION,Graph optimization warning,GraphOptimizer,图优化可能改变计算行为
+TensorFlow,ERROR,DATA_PIPELINE,Data pipeline deadlock,DataPipeline,数据管道出现死锁
+Pandas,ERROR,STYLER_RENDER,DataFrame styler render failed,Styler,DataFrame样式渲染失败
+Pandas,WARN,EXCEL_WRITE,Large DataFrame Excel write,ExcelWriter,大数据量写入Excel可能很慢
+NumPy,ERROR,RANDOM_SEED,Random seed not effective,RandomGenerator,随机种子设置未生效
+PyTorch,ERROR,AMP_FAIL,Automatic Mixed Precision failed,AMP_Manager,自动混合精度训练失败
+PyTorch,WARN,MODEL_SUMMARY,Model summary truncated,ModelAnalyzer,模型过大，摘要被截断
+TensorFlow,FATAL,SAVED_MODEL_LOAD,SavedModel loading failed,SavedModelLoader,SavedModel加载失败
+TensorFlow,ERROR,DISTRIBUTE_STRATEGY,Distribution strategy error,StrategyExecutor,分布式策略执行错误
+Pandas,ERROR,PLOT_FAIL,Plotting backend failed,Plotter,绘图后端失败，检查matplotlib配置
+Pandas,WARN,JSON_NORMALIZE,JSON normalization warning,JSON_Normalizer,JSON规范化可能丢失数据
+NumPy,ERROR,EIGENVALUE,Eigenvalue computation failed,EigenSolver,特征值计算不收敛
+PyTorch,FATAL,MPS_FAIL,MPS backend initialization failed,MPS_Manager,Apple Silicon MPS后端初始化失败
+PyTorch,ERROR,COMPILE_FAIL,Dynamo compilation failed,DynamoCompiler,动态图编译失败
+TensorFlow,WARN,COMPATIBILITY,TF 1.x compatibility issue,CompatLayer,TensorFlow 1.x兼容性问题
+TensorFlow,ERROR,CUSTOM_LOSS,Custom loss function error,LossFunction,自定义损失函数实现错误
+Pandas,ERROR,MULTI_PROCESS,Multiprocessing with DataFrame failed,ParallelProcessor,DataFrame多进程处理失败
+Pandas,WARN,SQL_QUERY,SQL query performance warning,SQL_Adapter,SQL查询可能存在性能问题
+NumPy,ERROR,INTERPOLATION,Interpolation failed,Interpolator,插值计算失败
+PyTorch,ERROR,PROFILER_TRACE,Profiler trace file corrupt,ProfilerExporter,性能分析跟踪文件损坏
+PyTorch,WARN,MEMORY_LEAK,Potential memory leak detected,MemoryProfiler,检测到潜在内存泄漏
+TensorFlow,FATAL,KERAS_TUNER,Keras Tuner search failed,Tuner,超参数搜索过程失败
+TensorFlow,ERROR,QUANTIZATION_POST,Post-training quantization failed,QuantizationTool,训练后量化失败
+Pandas,ERROR,HDF5_STORE,HDF5 store operation failed,HDF5_Store,HDF5存储操作失败
+Pandas,WARN,SPARSE_DENSE,Sparse to dense conversion,SparseHandler,稀疏到密集转换可能占用大量内存
+NumPy,ERROR,POLYFIT,Polynomial fit failed,PolynomialFitter,多项式拟合失败
+PyTorch,ERROR,DISTRIBUTED_ALLGATHER,AllGather operation failed,CollectiveOps,分布式AllGather操作失败
+PyTorch,WARN,AUTOCAST,AutoCast precision loss,PrecisionManager,自动类型转换可能导致精度损失
+Scikit-learn,ERROR,VALUE_ERROR,Unknown label type: 'unknown',LabelEncoder,标签类型不被支持
+Scikit-learn,FATAL,CONVERGENCE_WARNING,Solver did not converge,Solver,优化算法未收敛
+Scikit-learn,WARN,DATA_PREPROCESS,Input contains NaN,Preprocessor,输入数据包含NaN值
+Matplotlib,ERROR,FIGURE_SIZE,Figure size too large,FigureManager,图形尺寸超出限制
+Matplotlib,WARN,FONT_NOT_FOUND,Font family not found,FontManager,指定字体族不存在
+Seaborn,ERROR,PALETTE_ERROR,Unknown palette type,PaletteGenerator,调色板类型未知
+Seaborn,WARN,DATA_FORMAT,Using categorical plot on numerical data,PlotValidator,分类图用于数值数据
+OpenCV,ERROR,VIDEO_LOAD,Could not open video file,VideoReader,视频文件无法打开或损坏
+OpenCV,FATAL,CASCADE_LOAD,Cascade classifier load failed,FaceDetector,级联分类器加载失败
+OpenCV,WARN,CAMERA_FAIL,Camera index out of range,CameraManager,摄像头索引超出范围
+Flask,ERROR,ROUTE_NOT_FOUND,404 Not Found,RouteHandler,请求的路由不存在
+Flask,FATAL,TEMPLATE_ERROR,Template does not exist,TemplateRenderer,模板文件不存在
+Flask,WARN,DEBUG_MODE,Debug mode is enabled in production,ConfigValidator,生产环境启用了调试模式
+Django,ERROR,MIGRATION_FAIL,Migration conflict detected,MigrationRunner,数据库迁移冲突
+Django,FATAL,DB_INTEGRITY,Database integrity error,DatabaseManager,数据库完整性错误
+Django,WARN,SECRET_KEY,Weak secret key configuration,SecurityConfig,密钥配置过于简单
+FastAPI,ERROR,VALIDATION_ERROR,Request validation failed,RequestValidator,请求数据验证失败
+FastAPI,FATAL,DEPENDENCY_INJECT,Dependency injection failed,DependencyInjector,依赖注入失败
+FastAPI,WARN,RESPONSE_MODEL,Response model mismatch,ResponseValidator,响应模型不匹配
+Requests,ERROR,CONNECTION_ERROR,Max retries exceeded,ConnectionPool,连接重试次数超限
+Requests,FATAL,SSL_CERTIFICATE,SSL certificate verify failed,SSLVerifier,SSL证书验证失败
+Requests,WARN,TOO_MANY_REDIRECTS,Too many redirects,RedirectHandler,重定向次数过多
+SQLAlchemy,ERROR,DB_CONNECTION,Database connection lost,ConnectionPool,数据库连接丢失
+SQLAlchemy,FATAL,DECLARATIVE_BASE,Base class conflict,ORMConfig,声明式基类冲突
+SQLAlchemy,WARN,LAZY_LOAD,Lazy load performance warning,LazyLoader,懒加载可能导致性能问题
+Psycopg2,ERROR,INTEGRITY_ERROR,Duplicate key value violates constraint,PostgresAdapter,违反唯一约束
+Psycopg2,FATAL,ADAPTER_FAIL,Adaptation of Python type failed,TypeAdapter,Python类型适配失败
+Psycopg2,WARN,TRANSACTION_STATE,Unexpected transaction state,TransactionManager,事务状态异常
+Redis,ERROR,CONNECTION_REFUSED,Connection refused,RedisClient,Redis服务器拒绝连接
+Redis,FATAL,MEMORY_OVERFLOW,OOM command not allowed,MemoryManager,内存溢出，命令不被允许
+Redis,WARN,KEY_EXPIRED,Trying to access expired key,KeyManager,访问已过期的键
+Celery,ERROR,TASK_REJECTED,Task rejected by worker,TaskDispatcher,任务被工作节点拒绝
+Celery,FATAL,BROKER_CONNECTION,Cannot connect to broker,MessageBroker,无法连接到消息代理
+Celery,WARN,TASK_QUEUE_FULL,Task queue is full,QueueManager,任务队列已满
+PyTest,ERROR,FIXTURE_SCOPE,Fixture scope mismatch,FixtureManager,测试夹具作用域不匹配
+PyTest,FATAL,PLUGIN_LOAD,Plugin loading failed,PluginLoader,插件加载失败
+PyTest,WARN,DEPRECATION,PytestDeprecationWarning,Compatibility,使用了已弃用的pytest功能
+Logging,ERROR,HANDLER_CONFIG,Handler configuration error,LogConfig,日志处理器配置错误
+Logging,FATAL,ROTATION_FAIL,Log rotation failed,FileRotator,日志轮转失败
+Logging,WARN,FORMAT_MISMATCH,Log format mismatch,Formatter,日志格式不匹配
+Asyncio,ERROR,TIMEOUT_ERROR,Timeout error in coroutine,AsyncManager,协程执行超时
+Asyncio,FATAL,EVENT_LOOP,Event loop is closed,EventLoop,事件循环已关闭
+Asyncio,WARN,UNCLOSED_TRANSPORT,Unclosed transport detected,ResourceManager,未关闭的传输对象
+Multiprocessing,ERROR,PICKLE_ERROR,Cannot pickle object,ProcessSerializer,对象无法被序列化
+Multiprocessing,FATAL,DAEMON_EXIT,Daemon process exited unexpectedly,ProcessManager,守护进程异常退出
+Multiprocessing,WARN,RESOURCE_LEAK,Potential resource leak in pool,PoolManager,进程池可能存在资源泄漏
+Threading,ERROR,DEADLOCK_DETECTED,Deadlock detected,ThreadManager,检测到线程死锁
+Threading,FATAL,THREAD_EXCEPTION,Unhandled exception in thread,ExceptionHandler,线程中未处理的异常
+Threading,WARN,THREAD_LEAK,Thread not properly joined,ThreadMonitor,线程未正确回收
+Socket,ERROR,CONNECTION_RESET,Connection reset by peer,NetworkHandler,连接被对端重置
+Socket,FATAL,BIND_FAIL,Cannot bind to address,SocketBinder,无法绑定到指定地址
+Socket,WARN,BUFFER_OVERFLOW,Socket buffer overflow,BufferManager,套接字缓冲区溢出
+Scipy,ERROR,OPTIMIZE_FAIL,Optimization algorithm failed,Optimizer,优化算法失败
+Scipy,FATAL,LINEAR_ALGEBRA,Matrix is ill-conditioned,LinearSolver,矩阵病态条件数过大
+Scipy,WARN,INTEGRATION_WARNING,Integration tolerance not reached,Integrator,积分容差未达到
+Plotly,ERROR,LAYOUT_ERROR,Invalid layout configuration,LayoutValidator,图表布局配置无效
+Plotly,FATAL,RENDER_FAIL,Plot rendering failed,PlotRenderer,图表渲染失败
+Plotly,WARN,TRACE_OVERFLOW,Too many traces in figure,TraceManager,图中轨迹数量过多
+BeautifulSoup,ERROR,PARSER_ERROR,Parser error in HTML parsing,HTMLParser,HTML解析器错误
+BeautifulSoup,WARN,ENCODING_GUESS,Encoding detection may be inaccurate,EncodingDetector,编码检测可能不准确
+Pillow,ERROR,IMAGE_FORMAT,Unsupported image format,ImageDecoder,不支持的图像格式
+Pillow,FATAL,DECODE_ERROR,Cannot decode image data,ImageProcessor,图像数据解码失败
+Pillow,WARN,IMAGE_SIZE,Image size exceeds limit,ImageValidator,图像尺寸超出限制
+Jinja2,ERROR,TEMPLATE_SYNTAX,Template syntax error,TemplateParser,模板语法错误
+Jinja2,FATAL,EXTENSION_LOAD,Extension loading failed,ExtensionLoader,扩展加载失败
+Jinja2,WARN,UNDEFINED_VARIABLE,Undefined variable used,VariableResolver,使用了未定义的变量
+PyMySQL,ERROR,INTERFACE_ERROR,Interface error,DBInterface,数据库接口错误
+PyMySQL,FATAL,OPERATIONAL_ERROR,MySQL server has gone away,ConnectionMonitor,MySQL服务器连接断开
+PyMySQL,WARN,WARNING,MySQL warning raised,WarningHandler,MySQL警告
+SQLite3,ERROR,INTEGRITY_ERROR,UNIQUE constraint failed,ConstraintValidator,违反唯一约束
+SQLite3,FATAL,DATABASE_LOCKED,Database is locked,LockManager,数据库被锁定
+SQLite3,WARN,ISOLATION_LEVEL,Isolation level warning,TransactionHandler,隔离级别警告
+Pydantic,ERROR,VALIDATION_ERROR,Field required,ModelValidator,字段验证失败
+Pydantic,FATAL,SERIALIZATION,Serialization failed,Serializer,序列化失败
+Pydantic,WARN,FIELD_DEPRECATED,Field is deprecated,FieldValidator,字段已弃用
+Aiohttp,ERROR,CLIENT_ERROR,Client connection error,HTTPClient,客户端连接错误
+Aiohttp,FATAL,SERVER_DISCONNECT,Server disconnected,ServerHandler,服务器断开连接
+Aiohttp,WARN,UNVERIFIED_SSL,Unverified SSL context,SSLConfig,未经验证的SSL上下文
+Click,ERROR,OPTION_ERROR,Option validation failed,OptionValidator,命令行选项验证失败
+Click,FATAL,COMMAND_NOT_FOUND,Command not found,CommandLoader,命令未找到
+Click,WARN,CONTEXT_MISSING,Context object missing,ContextManager,上下文对象缺失
+Werkzeug,ERROR,REQUEST_ENTITY_TOO_LARGE,Request entity too large,RequestLimiter,请求实体过大
+Werkzeug,FATAL,ROUTING_ERROR,Routing build error,URLRouter,路由构建错误
+Werkzeug,WARN,SECURITY_WARNING,Security related warning,SecurityManager,安全相关警告
+PySpark,ERROR,OUT_OF_MEMORY,Java heap space,MemoryManager,Spark作业内存不足
+PySpark,FATAL,EXECUTOR_LOST,Executor lost during task,ClusterManager,执行器在任务执行期间丢失
+PySpark,WARN,DATA_SKEW,Data skew detected in partition,DataBalancer,数据分区存在倾斜
+Keras,ERROR,MODEL_COMPILE,Loss function not compatible,ModelCompiler,损失函数与模型不兼容
+Keras,FATAL,CALLBACK_FAIL,Early stopping callback failed,CallbackManager,早停回调函数执行失败
+Keras,WARN,UNINITIALIZED_WEIGHTS,Weights not initialized,WeightInitializer,模型权重未初始化
+NLTK,ERROR,CORPUS_NOT_FOUND,Corpus 'brown' not found,CorpusLoader,语料库不存在
+NLTK,FATAL,TOKENIZE_FAIL,Tokenization failed,Tokenizer,文本分词失败
+NLTK,WARN,STOPWORDS_MISSING,Stopwords not available for language,StopwordManager,指定语言的停用词不存在
+SpaCy,ERROR,MODEL_LOAD,Cannot load model 'en_core_web_sm',ModelLoader,模型加载失败
+SpaCy,FATAL,PIPELINE_FAIL,Pipeline component failed,PipelineExecutor,处理管道组件失败
+SpaCy,WARN,LANGUAGE_DETECT,Language detection uncertain,LanguageDetector,语言检测结果不确定
+Gensim,ERROR,WORD2VEC_FAIL,Word2Vec training failed,WordEmbeddingTrainer,Word2Vec训练失败
+Gensim,FATAL,LDA_MODEL,LDA model inference failed,TopicModel,主题模型推断失败
+Gensim,WARN,VOCAB_TRUNC,Vocabulary truncated due to size,VocabularyBuilder,词汇表因大小限制被截断
+Streamlit,ERROR,WIDGET_STATE,Widget state corrupted,WidgetManager,组件状态损坏
+Streamlit,FATAL,SESSION_STATE,Session state lost,SessionManager,会话状态丢失
+Streamlit,WARN,CACHE_MISS,Cache miss for expensive function,CacheManager,缓存未命中导致函数重新执行
+Dash,ERROR,CALLBACK_CONTEXT,Callback context missing,CallbackHandler,回调上下文缺失
+Dash,FATAL,LAYOUT_RENDER,Layout rendering timeout,LayoutRenderer,布局渲染超时
+Dash,WARN,ASSET_LOAD,Asset loading slow,AssetLoader,资源加载缓慢
+Plotly-Dash,ERROR,GRAPH_UPDATE,Graph update failed,GraphUpdater,图表更新失败
+Plotly-Dash,FATAL,COMPONENT_PROPS,Component properties invalid,ComponentValidator,组件属性无效
+Plotly-Dash,WARN,DEPENDENCY_CYCLE,Dependency cycle detected,DependencyAnalyzer,检测到依赖循环
+Tornado,ERROR,IOLOOP_BLOCK,IOLoop already running,AsyncIOManager,IOLoop已在运行
+Tornado,FATAL,WEBSOCKET_CLOSE,WebSocket closed unexpectedly,WebSocketHandler,WebSocket意外关闭
+Tornado,WARN,REQUEST_TIMEOUT,Request handling timeout,RequestHandler,请求处理超时
+Sanic,ERROR,BLUEPRINT_FAIL,Blueprint registration failed,BlueprintRegistrar,蓝图注册失败
+Sanic,FATAL,MIDDLEWARE_LOOP,Middleware loop detected,MiddlewareManager,中间件循环
+Sanic,WARN,ROUTE_CONFLICT,Route conflict detected,RouteResolver,路由冲突
+Flask-SQLAlchemy,ERROR,DB_SESSION,Database session expired,SessionManager,数据库会话过期
+Flask-SQLAlchemy,FATAL,COMMIT_FAIL,Commit failed due to constraint,TransactionManager,提交违反约束
+Flask-SQLAlchemy,WARN,QUERY_PERFORMANCE,Query performance issue,QueryOptimizer,查询性能问题
+Django-REST,ERROR,SERIALIZER_FIELD,Serializer field validation,SerializerValidator,序列化器字段验证失败
+Django-REST,FATAL,VIEWSET_ACTION,ViewSet action not found,ViewSetRouter,ViewSet操作不存在
+Django-REST,WARN,PAGINATION_SIZE,Pagination size too large,Paginator,分页大小过大
+DRF,ERROR,PERMISSION_DENIED,Permission denied,PermissionChecker,权限不足
+DRF,FATAL,AUTHENTICATION,Authentication failed,AuthManager,认证失败
+DRF,WARN,THROTTLE_LIMIT,Request throttled,ThrottleManager,请求被限流
+Marshmallow,ERROR,SCHEMA_LOAD,Schema loading failed,SchemaLoader,模式加载失败
+Marshmallow,FATAL,DESERIALIZE_FAIL,Deserialization failed,Deserializer,反序列化失败
+Marshmallow,WARN,FIELD_VALIDATION,Field validation warning,FieldValidator,字段验证警告
+PyYAML,ERROR,YAML_SYNTAX,YAML syntax error,YAMLParser,YAML语法错误
+PyYAML,FATAL,ANCHOR_REF,Anchor reference not found,AnchorResolver,锚点引用不存在
+PyYAML,WARN,DEPRECATED_TAG,Deprecated YAML tag used,YAMLValidator,使用了已弃用的YAML标签
+Paramiko,ERROR,SSH_AUTH,SSH authentication failed,SSHAuthenticator,SSH认证失败
+Paramiko,FATAL,CHANNEL_FAIL,SSH channel creation failed,ChannelManager,SSH通道创建失败
+Paramiko,WARN,HOST_KEY,Host key verification warning,HostKeyVerifier,主机密钥验证警告
+Fabric,ERROR,DEPLOY_FAIL,Deployment script failed,DeploymentManager,部署脚本执行失败
+Fabric,FATAL,CONNECTION_LOST,Connection lost during transfer,ConnectionManager,传输过程中连接丢失
+Fabric,WARN,SUDO_PASSWORD,Sudo password required,SudoHandler,需要sudo密码
+Invoke,ERROR,TASK_EXECUTE,Task execution failed,TaskExecutor,任务执行失败
+Invoke,FATAL,CONTEXT_MISS,Context missing for task,ContextManager,任务上下文缺失
+Invoke,WARN,ARGUMENT_TYPE,Argument type mismatch,ArgumentParser,参数类型不匹配
+Prefect,ERROR,FLOW_REGISTER,Flow registration failed,FlowRegistrar,流程注册失败
+Prefect,FATAL,TASK_RUN,Task run failed,TaskRunner,任务运行失败
+Prefect,WARN,RETRY_EXHAUSTED,Retry attempts exhausted,RetryManager,重试次数用尽
+Airflow,ERROR,DAG_PARSE,DAG parsing failed,DAGParser,DAG解析失败
+Airflow,FATAL,SCHEDULER_HANG,Scheduler hang detected,SchedulerMonitor,检测到调度器挂起
+Airflow,WARN,POOL_SLOT,No available pool slots,PoolManager,无可用池插槽
+Apache-Beam,ERROR,PIPELINE_FAIL,Pipeline execution failed,PipelineRunner,管道执行失败
+Apache-Beam,FATAL,TRANSFORM_ERROR,Transform execution error,TransformExecutor,转换执行错误
+Apache-Beam,WARN,SIDE_INPUT,Side input too large,SideInputManager,侧输入数据过大
+Dask,ERROR,WORKER_LOST,Worker process lost,WorkerManager,工作进程丢失
+Dask,FATAL,SCHEDULER_OVERLOAD,Scheduler overloaded,SchedulerManager,调度器过载
+Dask,WARN,MEMORY_SPIL,Memory spilling to disk,MemoryManager,内存溢出到磁盘
+Ray,ERROR,ACTOR_FAIL,Actor creation failed,ActorManager,Actor创建失败
+Ray,FATAL,OBJECT_STORE,Object store full,ObjectStoreManager,对象存储已满
+Ray,WARN,RESOURCE_OVERSUB,Resource oversubscription,ResourceManager,资源超额分配
+MLflow,ERROR,EXPERIMENT_CREATE,Experiment creation failed,ExperimentManager,实验创建失败
+MLflow,FATAL,MODEL_REGISTER,Model registration failed,ModelRegistry,模型注册失败
+MLflow,WARN,ARTIFACT_SIZE,Artifact size too large,ArtifactStore,产物大小过大
+XGBoost,ERROR,BOOSTER_PARAM,Booster parameter invalid,ParameterValidator,Booster参数无效
+XGBoost,FATAL,DMATRIX_FAIL,DMatrix creation failed,DataConverter,DMatrix创建失败
+XGBoost,WARN,EARLY_STOP,Early stopping too aggressive,EarlyStopper,早停过于激进
+LightGBM,ERROR,DATASET_PARAM,Dataset parameter error,DatasetBuilder,数据集参数错误
+LightGBM,FATAL,FEATURE_NAME,Feature name mismatch,FeatureValidator,特征名称不匹配
+LightGBM,WARN,CATEGORICAL_ENCODE,Categorical encoding warning,CategoricalEncoder,分类编码警告
+CatBoost,ERROR,POOL_CREATE,Pool creation failed,PoolBuilder,Pool创建失败
+CatBoost,FATAL,LOSS_FUNCTION,Loss function not supported,LossValidator,损失函数不支持
+CatBoost,WARN,OVERFIT_DETECT,Overfitting detected,OverfitDetector,检测到过拟合
+FastText,ERROR,SUPERVISED_FAIL,Supervised training failed,SupervisedTrainer,监督训练失败
+FastText,FATAL,WORD_VECTOR,Word vector generation failed,VectorGenerator,词向量生成失败
+FastText,WARN,MIN_COUNT,Word count below threshold,VocabularyFilter,词频低于阈值
+HuggingFace,ERROR,TOKENIZER_LOAD,Tokenizer loading failed,TokenizerLoader,分词器加载失败
+HuggingFace,FATAL,MODEL_HUB,Model hub download failed,ModelDownloader,模型中心下载失败
+HuggingFace,WARN,SEQUENCE_LENGTH,Sequence length exceeded,SequenceTruncator,序列长度超限
+Transformers,ERROR,ATTENTION_MASK,Attention mask invalid,AttentionValidator,注意力掩码无效
+Transformers,FATAL,POSITION_EMBED,Position embedding error,EmbeddingManager,位置嵌入错误
+Transformers,WARN,PRETRAINED_LOAD,Pretrained model loading warning,ModelLoader,预训练模型加载警告
+Datasets,ERROR,DATASET_LOAD,Dataset loading failed,DatasetLoader,数据集加载失败
+Datasets,FATAL,SPLIT_MISSING,Split not found,SplitManager,数据分割不存在
+Datasets,WARN,CACHE_DIR,Cache directory full,CacheManager,缓存目录已满
+Sentence-Transformers,ERROR,EMBEDDING_FAIL,Embedding generation failed,EmbeddingGenerator,嵌入生成失败
+Sentence-Transformers,FATAL,MODEL_ARCH,Model architecture mismatch,ArchitectureValidator,模型架构不匹配
+Sentence-Transformers,WARN,NORMALIZATION,Embedding not normalized,NormalizationChecker,嵌入未归一化
+LangChain,ERROR,CHAIN_EXECUTE,Chain execution failed,ChainExecutor,链执行失败
+LangChain,FATAL,PROMPT_TEMPLATE,Prompt template error,TemplateManager,提示模板错误
+LangChain,WARN,MEMORY_FULL,Memory buffer full,MemoryManager,记忆缓冲区已满
+OpenAI,ERROR,API_QUOTA,API quota exceeded,QuotaManager,API配额超限
+OpenAI,FATAL,RATE_LIMIT,Rate limit exceeded,RateLimiter,速率限制超限
+OpenAI,WARN,MODEL_DEPRECATED,Model deprecated,ModelManager,模型已弃用
+Pinecone,ERROR,INDEX_UPSERT,Upsert operation failed,IndexManager,索引更新失败
+Pinecone,FATAL,CONNECTION_POOL,Connection pool exhausted,ConnectionPool,连接池耗尽
+Pinecone,WARN,VECTOR_DIM,Vector dimension mismatch,DimensionValidator,向量维度不匹配
+Chroma,ERROR,COLLECTION_CREATE,Collection creation failed,CollectionManager,集合创建失败
+Chroma,FATAL,EMBEDDING_FUNC,Embedding function failed,EmbeddingFunction,嵌入函数失败
+Chroma,WARN,QUERY_PARAM,Query parameter invalid,QueryValidator,查询参数无效
+Polars,ERROR,COLUMN_NOT_FOUND,Column 'user_id' not found,DataFrameValidator,数据框中不存在指定列
+Polars,FATAL,LAZY_FRAME,LazyFrame collection failed,LazyExecutor,延迟执行框架收集失败
+Polars,WARN,DATA_TYPE,Dtype conversion may lose precision,TypeConverter,数据类型转换可能丢失精度
+DuckDB,ERROR,PARQUET_READ,Parquet file read failure,ParquetReader,Parquet文件读取失败
+DuckDB,FATAL,QUERY_PLAN,Query planning failed,QueryPlanner,查询计划生成失败
+DuckDB,WARN,INDEX_MISSING,Index not used in query,QueryOptimizer,查询未使用索引
+Vaex,ERROR,EXPRESSION_EVAL,Expression evaluation failed,ExpressionEvaluator,表达式求值失败
+Vaex,FATAL,VIRTUAL_COLUMN,Virtual column creation failed,VirtualColumnManager,虚拟列创建失败
+Vaex,WARN,MEMORY_MAPPING,Memory mapping inefficient,MemoryMapper,内存映射效率低下
+Modin,ERROR,PANDAS_API,Pandas API compatibility issue,PandasAdapter,Pandas API兼容性问题
+Modin,FATAL,DISTRIBUTED_OPS,Distributed operation failed,DistributedEngine,分布式操作失败
+Modin,WARN,RAY_CLUSTER,Ray cluster not optimized,ClusterOptimizer,Ray集群未优化
+Cython,ERROR,COMPILE_ERROR,Cython compilation failed,CythonCompiler,Cython编译失败
+Cython,FATAL,TYPE_DECLARATION,Type declaration error,TypeChecker,类型声明错误
+Cython,WARN,PURE_PYTHON,Pure Python fallback used,PerformanceMonitor,回退到纯Python模式
+Numba,ERROR,JIT_COMPILE,Numba JIT compilation failed,JITCompiler,即时编译失败
+Numba,FATAL,NPY_RULES,NumPy rules not supported,NumPyCompatibility,NumPy规则不支持
+Numba,WARN,OBJECT_MODE,Object mode performance hit,PerformanceAdvisor,对象模式性能下降
+Cupy,ERROR,CUDA_DRIVER,CUDA driver version mismatch,CUDAValidator,CUDA驱动版本不匹配
+Cupy,FATAL,KERNEL_LAUNCH,CUDA kernel launch failure,KernelLauncher,CUDA内核启动失败
+Cupy,WARN,MEMORY_POOL,Memory pool allocation slow,MemoryPoolManager,内存池分配缓慢
+Jax,ERROR,GRAD_COMPUTE,Gradient computation failed,GradientComputer,梯度计算失败
+Jax,FATAL,XLA_COMPILE,XLA compilation failed,XLACompiler,XLA编译失败
+Jax,WARN,JIT_TRACE,JIT tracing warning,Tracer,JIT跟踪警告
+SymPy,ERROR,SYMBOLIC_SOLVE,Symbolic solving failed,SymbolicSolver,符号求解失败
+SymPy,FATAL,SIMPLIFICATION,Expression simplification failed,Simplifier,表达式简化失败
+SymPy,WARN,ASSUMPTION_VIOLATION,Assumption violation detected,AssumptionChecker,假设条件违反
+NetworkX,ERROR,GRAPH_CYCLE,Graph cycle detection failed,CycleDetector,图循环检测失败
+NetworkX,FATAL,ALGORITHM_FAIL,Graph algorithm failed,AlgorithmExecutor,图算法执行失败
+NetworkX,WARN,PERFORMANCE_LARGE,Performance issue with large graph,PerformanceMonitor,大图性能问题
+PyGraphviz,ERROR,DOT_PARSE,DOT language parsing failed,DOTParser,DOT语言解析失败
+PyGraphviz,FATAL,RENDER_FORMAT,Render format not supported,Renderer,渲染格式不支持
+PyGraphviz,WARN,LAYOUT_ALGORITHM,Layout algorithm suboptimal,LayoutOptimizer,布局算法非最优
+Scrapy,ERROR,SPIDER_FAIL,Spider execution failed,SpiderRunner,爬虫执行失败
+Scrapy,FATAL,DOWNLOADER_MIDDLEWARE,Downloader middleware error,DownloaderManager,下载中间件错误
+Scrapy,WARN,ROBOTSTXT,Robots.txt compliance warning,RobotsValidator,Robots.txt合规警告
+Selenium,ERROR,WEBDRIVER_FAIL,WebDriver initialization failed,WebDriverManager,WebDriver初始化失败
+Selenium,FATAL,ELEMENT_NOT_FOUND,Element not found in timeout,ElementLocator,超时内未找到元素
+Selenium,WARN,IMPLICIT_WAIT,Implicit wait may slow tests,WaitStrategy,隐式等待可能减慢测试
+Playwright,ERROR,BROWSER_CONTEXT,Browser context creation failed,BrowserManager,浏览器上下文创建失败
+Playwright,FATAL,PAGE_NAVIGATE,Page navigation timeout,PageNavigator,页面导航超时
+Playwright,WARN,SELECTOR_INVALID,CSS selector invalid,SelectorValidator,CSS选择器无效
+Locust,ERROR,USER_SPAWN,User spawn rate too high,UserSpawner,用户生成速率过高
+Locust,FATAL,MASTER_WORKER,Master-worker communication failed,DistributedCoordinator,主从通信失败
+Locust,WARN,RPS_LIMIT,RPS limit approaching,LoadMonitor,RPS接近限制
+Faker,ERROR,LOCALE_DATA,Locale data not found,LocaleManager,本地化数据不存在
+Faker,FATAL,PROVIDER_LOAD,Provider loading failed,ProviderLoader,提供者加载失败
+Faker,WARN,DATA_QUALITY,Generated data quality issue,DataQualityChecker,生成数据质量问题
+Great-Expectations,ERROR,VALIDATION_FAIL,Data validation failed,DataValidator,数据验证失败
+Great-Expectations,FATAL,CHECKPOINT_SAVE,Checkpoint save failed,CheckpointManager,检查点保存失败
+Great-Expectations,WARN,EXPECTATION_CONFIG,Expectation configuration warning,ConfigValidator,期望配置警告
+Kedro,ERROR,PIPELINE_RUN,Pipeline run failed,PipelineRunner,管道运行失败
+Kedro,FATAL,CATALOG_LOAD,Catalog loading failed,CatalogLoader,目录加载失败
+Kedro,WARN,DATA_VERSIONING,Data versioning issue,VersionManager,数据版本控制问题
+Luigi,ERROR,TASK_DEPENDENCY,Task dependency resolution failed,DependencyResolver,任务依赖解析失败
+Luigi,FATAL,WORKER_POOL,Worker pool exhausted,WorkerManager,工作池耗尽
+Luigi,WARN,SCHEDULER_BACKLOG,Scheduler backlog large,SchedulerMonitor,调度器积压严重
+Poetry,ERROR,DEPENDENCY_RESOLVE,Dependency resolution failed,DependencyResolver,依赖解析失败
+Poetry,FATAL,LOCK_FILE,Lock file corrupted,LockFileManager,锁定文件损坏
+Poetry,WARN,VERSION_CONFLICT,Version conflict detected,VersionChecker,检测到版本冲突
+Pipenv,ERROR,VIRTUALENV_FAIL,Virtual environment creation failed,VirtualEnvManager,虚拟环境创建失败
+Pipenv,FATAL,PIPFILE_LOCK,Pipfile.lock out of sync,LockFileValidator,Pipfile.lock不同步
+Pipenv,WARN,SHELL_ACTIVATE,Shell activation warning,ShellManager,Shell激活警告
+Conda,ERROR,ENVIRONMENT_CREATE,Environment creation failed,EnvironmentManager,环境创建失败
+Conda,FATAL,SOLVER_ERROR,Dependency solver error,DependencySolver,依赖求解器错误
+Conda,WARN,CHANNEL_PRIORITY,Channel priority conflict,ChannelManager,通道优先级冲突
+Pip-tools,ERROR,REQUIREMENTS_COMPILE,Requirements compilation failed,Compiler,需求文件编译失败
+Pip-tools,FATAL,VERSION_PIN,Version pinning failed,VersionPinner,版本锁定失败
+Pip-tools,WARN,OUTDATED_PACKAGE,Outdated package detected,PackageChecker,检测到过时包
+Black,ERROR,CODE_FORMAT,Code formatting failed,Formatter,代码格式化失败
+Black,FATAL,SYNTAX_ERROR,Syntax error in source code,SyntaxChecker,源代码语法错误
+Black,WARN,LINE_LENGTH,Line length exceeds limit,LineLengthChecker,行长度超限
+Flake8,ERROR,LINT_FAIL,Linting failed,Linter,代码检查失败
+Flake8,FATAL,PLUGIN_LOAD,Plugin loading error,PluginLoader,插件加载错误
+Flake8,WARN,STYLE_VIOLATION,Style violation detected,StyleChecker,检测到风格违规
+Pylint,ERROR,STATIC_ANALYSIS,Static analysis failed,StaticAnalyzer,静态分析失败
+Pylint,FATAL,AST_PARSE,AST parsing failed,ASTParser,AST解析失败
+Pylint,WARN,CODE_COMPLEXITY,Code complexity high,ComplexityAnalyzer,代码复杂度高
+MyPy,ERROR,TYPE_CHECK,Type checking failed,TypeChecker,类型检查失败
+MyPy,FATAL,STUB_MISSING,Stub file missing,StubManager,存根文件缺失
+MyPy,WARN,IMPLICIT_ANY,Implicit Any used,TypeInferencer,使用了隐式Any类型
+Bandit,ERROR,SECURITY_SCAN,Security scan failed,SecurityScanner,安全扫描失败
+Bandit,FATAL,AST_BUILD,AST building failed,ASTBuilder,AST构建失败
+Bandit,WARN,SECURITY_ISSUE,Security issue detected,SecurityAnalyzer,检测到安全问题
+Safety,ERROR,VULNERABILITY_CHECK,Vulnerability check failed,VulnerabilityScanner,漏洞检查失败
+Safety,FATAL,DB_UPDATE,Vulnerability database update failed,DatabaseUpdater,漏洞数据库更新失败
+Safety,WARN,UNPATCHED_VULN,Unpatched vulnerability found,VulnerabilityReporter,发现未修补漏洞
+Pydocstyle,ERROR,DOC_CHECK,Documentation check failed,DocumentationChecker,文档检查失败
+Pydocstyle,FATAL,PARSE_ERROR,Docstring parsing error,DocstringParser,文档字符串解析错误
+Pydocstyle,WARN,STYLE_ISSUE,Documentation style issue,StyleChecker,文档风格问题
+Coverage.py,ERROR,COVERAGE_RUN,Coverage run failed,CoverageRunner,覆盖率运行失败
+Coverage.py,FATAL,DATA_SAVE,Coverage data save failed,DataSaver,覆盖率数据保存失败
+Coverage.py,WARN,LOW_COVERAGE,Low coverage detected,CoverageAnalyzer,检测到低覆盖率
+Pytest-cov,ERROR,COVERAGE_MERGE,Coverage merge failed,CoverageMerger,覆盖率合并失败
+Pytest-cov,FATAL,REPORT_GEN,Report generation failed,ReportGenerator,报告生成失败
+Pytest-cov,WARN,THRESHOLD_FAIL,Coverage threshold not met,ThresholdChecker,覆盖率阈值未达到
+Hypothesis,ERROR,SHRINK_FAIL,Example shrinking failed,ExampleShrinker,示例收缩失败
+Hypothesis,FATAL,STRATEGY_FAIL,Strategy generation failed,StrategyGenerator,策略生成失败
+Hypothesis,WARN,FLAKY_TEST,Flaky test detected,FlakyDetector,检测到不稳定测试
+Tox,ERROR,ENV_CREATE,Environment creation failed,EnvironmentCreator,环境创建失败
+Tox,FATAL,COMMAND_EXEC,Command execution failed,CommandExecutor,命令执行失败
+Tox,WARN,DEPENDENCY_MISSING,Dependency missing in env,DependencyChecker,环境中依赖缺失
+Docker-py,ERROR,IMAGE_BUILD,Image build failed,ImageBuilder,镜像构建失败
+Docker-py,FATAL,CONTAINER_RUN,Container run failed,ContainerRunner,容器运行失败
+Docker-py,WARN,RESOURCE_LIMIT,Resource limit approaching,ResourceMonitor,资源限制接近
+Kubernetes-py,ERROR,POD_CREATE,Pod creation failed,PodManager,Pod创建失败
+Kubernetes-py,FATAL,API_SERVER,API server communication failed,APIClient,API服务器通信失败
+Kubernetes-py,WARN,RESOURCE_QUOTA,Resource quota exceeded,ResourceQuotaManager,资源配额超限
+Boto3,ERROR,AWS_CREDENTIAL,AWS credential invalid,CredentialValidator,AWS凭据无效
+Boto3,FATAL,SERVICE_ERROR,AWS service error,ServiceClient,AWS服务错误
+Boto3,WARN,RATE_LIMIT,API rate limit approaching,RateLimitMonitor,API速率限制接近

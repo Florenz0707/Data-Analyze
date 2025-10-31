@@ -1,0 +1,366 @@
+服务,级别,错误,消息,组件,原因
+bash,ERROR,COMMAND_NOT_FOUND,"bash: somecommand: command not found",,用户输入了不存在的命令
+ls,ERROR,PERMISSION_DENIED,"ls: cannot open directory '/root': Permission denied",,用户没有权限访问该目录
+cp,ERROR,FILE_NOT_FOUND,"cp: cannot stat 'nonexistent.txt': No such file or directory",,源文件不存在
+rm,ERROR,PERMISSION_DENIED,"rm: cannot remove 'protected.txt': Permission denied",,用户没有删除文件的权限
+git,ERROR,NOT_A_GIT_REPOSITORY,"fatal: not a git repository (or any of the parent directories): .git",,当前目录不是Git仓库
+ssh,ERROR,CONNECTION_REFUSED,"ssh: connect to host example.com port 22: Connection refused",,目标主机拒绝连接或SSH服务未运行
+tar,ERROR,INVALID_OPTION,"tar: invalid option -- 'z'",,使用了无效的选项
+chmod,ERROR,INVALID_MODE,"chmod: invalid mode: 'x'",,权限模式无效
+df,WARN,DISK_SPACE_LOW,"df: no space left on device",,磁盘空间不足
+grep,ERROR,FILE_NOT_FOUND,"grep: nonexistent.txt: No such file or directory",,指定文件不存在
+sudo,ERROR,PERMISSION_DENIED,"sudo: user is not in the sudoers file. This incident will be reported.",,用户没有sudo权限
+mv,ERROR,FILE_EXISTS,"mv: cannot move 'file1' to 'file2': File exists",,目标文件已存在
+cat,ERROR,FILE_NOT_FOUND,"cat: nonexistent.txt: No such file or directory",,文件不存在
+ps,ERROR,INVALID_OPTION,"ps: invalid option -- 'x'",,选项无效
+kill,ERROR,INVALID_SIGNAL,"kill: invalid signal specification",,信号指定无效
+find,ERROR,PERMISSION_DENIED,"find: ‘/root’: Permission denied",,没有权限搜索该目录
+du,ERROR,PERMISSION_DENIED,"du: cannot read directory '/root': Permission denied",,没有权限读取目录
+ssh-keygen,WARN,FILE_EXISTS,"ssh-keygen: /home/user/.ssh/id_rsa already exists.",,密钥文件已存在
+curl,ERROR,CONNECTION_FAILED,"curl: (7) Failed to connect to example.com port 80: Connection refused",,无法连接到目标主机
+wget,ERROR,HOST_NOT_FOUND,"wget: unable to resolve host address 'nonexistent.com'",,域名解析失败
+apt,ERROR,PKG_NOT_FOUND,"E: Unable to locate package nonexistent-pkg",,软件包名称错误或不在软件源中
+systemctl,ERROR,SERVICE_NOT_FOUND,"Failed to start myservice.service: Unit not found.",,服务名称错误或服务未安装
+docker,ERROR,IMAGE_NOT_FOUND,"Unable to find image 'nonexistent:latest' locally",,Docker镜像不存在于本地或仓库
+nginx,ERROR,CONFIG_TEST_FAIL,"nginx: configuration file test failed",,nginx配置文件语法错误
+python,ERROR,MODULE_NOT_FOUND,"ModuleNotFoundError: No module named 'nonexistent'",,Python模块未安装或名称错误
+mysql,ERROR,ACCESS_DENIED,"ERROR 1045 (28000): Access denied for user 'root'@'localhost'",,用户名或密码错误
+ssh,ERROR,HOST_KEY_CHANGED,"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!",,服务器密钥已变更，可能存在安全风险
+git,ERROR,BRANCH_NOT_FOUND,"error: pathspec 'nonexistent-branch' did not match any file(s) known to git",,分支名称错误或分支不存在
+tar,ERROR,ARCHIVE_CORRUPT,"tar: This does not look like a tar archive",,文件不是有效的tar归档文件
+chown,ERROR,INVALID_USER,"chown: invalid user: 'nonexistentuser'",,指定的用户不存在
+crontab,ERROR,PERMISSION_DENIED,"crontab: installing new crontab: permission denied",,用户没有权限编辑crontab
+find,ERROR,INVALID_EXPR,"find: invalid expression; unknown primary or operator",,find命令表达式语法错误
+grep,ERROR,PATTERN_SYNTAX,"grep: invalid regular expression",,正则表达式语法错误
+sed,ERROR,COMMAND_SYNTAX,"sed: -e expression #1, char 5: unknown command",,sed命令语法错误
+awk,ERROR,SYNTAX_ERROR,"awk: syntax error at source line 1",,awk脚本语法错误
+rsync,ERROR,CONNECTION_FAILED,"rsync: connection unexpectedly closed",,远程连接意外中断
+scp,ERROR,FILE_NOT_FOUND,"scp: /path/to/nonexistent: No such file or directory",,远程文件不存在
+wget,ERROR,CERTIFICATE_VERIFY_FAILED,"SSL certificate problem: self signed certificate",,SSL证书验证失败
+curl,ERROR,TIMEOUT,"curl: (28) Connection timed out after 5000 milliseconds",,连接超时
+ping,ERROR,NAME_RESOLUTION_FAILED,"ping: unknown host nonexistent.com",,域名解析失败
+ip,ERROR,LINK_NOT_FOUND,"Error: cannot find device 'eth999'",,网络接口不存在
+iptables,ERROR,CHAIN_NOT_FOUND,"iptables: No chain/target/match by that name.",,防火墙链或目标不存在
+systemd,ERROR,DEPENDENCY_FAIL,"Job for network.service failed because a dependency was not satisfied.",,服务依赖项未满足
+journalctl,ERROR,NO_LOGS,"No journal files were found.",,系统日志文件不存在
+useradd,ERROR,USER_EXISTS,"useradd: user 'testuser' already exists",,用户已存在
+groupadd,ERROR,GROUP_EXISTS,"groupadd: group 'testgroup' already exists",,用户组已存在
+passwd,ERROR,PASSWORD_SHORT,"BAD PASSWORD: The password is shorter than 8 characters",,密码长度不足
+su,ERROR,AUTHENTICATION_FAILURE,"su: Authentication failure",,密码错误或用户不存在
+visudo,ERROR,SYNTAX_ERROR,">>> /etc/sudoers: syntax error near line 10",,sudoers文件语法错误
+mount,ERROR,MOUNT_POINT_NOT_FOUND,"mount: mount point /mnt/nonexistent does not exist",,挂载点目录不存在
+umount,ERROR,DEVICE_BUSY,"umount: /mnt/data: target is busy.",,设备正在使用中
+dd,ERROR,NO_SPACE,"dd: error writing 'out.img': No space left on device",,磁盘空间不足
+fdisk,ERROR,INVALID_PARTITION,"fdisk: invalid partition number: 99",,分区编号无效
+lsblk,ERROR,DEVICE_NOT_FOUND,"lsblk: unknown device: /dev/nonexistent",,设备不存在
+blkid,ERROR,NO_BLOCK,"blkid: /dev/sdx: not a block device",,不是块设备
+smartctl,ERROR,DEVICE_NOT_SUPPORTED,"smartctl: Device does not support SMART",,设备不支持SMART功能
+hdparm,ERROR,PERMISSION_DENIED,"hdparm: permission denied while getting current/settings",,权限不足
+lspci,ERROR,NO_PCI_DEVICES,"lspci: Unable to read any PCI devices",,没有PCI设备或权限不足
+lsusb,ERROR,NO_USB_DEVICES,"lsusb: Unable to read any USB devices",,没有USB设备或权限不足
+dmidecode,ERROR,NO_SMBIOS,"dmidecode: No SMBIOS nor DMI entry point found.",,系统不支持DMI
+top,ERROR,TERMINAL_NOT_SUPPORTED,"top: failed tty get",,终端类型不支持
+htop,ERROR,TERMINAL_TOO_SMALL,"htop: terminal too small",,终端窗口太小
+iotop,ERROR,NO_IO_DATA,"iotop: no I/O data to display",,没有I/O数据可显示
+nmap,ERROR,HOST_DOWN,"Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn",,主机可能已关闭或阻止ping探测
+tcpdump,ERROR,PERMISSION_DENIED,"tcpdump: eth0: You don't have permission to capture on that device",,没有权限捕获网络数据包
+netstat,ERROR,COMMAND_NOT_FOUND,"netstat: command not found",,命令未安装
+ss,ERROR,INVALID_OPTION,"ss: invalid option -- 'x'",,选项无效
+dig,ERROR,DNS_SERVER_FAILED,"dig: couldn't get address for 'example.com': not found",,DNS服务器查询失败
+nslookup,ERROR,SERVER_FAILED,"** server can't find example.com: NXDOMAIN",,DNS服务器返回域名不存在
+whois,ERROR,QUOTA_EXCEEDED,"Whois query quota exceeded. Please reduce the frequency of your requests.",,查询频率超限
+tree,ERROR,PERMISSION_DENIED,"tree: /root: Permission denied",,没有权限访问目录
+file,ERROR,CANNOT_OPEN,"file: cannot open `nonexistent' (No such file or directory)",,文件不存在
+stat,ERROR,FILE_NOT_FOUND,"stat: cannot stat 'nonexistent': No such file or directory",,文件不存在
+du,ERROR,PERMISSION_DENIED,"du: cannot read directory '/root': Permission denied",,没有权限读取目录
+df,ERROR,MOUNT_POINT_INVALID,"df: '/mnt/nonexistent': No such file or directory",,挂载点无效
+ln,ERROR,FILE_EXISTS,"ln: failed to create hard link 'link': File exists",,链接文件已存在
+readlink,ERROR,INVALID_LINK,"readlink: invalid option -- 'x'",,选项无效
+basename,ERROR,MISSING_OPERAND,"basename: missing operand",,缺少操作数
+dirname,ERROR,MISSING_OPERAND,"dirname: missing operand",,缺少操作数
+realpath,ERROR,FILE_NOT_FOUND,"realpath: nonexistent: No such file or directory",,文件不存在
+mktemp,ERROR,INVALID_TEMPLATE,"mktemp: too few X's in template",,模板中X字符不足
+tempfile,ERROR,PERMISSION_DENIED,"tempfile: cannot create temp file: Permission denied",,没有权限创建临时文件
+split,ERROR,INVALID_SIZE,"split: invalid number of bytes: 'abc'",,字节数格式无效
+csplit,ERROR,PATTERN_NOT_FOUND,"csplit: pattern not found",,模式未找到
+shuf,ERROR,INVALID_RANGE,"shuf: invalid range",,范围无效
+sort,ERROR,INVALID_OPTION,"sort: invalid option -- 'z'",,选项无效
+uniq,ERROR,INVALID_OPTION,"uniq: invalid option -- 'x'",,选项无效
+wc,ERROR,FILE_NOT_FOUND,"wc: nonexistent: No such file or directory",,文件不存在
+cut,ERROR,INVALID_FIELD,"cut: invalid field value",,字段值无效
+paste,ERROR,INVALID_DELIMITER,"paste: invalid delimiter",,分隔符无效
+join,ERROR,INVALID_FIELD,"join: invalid field number",,字段编号无效
+tr,ERROR,INVALID_RANGE,"tr: invalid range",,字符范围无效
+tee,ERROR,PERMISSION_DENIED,"tee: /root/output: Permission denied",,没有写入权限
+script,ERROR,TERMINAL_NOT_SUPPORTED,"script: cannot set script permission on /dev/pts/0",,终端不支持脚本记录
+time,ERROR,COMMAND_NOT_FOUND,"time: command not found",,命令不存在
+timeout,ERROR,INVALID_DURATION,"timeout: invalid time interval 'abc'",,时间间隔格式无效
+watch,ERROR,COMMAND_NOT_FOUND,"watch: command not found",,命令不存在
+xargs,ERROR,INVALID_OPTION,"xargs: invalid option -- 'z'",,选项无效
+parallel,ERROR,JOB_FAILED,"parallel: This job failed:",,并行作业执行失败
+nohup,ERROR,PERMISSION_DENIED,"nohup: ignoring input and appending output to 'nohup.out': Permission denied",,没有写入权限
+screen,ERROR,SOCKET_DIR_MISSING,"No Sockets found in /tmp/screens/S-username.",,screen套接字目录不存在
+tmux,ERROR,SESSION_NOT_FOUND,"session not found: 0",,会话不存在
+vim,ERROR,FILE_READ_ONLY,"E142: File not writable, '!'' to override",,文件只读，需要强制写入
+emacs,ERROR,CANNOT_LOAD_FILE,"Cannot open load file: No such file or directory, nonexistent",,无法加载文件
+nano,ERROR,PERMISSION_DENIED,"Error writing /root/file: Permission denied",,没有写入权限
+less,ERROR,FILE_NOT_FOUND,"nonexistent: No such file or directory",,文件不存在
+more,ERROR,FILE_NOT_FOUND,"nonexistent: No such file or directory",,文件不存在
+head,ERROR,INVALID_NUMBER,"head: invalid number of lines: 'abc'",,行数格式无效
+tail,ERROR,INVALID_OPTION,"tail: invalid option -- 'x'",,选项无效
+cat,ERROR,FILE_NOT_FOUND,"cat: nonexistent: No such file or directory",,文件不存在
+tac,ERROR,FILE_NOT_FOUND,"tac: nonexistent: No such file or directory",,文件不存在
+rev,ERROR,FILE_NOT_FOUND,"rev: cannot open 'nonexistent' for reading: No such file or directory",,文件不存在
+od,ERROR,INVALID_OPTION,"od: invalid option -- 'x'",,选项无效
+hexdump,ERROR,FILE_NOT_FOUND,"hexdump: nonexistent: No such file or directory",,文件不存在
+xxd,ERROR,INVALID_OPTION,"xxd: invalid option -- 'z'",,选项无效
+base64,ERROR,INVALID_OPTION,"base64: invalid option -- 'x'",,选项无效
+md5sum,ERROR,FILE_NOT_FOUND,"md5sum: nonexistent: No such file or directory",,文件不存在
+sha1sum,ERROR,FILE_NOT_FOUND,"sha1sum: nonexistent: No such file or directory",,文件不存在
+sha256sum,ERROR,FILE_NOT_FOUND,"sha256sum: nonexistent: No such file or directory",,文件不存在
+gpg,ERROR,KEY_NOT_FOUND,"gpg: no valid OpenPGP data found",,没有有效的OpenPGP数据
+openssl,ERROR,INVALID_COMMAND,"openssl:Error: 'nonexistent' is an invalid command.",,命令无效
+ssh-keygen,ERROR,PASSPHRASE_TOO_SHORT,"Passphrase too short",,密码短语太短
+ssh-copy-id,ERROR,AUTHENTICATION_FAILED,"Permission denied (publickey).",,公钥认证失败
+rsync,ERROR,PATH_NOT_FOUND,"rsync: change_dir ""/nonexistent"" failed: No such file or directory",,路径不存在
+yum,ERROR,PKG_NOT_FOUND,"No package nonexistent available.",,软件包在YUM仓库中不存在
+dnf,ERROR,REPO_NOT_AVAILABLE,"Failed to synchronize cache for repo 'nonexistent'",,软件仓库不可用
+pacman,ERROR,PACKAGE_NOT_FOUND,"error: target not found: nonexistent-pkg",,Arch Linux软件包不存在
+zypper,ERROR,REPO_FAILURE,"Repository 'nonexistent' not found.",,openSUSE软件仓库不存在
+snap,ERROR,SNAP_NOT_FOUND,"error: snap 'nonexistent' not found",,Snap软件包不存在
+flatpak,ERROR,REMOTE_NOT_FOUND,"error: remote 'nonexistent' not found",,Flatpak远程仓库不存在
+rpm,ERROR,PACKAGE_NOT_INSTALLED,"package nonexistent is not installed",,RPM软件包未安装
+dpkg,ERROR,PACKAGE_NOT_FOUND,"dpkg-query: no packages found matching nonexistent",,Debian软件包不存在
+pip,ERROR,PACKAGE_NOT_FOUND,"ERROR: Could not find a version that satisfies the requirement nonexistent",,Python包不存在
+npm,ERROR,PACKAGE_NOT_FOUND,"npm ERR! 404 Not Found - GET https://registry.npmjs.org/nonexistent",,Node.js包不存在
+gem,ERROR,GEM_NOT_FOUND,"ERROR: Could not find a valid gem 'nonexistent'",,Ruby gem不存在
+cargo,ERROR,CRATE_NOT_FOUND,"error: no matching package named `nonexistent` found",,Rust crate不存在
+go,ERROR,MODULE_NOT_FOUND,"cannot find module providing package nonexistent",,Go模块不存在
+composer,ERROR,PACKAGE_NOT_FOUND,"[InvalidArgumentException] Package nonexistent not found",,PHP包不存在
+docker-compose,ERROR,FILE_NOT_FOUND,"Can't find a suitable configuration file in this directory or any parent",,docker-compose.yml文件不存在
+kubectl,ERROR,CONTEXT_NOT_FOUND,"error: context 'nonexistent' does not exist",,Kubernetes上下文不存在
+podman,ERROR,IMAGE_NOT_FOUND,"Error: image not found",,Podman镜像不存在
+buildah,ERROR,IMAGE_NOT_FOUND,"error finding image: image not known",,Buildah镜像不存在
+skopeo,ERROR,IMAGE_NOT_FOUND,"Error: error copying image: image not known",,Skopeo镜像不存在
+ansible,ERROR,HOST_NOT_FOUND,"[WARNING]: Could not match supplied host pattern, ignoring: nonexistent",,Ansible主机不存在
+terraform,ERROR,STATE_LOCKED,"Error: Error acquiring the state lock",,Terraform状态文件被锁定
+vagrant,ERROR,BOX_NOT_FOUND,"The box 'nonexistent' could not be found or could not be accessed",,Vagrant box不存在
+puppet,ERROR,CERTIFICATE_NOT_FOUND,"Could not find certificate for nonexistent",,Puppet证书不存在
+chef,ERROR,NODE_NOT_FOUND,"ERROR: Node not found: 'nonexistent'",,Chef节点不存在
+salt,ERROR,MINION_NOT_FOUND,"Minion did not return. [Not connected]",,Salt minion未连接
+fail2ban,ERROR,JAIL_NOT_FOUND,"ERROR: Jail 'nonexistent' not found",,Fail2ban监狱配置不存在
+ufw,ERROR,RULE_NOT_FOUND,"ERROR: Could not delete nonexistent rule",,防火墙规则不存在
+firewalld,ERROR,ZONE_NOT_FOUND,"ERROR: ZONE_NOT_FOUND: 'nonexistent'",,防火墙区域不存在
+selinux,ERROR,BOOLEAN_NOT_FOUND,"setsebool: nonexistent: boolean not defined",,SELinux布尔值不存在
+apparmor,ERROR,PROFILE_NOT_FOUND,"ERROR: profile 'nonexistent' not found",,AppArmor配置文件不存在
+logrotate,ERROR,CONFIG_ERROR,"error: nonexistent:1 unknown option 'invalid_option'",,日志轮转配置错误
+sysctl,ERROR,PARAMETER_NOT_FOUND,"sysctl: cannot stat /proc/sys/nonexistent: No such file or directory",,内核参数不存在
+modprobe,ERROR,MODULE_NOT_FOUND,"modprobe: FATAL: Module nonexistent not found",,内核模块不存在
+depmod,ERROR,KERNEL_VERSION,"depmod: FATAL: could not load /lib/modules/nonexistent/modules.dep",,内核版本不存在
+lsmod,ERROR,NOT_LOADED,"Module nonexistent not loaded",,内核模块未加载
+insmod,ERROR,LOAD_FAILED,"insmod: ERROR: could not load module nonexistent: No such file or directory",,模块文件不存在
+rmmod,ERROR,REMOVE_FAILED,"rmmod: ERROR: Module nonexistent is not currently loaded",,模块未加载
+dmesg,ERROR,PERMISSION_DENIED,"dmesg: read kernel buffer failed: Operation not permitted",,没有读取内核缓冲区的权限
+lscpu,ERROR,ARCH_NOT_SUPPORTED,"lscpu: failed to determine number of CPUs",,无法确定CPU信息
+free,ERROR,INVALID_OPTION,"free: invalid option -- 'x'",,选项无效
+vmstat,ERROR,INTERVAL_INVALID,"vmstat: invalid interval 'abc'",,时间间隔无效
+iostat,ERROR,DEVICE_NOT_FOUND,"iostat: cannot find device nonexistent",,设备不存在
+mpstat,ERROR,CPU_NOT_FOUND,"mpstat: cannot find CPU 999",,CPU编号无效
+pidstat,ERROR,PROCESS_NOT_FOUND,"pidstat: no process found with given criteria",,没有找到符合条件的进程
+sar,ERROR,NO_DATA,"sar: No data collected for today",,今天没有收集到系统活动数据
+tload,ERROR,TERMINAL_NOT_SUPPORTED,"tload: terminal too small",,终端太小无法显示图形
+uptime,ERROR,PROC_READ_FAILED,"uptime: /proc/loadavg: No such file or directory",,无法读取系统负载信息
+w,ERROR,UTMP_READ_FAILED,"w: cannot read utmp",,无法读取用户登录信息
+who,ERROR,UTMP_READ_FAILED,"who: cannot read utmp",,无法读取用户登录信息
+last,ERROR,WTMP_READ_FAILED,"last: /var/log/wtmp: No such file or directory",,无法读取登录历史
+lastlog,ERROR,LASTLOG_READ_FAILED,"lastlog: /var/log/lastlog: No such file or directory",,无法读取最后登录信息
+finger,ERROR,USER_NOT_FOUND,"finger: nonexistent: no such user",,用户不存在
+chage,ERROR,USER_NOT_FOUND,"chage: user 'nonexistent' does not exist",,用户不存在
+usermod,ERROR,USER_NOT_FOUND,"usermod: user 'nonexistent' does not exist",,用户不存在
+userdel,ERROR,USER_NOT_FOUND,"userdel: user 'nonexistent' does not exist",,用户不存在
+groupmod,ERROR,GROUP_NOT_FOUND,"groupmod: group 'nonexistent' does not exist",,用户组不存在
+groupdel,ERROR,GROUP_NOT_FOUND,"groupdel: group 'nonexistent' does not exist",,用户组不存在
+gpasswd,ERROR,GROUP_NOT_FOUND,"gpasswd: group 'nonexistent' does not exist",,用户组不存在
+newgrp,ERROR,GROUP_NOT_FOUND,"newgrp: group 'nonexistent' does not exist",,用户组不存在
+id,ERROR,USER_NOT_FOUND,"id: 'nonexistent': no such user",,用户不存在
+groups,ERROR,USER_NOT_FOUND,"groups: 'nonexistent': no such user",,用户不存在
+getent,ERROR,ENTRY_NOT_FOUND,"getent: name database: nonexistent not found",,数据库条目不存在
+chroot,ERROR,DIRECTORY_NOT_FOUND,"chroot: failed to run command '/bin/bash': No such file or directory",,目录不存在或缺少必要的文件
+unshare,ERROR,NAMESPACE_FAILED,"unshare: failed to create new namespace: Operation not permitted",,没有创建命名空间的权限
+nsenter,ERROR,NAMESPACE_NOT_FOUND,"nsenter: cannot open /proc/99999/ns/pid: No such file or directory",,进程命名空间不存在
+prlimit,ERROR,PROCESS_NOT_FOUND,"prlimit: failed to get and set the limits for process 99999: No such process",,进程不存在
+ulimit,ERROR,INVALID_LIMIT,"ulimit: invalid number: abc",,限制值无效
+nice,ERROR,PERMISSION_DENIED,"nice: cannot set niceness: Permission denied",,没有调整进程优先级的权限
+renice,ERROR,PROCESS_NOT_FOUND,"renice: 99999: failed to set priority: No such process",,进程不存在
+time,ERROR,COMMAND_FAILED,"Command terminated abnormally.",,命令异常终止
+strace,ERROR,PROCESS_NOT_FOUND,"strace: Can't stat 'nonexistent': No such file or directory",,进程或命令不存在
+ltrace,ERROR,PROCESS_NOT_FOUND,"ltrace: Could not find command 'nonexistent'",,命令不存在
+gdb,ERROR,EXECUTABLE_NOT_FOUND,"gdb: nonexistent: No such file or directory",,可执行文件不存在
+valgrind,ERROR,EXECUTABLE_NOT_FOUND,"valgrind: nonexistent: No such file or directory",,可执行文件不存在
+perf,ERROR,PERMISSION_DENIED,"Permission error mapping pages.",,没有性能分析的权限
+systemtap,ERROR,MODULE_NOT_FOUND,"ERROR: module stap_Nonexistent does not exist",,SystemTap模块不存在
+dtrace,ERROR,PROVIDER_NOT_FOUND,"dtrace: failed to compile script: line 1: provider 'nonexistent' not found",,DTrace提供者不存在
+bpftrace,ERROR,PROBE_NOT_FOUND,"ERROR: probe description 'kprobe:nonexistent' does not match any probes",,BPF探针不存在
+tcpflow,ERROR,INTERFACE_NOT_FOUND,"tcpflow: cannot find device nonexistent",,网络接口不存在
+ngrep,ERROR,PATTERN_INVALID,"ngrep: invalid regular expression: '*'",,正则表达式无效
+tshark,ERROR,PERMISSION_DENIED,"tshark: The capture session could not be initiated (you may not have permission to capture on that device)",,没有抓包权限
+wireshark,ERROR,INTERFACE_NOT_FOUND,"wireshark: There are no interfaces on which a capture can be done",,没有可用的网络接口
+mtr,ERROR,HOST_NOT_FOUND,"mtr: unable to resolve host name: nonexistent.com",,主机名解析失败
+tracepath,ERROR,HOST_NOT_FOUND,"tracepath: unknown host nonexistent.com",,主机名解析失败
+traceroute,ERROR,HOST_NOT_FOUND,"traceroute: unknown host nonexistent.com",,主机名解析失败
+host,ERROR,DOMAIN_NOT_FOUND,"Host nonexistent.com not found: 3(NXDOMAIN)",,域名不存在
+getfacl,ERROR,FILE_NOT_FOUND,"getfacl: nonexistent: No such file or directory",,文件不存在
+setfacl,ERROR,FILE_NOT_FOUND,"setfacl: nonexistent: No such file or directory",,文件不存在
+getfattr,ERROR,FILE_NOT_FOUND,"getfattr: nonexistent: No such file or directory",,文件不存在
+setfattr,ERROR,FILE_NOT_FOUND,"setfattr: nonexistent: No such file or directory",,文件不存在
+attr,ERROR,FILE_NOT_FOUND,"attr: No such file or directory",,文件不存在
+lsattr,ERROR,FILE_NOT_FOUND,"lsattr: No such file or directory while trying to stat nonexistent",,文件不存在
+chattr,ERROR,FILE_NOT_FOUND,"chattr: No such file or directory while trying to stat nonexistent",,文件不存在
+debugfs,ERROR,DEVICE_NOT_FOUND,"debugfs: No such file or directory while trying to open nonexistent",,设备不存在
+tune2fs,ERROR,DEVICE_NOT_FOUND,"tune2fs: No such file or directory while trying to open nonexistent",,设备不存在
+dumpe2fs,ERROR,DEVICE_NOT_FOUND,"dumpe2fs: No such file or directory while trying to open nonexistent",,设备不存在
+e2fsck,ERROR,DEVICE_NOT_FOUND,"e2fsck: No such file or directory while trying to open nonexistent",,设备不存在
+resize2fs,ERROR,DEVICE_NOT_FOUND,"resize2fs: No such file or directory while trying to open nonexistent",,设备不存在
+xfs_repair,ERROR,DEVICE_NOT_FOUND,"xfs_repair: nonexistent is not a valid XFS filesystem",,不是有效的XFS文件系统
+xfs_db,ERROR,DEVICE_NOT_FOUND,"xfs_db: nonexistent is not a valid XFS filesystem",,不是有效的XFS文件系统
+xfs_growfs,ERROR,NOT_XFS,"xfs_growfs: nonexistent is not a mounted XFS filesystem",,不是已挂载的XFS文件系统
+btrfs,ERROR,NOT_BTRFS,"btrfs: 'nonexistent' is not a btrfs filesystem",,不是Btrfs文件系统
+btrfsck,ERROR,NOT_BTRFS,"btrfsck: nonexistent is not a btrfs filesystem",,不是Btrfs文件系统
+zfs,ERROR,DATASET_NOT_FOUND,"cannot open 'nonexistent': dataset does not exist",,ZFS数据集不存在
+zpool,ERROR,POOL_NOT_FOUND,"cannot open 'nonexistent': no such pool",,ZFS存储池不存在
+mdadm,ERROR,ARRAY_NOT_FOUND,"mdadm: cannot open /dev/nonexistent: No such file or directory",,RAID阵列不存在
+lvm,ERROR,VG_NOT_FOUND,"Volume group ""nonexistent"" not found",,LVM卷组不存在
+pvcreate,ERROR,DEVICE_NOT_FOUND,"Device /dev/nonexistent not found (or ignored by filtering).",,物理卷设备不存在
+vgcreate,ERROR,DEVICE_NOT_FOUND,"Device /dev/nonexistent not found.",,物理卷设备不存在
+lvcreate,ERROR,VG_NOT_FOUND,"Volume group ""nonexistent"" not found",,卷组不存在
+lvremove,ERROR,LV_NOT_FOUND,"Logical volume nonexistent not found.",,逻辑卷不存在
+lvresize,ERROR,LV_NOT_FOUND,"Logical volume nonexistent not found.",,逻辑卷不存在
+lvextend,ERROR,LV_NOT_FOUND,"Logical volume nonexistent not found.",,逻辑卷不存在
+lvreduce,ERROR,LV_NOT_FOUND,"Logical volume nonexistent not found.",,逻辑卷不存在
+at,ERROR,JOB_NOT_FOUND,"at: cannot find job 99999",,指定的at作业不存在
+atq,ERROR,PERMISSION_DENIED,"atq: you are not authorized to use at",,用户没有使用at命令的权限
+atrm,ERROR,JOB_NOT_FOUND,"atrm: cannot remove job 99999",,at作业不存在
+batch,ERROR,PERMISSION_DENIED,"batch: you are not authorized to use batch",,用户没有使用batch命令的权限
+crontab,ERROR,USER_NOT_FOUND,"crontab: user 'nonexistent' not found",,用户不存在
+anacron,ERROR,CONFIG_NOT_FOUND,"anacron: /etc/anacrontab: No such file or directory",,anacron配置文件不存在
+incron,ERROR,TABLE_NOT_FOUND,"incron: cannot load table for user nonexistent",,incron表不存在
+systemd-run,ERROR,UNIT_CREATION_FAILED,"Failed to create transient unit: Invalid argument",,创建临时systemd单元失败
+systemd-analyze,ERROR,BOOT_NOT_FOUND,"Failed to look up boot entry: No such file or directory",,启动条目不存在
+loginctl,ERROR,SESSION_NOT_FOUND,"loginctl: session 99999 not found",,会话不存在
+hostnamectl,ERROR,PERMISSION_DENIED,"hostnamectl: Failed to set host name: Access denied",,没有修改主机名的权限
+localectl,ERROR,KEYMAP_NOT_FOUND,"localectl: Keymap 'nonexistent' not found",,键盘映射不存在
+timedatectl,ERROR,TIME_SYNC_FAILED,"Failed to set time: Automatic time synchronization is enabled",,自动时间同步已启用，无法手动设置时间
+networkctl,ERROR,LINK_NOT_FOUND,"networkctl: link 'nonexistent' not found",,网络链接不存在
+busctl,ERROR,BUS_NOT_FOUND,"busctl: Failed to connect to bus: No such file or directory",,总线不存在
+machinectl,ERROR,MACHINE_NOT_FOUND,"machinectl: machine 'nonexistent' not found",,systemd-nspawn机器不存在
+systemd-cgls,ERROR,CONTROLLER_NOT_FOUND,"systemd-cgls: controller 'nonexistent' not found",,控制组控制器不存在
+systemd-cgtop,ERROR,CONTROLLER_NOT_FOUND,"systemd-cgtop: controller 'nonexistent' not found",,控制组控制器不存在
+systemd-delta,ERROR,NO_OVERLAYS,"No overrides found",,没有找到覆盖配置
+systemd-inhibit,ERROR,OPERATION_NOT_SUPPORTED,"Operation not supported",,操作不支持
+systemd-nspawn,ERROR,IMAGE_NOT_FOUND,"systemd-nspawn: failed to find image 'nonexistent'",,容器镜像不存在
+systemd-run,ERROR,SCOPE_CREATION_FAILED,"Failed to create scope: Unit already exists",,范围单元已存在
+resolvectl,ERROR,DOMAIN_NOT_FOUND,"resolvectl: nonexistent.com: resolve call failed: No appropriate name servers or networks for name found",,域名解析失败
+kernel-install,ERROR,KERNEL_NOT_FOUND,"kernel-install: kernel version 'nonexistent' not found",,内核版本不存在
+bootctl,ERROR,EFI_NOT_FOUND,"bootctl: EFI System Partition not found",,EFI系统分区不存在
+coredumpctl,ERROR,DUMP_NOT_FOUND,"coredumpctl: no stored core dumps found",,没有找到核心转储
+systemd-firstboot,ERROR,ALREADY_CONFIGURED,"systemd-firstboot: System already initialized",,系统已经初始化
+systemd-sysusers,ERROR,CONFIG_NOT_FOUND,"systemd-sysusers: configuration file 'nonexistent' not found",,配置文件不存在
+systemd-tmpfiles,ERROR,CONFIG_NOT_FOUND,"systemd-tmpfiles: configuration file 'nonexistent' not found",,配置文件不存在
+systemd-udevd,ERROR,DEVICE_NOT_FOUND,"systemd-udevd: failed to query device 'nonexistent': No such device",,设备不存在
+udevadm,ERROR,DEVICE_NOT_FOUND,"udevadm: unknown device 'nonexistent'",,设备不存在
+acpid,ERROR,EVENT_NOT_FOUND,"acpid: event 'nonexistent' not found",,ACPI事件不存在
+bluetoothctl,ERROR,DEVICE_NOT_FOUND,"bluetoothctl: Device nonexistent not available",,蓝牙设备不存在
+rfkill,ERROR,DEVICE_NOT_FOUND,"rfkill: Cannot find device nonexistent",,无线设备不存在
+iw,ERROR,INTERFACE_NOT_FOUND,"iw: Could not find interface 'nonexistent'",,无线接口不存在
+iwconfig,ERROR,INTERFACE_NOT_FOUND,"iwconfig: no such wireless extension on interface nonexistent",,接口没有无线扩展
+iwlist,ERROR,INTERFACE_NOT_FOUND,"iwlist: nonexistent: no such device",,设备不存在
+wpa_supplicant,ERROR,CONFIG_NOT_FOUND,"wpa_supplicant: Configuration file 'nonexistent' not found",,配置文件不存在
+wpa_cli,ERROR,SOCKET_NOT_FOUND,"wpa_cli: Could not connect to wpa_supplicant",,无法连接到wpa_supplicant
+hostapd,ERROR,CONFIG_NOT_FOUND,"hostapd: Configuration file 'nonexistent' not found",,配置文件不存在
+airmon-ng,ERROR,INTERFACE_NOT_FOUND,"airmon-ng: Interface 'nonexistent' not found",,接口不存在
+airodump-ng,ERROR,INTERFACE_NOT_FOUND,"airodump-ng: Interface 'nonexistent' not found",,接口不存在
+aireplay-ng,ERROR,INTERFACE_NOT_FOUND,"aireplay-ng: Interface 'nonexistent' not found",,接口不存在
+aircrack-ng,ERROR,CAP_FILE_NOT_FOUND,"aircrack-ng: Cannot open file nonexistent",,捕获文件不存在
+reaver,ERROR,INTERFACE_NOT_FOUND,"reaver: Interface 'nonexistent' not found",,接口不存在
+bully,ERROR,INTERFACE_NOT_FOUND,"bully: Interface 'nonexistent' not found",,接口不存在
+pixiewps,ERROR,INVALID_DATA,"pixiewps: Invalid data provided",,提供的数据无效
+hcxdumptool,ERROR,INTERFACE_NOT_FOUND,"hcxdumptool: Interface 'nonexistent' not found",,接口不存在
+hcxpcapngtool,ERROR,FILE_NOT_FOUND,"hcxpcapngtool: Cannot open file nonexistent",,文件不存在
+hashcat,ERROR,HASH_NOT_RECOGNIZED,"hashcat: Token length exception",,哈希格式不被识别
+john,ERROR,HASH_NOT_RECOGNIZED,"john: No password hashes loaded",,没有加载密码哈希
+hydra,ERROR,TARGET_NOT_FOUND,"hydra: Host 'nonexistent.com' not found",,目标主机不存在
+medusa,ERROR,TARGET_NOT_FOUND,"medusa: Host 'nonexistent.com' not found",,目标主机不存在
+ncrack,ERROR,TARGET_NOT_FOUND,"ncrack: Could not resolve hostname: nonexistent.com",,目标主机名无法解析
+sqlmap,ERROR,TARGET_NOT_FOUND,"sqlmap: 'nonexistent.com' is not a valid URL",,目标URL无效
+nuclei,ERROR,TEMPLATE_NOT_FOUND,"nuclei: template 'nonexistent' not found",,模板不存在
+metasploit,ERROR,MODULE_NOT_FOUND,"msf> use auxiliary/nonexistent: failed to load module",,Metasploit模块不存在
+beef,ERROR,CONFIG_NOT_FOUND,"beef: Configuration file 'nonexistent' not found",,配置文件不存在
+burpsuite,ERROR,PROJECT_NOT_FOUND,"burpsuite: Project 'nonexistent' not found",,项目文件不存在
+wireshark,ERROR,CAP_FILE_NOT_FOUND,"wireshark: The file 'nonexistent' doesn't exist",,捕获文件不存在
+ettercap,ERROR,INTERFACE_NOT_FOUND,"ettercap: interface 'nonexistent' not found",,接口不存在
+etterlog,ERROR,LOG_FILE_NOT_FOUND,"etterlog: Cannot open file 'nonexistent'",,日志文件不存在
+etterfilter,ERROR,SCRIPT_NOT_FOUND,"etterfilter: script 'nonexistent' not found",,过滤脚本不存在
+dnsenum,ERROR,DOMAIN_NOT_FOUND,"dnsenum: Domain 'nonexistent.com' not found",,域名不存在
+dnsmap,ERROR,DOMAIN_NOT_FOUND,"dnsmap: Domain 'nonexistent.com' not found",,域名不存在
+dnsrecon,ERROR,DOMAIN_NOT_FOUND,"dnsrecon: Domain 'nonexistent.com' not found",,域名不存在
+fierce,ERROR,DOMAIN_NOT_FOUND,"fierce: Domain 'nonexistent.com' not found",,域名不存在
+theharvester,ERROR,DOMAIN_NOT_FOUND,"theharvester: Domain 'nonexistent.com' not found",,域名不存在
+maltego,ERROR,CONFIG_NOT_FOUND,"maltego: Configuration file 'nonexistent' not found",,配置文件不存在
+recon-ng,ERROR,MODULE_NOT_FOUND,"recon-ng: module 'nonexistent' not found",,模块不存在
+spiderfoot,ERROR,SCAN_NOT_FOUND,"spiderfoot: Scan 'nonexistent' not found",,扫描不存在
+shodan,ERROR,API_KEY_INVALID,"shodan: Invalid API key",,API密钥无效
+censys,ERROR,API_KEY_INVALID,"censys: Invalid API credentials",,API凭据无效
+zoomeye,ERROR,API_KEY_INVALID,"zoomeye: Invalid API key",,API密钥无效
+amass,ERROR,DOMAIN_NOT_FOUND,"amass: Domain 'nonexistent.com' not found",,域名不存在
+subfinder,ERROR,DOMAIN_NOT_FOUND,"subfinder: Domain 'nonexistent.com' not found",,域名不存在
+assetfinder,ERROR,DOMAIN_NOT_FOUND,"assetfinder: Domain 'nonexistent.com' not found",,域名不存在
+findomain,ERROR,DOMAIN_NOT_FOUND,"findomain: Domain 'nonexistent.com' not found",,域名不存在
+massdns,ERROR,DOMAIN_LIST_NOT_FOUND,"massdns: Cannot open domains file 'nonexistent'",,域名列表文件不存在
+masscan,ERROR,TARGET_NOT_FOUND,"masscan: target 'nonexistent.com' not found",,目标不存在
+zmap,ERROR,TARGET_NOT_FOUND,"zmap: target 'nonexistent.com' not found",,目标不存在
+nmap,ERROR,SCRIPT_NOT_FOUND,"nmap: Script 'nonexistent' not found",,NSE脚本不存在
+nikto,ERROR,TARGET_NOT_FOUND,"nikto: Target 'nonexistent.com' not found",,目标不存在
+wapiti,ERROR,TARGET_NOT_FOUND,"wapiti: Target 'nonexistent.com' not found",,目标不存在
+arachni,ERROR,TARGET_NOT_FOUND,"arachni: Target 'nonexistent.com' not found",,目标不存在
+w3af,ERROR,TARGET_NOT_FOUND,"w3af: Target 'nonexistent.com' not found",,目标不存在
+skipfish,ERROR,TARGET_NOT_FOUND,"skipfish: Target 'nonexistent.com' not found",,目标不存在
+wafw00f,ERROR,TARGET_NOT_FOUND,"wafw00f: Target 'nonexistent.com' not found",,目标不存在
+whatweb,ERROR,TARGET_NOT_FOUND,"whatweb: Target 'nonexistent.com' not found",,目标不存在
+dirb,ERROR,TARGET_NOT_FOUND,"dirb: Target 'nonexistent.com' not found",,目标不存在
+dirbuster,ERROR,TARGET_NOT_FOUND,"dirbuster: Target 'nonexistent.com' not found",,目标不存在
+gobuster,ERROR,TARGET_NOT_FOUND,"gobuster: Target 'nonexistent.com' not found",,目标不存在
+ffuf,ERROR,TARGET_NOT_FOUND,"ffuf: Target 'nonexistent.com' not found",,目标不存在
+wfuzz,ERROR,TARGET_NOT_FOUND,"wfuzz: Target 'nonexistent.com' not found",,目标不存在
+patator,ERROR,TARGET_NOT_FOUND,"patator: Target 'nonexistent.com' not found",,目标不存在
+commix,ERROR,TARGET_NOT_FOUND,"commix: Target 'nonexistent.com' not found",,目标不存在
+xsstrike,ERROR,TARGET_NOT_FOUND,"xsstrike: Target 'nonexistent.com' not found",,目标不存在
+xsser,ERROR,TARGET_NOT_FOUND,"xsser: Target 'nonexistent.com' not found",,目标不存在
+sqlmate,ERROR,TARGET_NOT_FOUND,"sqlmate: Target 'nonexistent.com' not found",,目标不存在
+nosqlmap,ERROR,TARGET_NOT_FOUND,"nosqlmap: Target 'nonexistent.com' not found",,目标不存在
+mongoaudit,ERROR,TARGET_NOT_FOUND,"mongoaudit: Target 'nonexistent.com' not found",,目标不存在
+redis-cli,ERROR,CONNECTION_FAILED,"redis-cli: Could not connect to Redis at nonexistent.com:6379: Connection refused",,无法连接到Redis服务器
+memcached,ERROR,CONNECTION_FAILED,"memcached: failed to listen on nonexistent.com:11211",,无法在指定地址监听
+etcdctl,ERROR,ENDPOINT_NOT_FOUND,"etcdctl: endpoint 'nonexistent.com' not found",,etcd端点不存在
+consul,ERROR,AGENT_NOT_FOUND,"consul: Failed to get agent: dial tcp nonexistent.com:8500: connect: connection refused",,Consul代理不可达
+vault,ERROR,SERVER_NOT_FOUND,"vault: Error making API request: Get https://nonexistent.com:8200/v1/sys/health: dial tcp: lookup nonexistent.com: no such host",,Vault服务器不可达
+nomad,ERROR,SERVER_NOT_FOUND,"nomad: Error querying node: Get http://nonexistent.com:4646/v1/nodes: dial tcp nonexistent.com:4646: connect: connection refused",,Nomad服务器不可达
+docker,ERROR,NETWORK_NOT_FOUND,"docker: network nonexistent not found",,Docker网络不存在
+docker-compose,ERROR,SERVICE_NOT_FOUND,"docker-compose: service 'nonexistent' is not running",,Docker服务未运行
+kubectl,ERROR,NAMESPACE_NOT_FOUND,"kubectl: namespaces 'nonexistent' not found",,Kubernetes命名空间不存在
+helm,ERROR,RELEASE_NOT_FOUND,"helm: release: 'nonexistent' not found",,Helm发布不存在
+istioctl,ERROR,NAMESPACE_NOT_FOUND,"istioctl: namespace 'nonexistent' not found",,Istio命名空间不存在
+linkerd,ERROR,NAMESPACE_NOT_FOUND,"linkerd: namespace 'nonexistent' not found",,Linkerd命名空间不存在
+flux,ERROR,REPOSITORY_NOT_FOUND,"flux: repository 'nonexistent' not found",,Git仓库不存在
+argocd,ERROR,APPLICATION_NOT_FOUND,"argocd: application 'nonexistent' not found",,ArgoCD应用不存在
+tekton,ERROR,PIPELINE_NOT_FOUND,"tekton: pipeline 'nonexistent' not found",,Tekton流水线不存在
+knative,ERROR,SERVICE_NOT_FOUND,"knative: service 'nonexistent' not found",,Knative服务不存在
+openshift,ERROR,PROJECT_NOT_FOUND,"openshift: project 'nonexistent' not found",,OpenShift项目不存在
+rancher,ERROR,CLUSTER_NOT_FOUND,"rancher: cluster 'nonexistent' not found",,Rancher集群不存在
+k3s,ERROR,AGENT_NOT_FOUND,"k3s: agent 'nonexistent' not found",,K3s代理不存在
+k0s,ERROR,CONTROLLER_NOT_FOUND,"k0s: controller 'nonexistent' not found",,K0s控制器不存在
+microk8s,ERROR,SERVICE_NOT_FOUND,"microk8s: service 'nonexistent' not found",,MicroK8s服务不存在
+minikube,ERROR,PROFILE_NOT_FOUND,"minikube: profile 'nonexistent' not found",,Minikube配置档不存在
+kind,ERROR,CLUSTER_NOT_FOUND,"kind: cluster 'nonexistent' not found",,Kind集群不存在
+kubeadm,ERROR,CONFIG_NOT_FOUND,"kubeadm: config file 'nonexistent' not found",,配置文件不存在
+kubelet,ERROR,CONFIG_NOT_FOUND,"kubelet: config file 'nonexistent' not found",,配置文件不存在
+kube-proxy,ERROR,CONFIG_NOT_FOUND,"kube-proxy: config file 'nonexistent' not found",,配置文件不存在

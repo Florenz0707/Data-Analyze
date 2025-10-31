@@ -1,3 +1,4 @@
+from math import log
 import os
 
 # chroma 不上传数据
@@ -335,6 +336,7 @@ class TopKLogSystem:
 
             file_path = f"{data_path}/{file}"
             try:
+                logger.info(f"正在读取{file}...")
                 if ext == ".csv":  # utf-8 的 csv
                     # 大型 csv 分块进行读取
                     chunk_size = 1000  # 每次读取1000行
@@ -586,7 +588,7 @@ if __name__ == "__main__":
     )
 
     # 执行查询
-    query = "如何解决数据库连接池耗尽的问题？"
+    query = "如何解决java依赖注入失败？"
     result = system.query(query)
 
     print("查询:", query)

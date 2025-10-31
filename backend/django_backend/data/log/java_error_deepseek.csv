@@ -1,0 +1,275 @@
+服务,级别,错误,消息,组件,原因
+java,ERROR,ClassNotFoundException,类 com.example.UserService 未找到,ClassLoader,类路径中缺少必要的JAR文件或类名拼写错误
+java,ERROR,NullPointerException,在 UserController.getUser 方法中，user对象为null,UserController,对象未初始化即被使用，可能由于未正确赋值或依赖注入失败
+java,ERROR,ArrayIndexOutOfBoundsException,数组索引 5 超出长度 3,ArrayProcessor,循环边界条件错误或数组未正确初始化
+java,ERROR,IllegalArgumentException,参数 'age' 必须为正数,ValidationUtils,方法接收到非法参数，验证逻辑失败
+java,ERROR,NumberFormatException,对于输入字符串: 'abc',NumberParser,字符串格式错误，无法转换为数字类型
+mybatis,ERROR,SQLException,执行SQL查询时出错: SELECT * FROM users,SqlSession,数据库连接超时或SQL语法错误
+springboot,ERROR,BeanCreationException,创建Bean 'dataSource' 失败,ApplicationContext,依赖注入失败或配置属性缺失
+java,FATAL,OutOfMemoryError,Java堆空间不足,JVM,内存泄漏或堆内存配置不足导致耗尽
+hibernate,ERROR,HibernateException,无法获取Hibernate Session,SessionFactory,数据库连接池已满或ORM映射配置错误
+springboot,ERROR,MissingServletRequestParameterException,必需参数 'userId' 不存在,ControllerAdvice,前端请求未传递必需的参数
+java,ERROR,NoSuchMethodException,方法 'getUser' 未找到,ReflectionUtils,通过反射调用方法时，方法名或参数不匹配
+mybatis,ERROR,BindingException,无效的绑定语句: com.example.UserDao.getUser,MapperRegistry,MyBatis映射文件未找到或XML配置错误
+java,ERROR,IOException,文件读取失败: /path/to/file.txt,FileReader,文件不存在或权限不足
+springboot,WARN,HttpMessageNotReadableException,请求体解析失败: JSON格式错误,HttpMessageConverter,JSON数据格式不正确或字段类型不匹配
+java,ERROR,ClassCastException,无法将类型 java.lang.String 转换为 com.example.User,TypeCaster,对象类型转换时，实际类型与目标类型不兼容
+lombok,ERROR,NoSuchMethodError,lombok.Getter 方法未找到,AnnotationProcessor,类路径中Lombok版本不兼容或未正确配置注解处理器
+jdbc,ERROR,SQLSyntaxErrorException,SQL语法错误: SELEC * FROM users,StatementParser,SQL语句拼写错误，缺少关键字或表名不存在
+springboot,FATAL,CircularDependency,检测到循环依赖: A→B→A,DependencyResolver,Bean之间相互引用导致无法完成依赖注入
+maven,ERROR,DependencyResolutionException,无法解析依赖: com.example:utils:1.0.0,DependencyManager,仓库中不存在该版本或网络连接失败
+mybatis,ERROR,PersistenceException,MyBatis映射异常: 结果集映射失败,ResultMapHandler,数据库列名与Java属性名不匹配
+java,ERROR,StackOverflowError,栈溢出: 递归调用深度超过限制,JVM,递归方法缺少终止条件或递归深度过大
+spring,ERROR,NoUniqueBeanDefinitionException,找到多个Bean: UserService,BeanFactory,同一类型存在多个实现类且未指定主Bean
+jackson,ERROR,JsonProcessingException,JSON解析失败: 无法识别的字段 'userName',ObjectMapper,JSON中包含Java对象不存在的字段
+junit,ERROR,AssertionFailedError,断言失败: 期望值100，实际值95,TestRunner,测试用例预期结果与实际执行结果不符
+hibernate,WARN,LazyInitializationException,延迟加载异常: 会话已关闭,LazyLoader,在Hibernate会话外访问延迟加载的关联对象
+log4j,ERROR,AppenderFail,日志追加器失败: 文件写入被拒绝,FileAppender,日志文件被其他进程占用或权限不足
+redis,ERROR,RedisConnectionFailure,Redis连接失败: Connection refused,JedisClient,Redis服务未启动或网络配置错误
+springcloud,ERROR,FeignException,Feign调用失败: 服务不可用,FeignClient,目标服务未注册或健康检查失败
+kafka,ERROR,ProducerException,Kafka生产者异常: 消息发送超时,KafkaProducer,broker配置错误或网络延迟
+gradle,ERROR,BuildException,Gradle构建失败: 任务依赖冲突,TaskExecutor,任务循环依赖或配置错误
+springsecurity,ERROR,AccessDeniedException,访问被拒绝: 权限不足,AccessDecisionManager,用户角色不具备访问该资源的权限
+jvm,ERROR,GCOverheadLimitExceed,GC开销超出限制: 98%时间用于GC,GarbageCollector,堆内存不足或存在内存泄漏
+mongodb,ERROR,MongoSocketException,MongoDB套接字异常: 连接超时,MongoClient,数据库地址错误或防火墙阻挡
+springbatch,ERROR,JobExecutionException,作业执行失败: 读取数据异常,ItemReader,数据源配置错误或文件格式不匹配
+elasticsearch,ERROR,ElasticsearchStatusException,索引操作失败: 索引只读,IndicesClient,磁盘空间不足导致索引进入只读模式
+tomcat,ERROR,LifecycleException,Tomcat启动失败: 端口8080被占用,Connector,其他进程占用了服务端口
+docker,ERROR,DockerException,容器启动失败: 镜像不存在,DockerClient,镜像名称错误或未拉取到本地
+nginx,ERROR,ConfigError,Nginx配置错误: 未知指令 'proxy_passs',ConfigParser,配置文件存在语法错误
+zookeeper,ERROR,ConnectionLossException,ZooKeeper连接丢失: 会话超时,CuratorFramework,网络波动或ZooKeeper集群故障
+rabbitmq,ERROR,ChannelClosedException,RabbitMQ通道关闭: 连接意外断开,Channel,网络中断或心跳超时
+mybatis-plus,ERROR,MybatisPlusException,分页查询失败: 总数统计SQL错误,PaginationInterceptor,自定义SQL与分页插件不兼容
+springdata,ERROR,DataAccessException,数据访问异常: JPA查询方法解析失败,QueryLookupStrategy,方法命名不符合Spring Data规范
+swagger,ERROR,ApiException,Swagger文档生成失败: 重复的接口路径,SwaggerScanner,控制器中存在相同路径的映射方法
+actuator,ERROR,EndpointNotFoundException,监控端点不存在: /actuator/healthx,EndpointDiscoverer,端点路径拼写错误或未启用
+springsession,ERROR,SerializationException,会话序列化失败: 不支持的类型,RedisSerializer,存储在会话中的对象未实现序列化接口
+websocket,ERROR,MessageDeliveryException,消息投递失败: 连接已关闭,WebSocketSession,客户端意外断开连接
+quartz,ERROR,JobExecutionException,定时任务执行失败: 触发器配置错误,Scheduler,CRON表达式格式不正确
+springcache,ERROR,CacheException,缓存操作失败: 键值为空,CacheManager,缓存键生成策略返回空值
+validation,ERROR,ConstraintViolationException,参数校验失败: 邮箱格式错误,BeanValidator,输入数据不符合注解约束条件
+springmail,ERROR,MailSendException,邮件发送失败: 认证失败,JavaMailSender,SMPT服务器账号密码错误
+springcloudgateway,ERROR,RoutePredicateException,路由断言失败: 请求头缺失,RouteLocator,网关配置的路由条件不满足
+springadmin,ERROR,InstanceNotFoundException,实例未找到: 服务已下线,InstanceRegistry,监控的服务实例已停止
+springintegration,ERROR,MessageHandlingException,消息处理失败: 通道不可用,MessageChannel,消息通道配置错误或未启动
+springwebflux,ERROR,WebClientResponseException,WebClient响应异常: 500内部错误,WebClient,下游服务返回错误状态码
+springactuator,ERROR,HealthIndicatorFail,健康检查失败: 数据库连接异常,DataSourceHealthIndicator,数据库服务不可用
+springboot,ERROR,ConfigurationPropertiesBindException,配置属性绑定失败: 类型不匹配,ConfigurationPropertiesBinder,YAML文件中的属性值与Java类型不兼容
+springcloudconfig,ERROR,ConfigDataNotFoundException,配置数据未找到: 未知配置文件,ConfigServer,配置中心不存在指定环境的配置文件
+springsecurity,ERROR,BadCredentialsException,认证失败: 用户名或密码错误,AuthenticationProvider,用户输入凭据与存储信息不匹配
+springsocial,ERROR,SocialException,社交登录失败: 授权码无效,OAuth2Template,第三方平台返回的授权码已过期
+springmobile,ERROR,DeviceResolverException,设备解析失败: User-Agent格式异常,DeviceResolver,无法从请求头中识别设备类型
+springandroid,ERROR,AndroidException,Android客户端异常: 证书验证失败,RestTemplate,HTTPS证书不受信任
+springroo,ERROR,RooException,ROO项目生成失败: 实体类注解错误,EntityGenerator,注解配置不符合ROO规范
+springshell,ERROR,CommandNotFound,命令未找到: 未知命令,CommandRegistry,输入的Shell命令不存在
+springxd,ERROR,XDException,Spring XD流定义错误: 模块配置冲突,StreamDefinitionParser,流定义文件中存在不兼容的模块组合
+springflo,ERROR,FloException,流程图解析失败: 节点连接错误,FlowParser,流程图存在环形依赖或未连接节点
+springcloudstream,ERROR,BinderException,绑定器异常: 目标主题不存在,Binder,消息中间件中未创建对应的Topic
+springvault,ERROR,VaultException,Vault操作失败: 令牌已过期,VaultTemplate,HashiCorp Vault的访问令牌失效
+springstatemachine,ERROR,StateMachineException,状态机异常: 非法状态转移,StateMachine,当前状态下不允许执行该操作
+springldap,ERROR,LdapException,LDAP操作失败: 目录服务不可用,LdapTemplate,LDAP服务器连接失败
+springhateoas,ERROR,LinkDiscovererException,链接发现失败: 资源中未找到链接,LinkDiscoverer,HAL格式的响应体中缺少必要的链接关系
+springrestdocs,ERROR,RestDocumentationException,文档生成失败: 片段名称重复,RestDocumentation,测试用例中定义了重复的文档片段
+springkafka,ERROR,KafkaException,Kafka监听器失败: 反序列化错误,MessageListener,消息内容与配置的反序列化器不匹配
+springintegration,ERROR,MessageRejectedException,消息被拒绝: 过滤器拦截,MessageFilter,消息内容不符合过滤条件
+springbatch,ERROR,SkipPolicyViolation,跳过策略违规: 错误次数超限,SkipPolicy,配置的跳过策略不允许继续处理
+springsession,ERROR,SessionNotFoundException,会话未找到: ID无效,SessionRepository,Redis中不存在对应的会话数据
+springsecurity,ERROR,SessionAuthenticationException,会话认证异常: 并发登录限制,ConcurrentSessionController,同一账号在多个设备登录触发安全策略
+springwebflow,ERROR,FlowExecutionException,流程执行异常: 状态入口失败,FlowExecutor,流程定义文件存在逻辑错误
+springmobile,ERROR,LiteDeviceResolverException,轻量设备解析失败: 无法识别设备类型,LiteDeviceResolver,请求头中缺少必要的设备信息
+springandroid,ERROR,AndroidAuthenticationException,Android认证失败: 令牌刷新失败,OAuth2Client,刷新令牌已失效
+springroo,ERROR,ProjectGenerationException,项目生成失败: 依赖冲突,ProjectGenerator,Maven依赖之间存在版本不兼容
+springshell,ERROR,ParameterValidationException,参数验证失败: 缺少必需参数,ParameterValidator,命令参数校验失败
+springxd,ERROR,ModuleRegistrationException,模块注册失败: 名称冲突,ModuleRegistry,重复注册相同名称的模块
+springflo,ERROR,FlowValidationException,流程验证失败: 开始节点缺失,FlowValidator,流程图缺少起始节点
+springcloudstream,ERROR,ConsumerGroupException,消费组异常: 偏移量重置失败,ConsumerGroup,消费者组配置的偏移量重置策略执行失败
+springvault,ERROR,TransitException,加密操作失败: 密钥不存在,TransitTemplate,Vault中未配置指定的加密密钥
+springstatemachine,ERROR,TransitionConflictException,转移冲突: 多个条件同时满足,TransitionManager,状态转移条件存在歧义
+springldap,ERROR,NameNotFoundException,条目未找到: DN不存在,LdapQuery,指定的识别名在目录中不存在
+springhateoas,ERROR,ResourceAssemblerException,资源组装失败: 实体转换错误,ResourceAssembler,实体对象到资源对象的转换过程异常
+springrestdocs,ERROR,SnippetException,片段生成失败: 响应体为空,ResponseBodySnippet,HTTP响应体内容为空无法生成文档片段
+springkafka,ERROR,ListenerExecutionFailedException,监听器执行失败: 业务逻辑异常,MessageListenerContainer,消费者处理消息时抛出未捕获异常
+springintegration,ERROR,MessageTimeoutException,消息超时: 网关调用未响应,MessagingGateway,同步消息传递超过等待时间
+springbatch,ERROR,UnexpectedInputException,输入异常: 文件格式错误,FlatFileItemReader,数据文件格式与读取器配置不匹配
+springsession,ERROR,SessionStorageException,会话存储失败: 序列化错误,RedisOperationsSessionRepository,会话对象包含不可序列化的属性
+springsecurity,ERROR,InsufficientAuthenticationException,认证不足: 匿名访问被拒绝,AuthenticationTrustResolver,接口要求认证但当前为匿名访问
+springwebflow,ERROR,ViewSelectionException,视图选择异常: 状态未定义视图,ViewSelector,流程状态缺少对应的视图配置
+springmobile,ERROR,DeviceDecoratorException,设备装饰器异常: 主题解析失败,DeviceDecoratingViewResolver,无法根据设备类型选择合适主题
+springandroid,ERROR,AuthorizationCodeException,授权码异常: 状态参数不匹配,AuthorizationCodeTokenProvider,OAuth2授权流程中的状态参数验证失败
+springroo,ERROR,AddonInstallationException,插件安装失败: 版本不兼容,AddonInstaller,插件与当前ROO版本存在兼容性问题
+springshell,ERROR,CommandExecutionException,命令执行失败: 权限不足,CommandExecutor,当前用户无权执行该命令
+springxd,ERROR,ContainerRegistrationException,容器注册失败: 地址已占用,ContainerRegistrar,尝试注册的容器地址已被其他实例使用
+springflo,ERROR,FlowExecutionTimeout,流程执行超时: 节点处理时间过长,FlowExecutor,单个节点处理时间超过配置阈值
+springcloudstream,ERROR,BindingServiceException,绑定服务异常: 动态绑定失败,BindingService,运行时无法创建新的消息绑定
+springvault,ERROR,LeaseException,租约管理失败: 续租被拒绝,LeaseManager,Vault拒绝续租请求，可能因令牌权限不足
+springstatemachine,ERROR,StateContextException,状态上下文异常: 事件类型不匹配,StateContext,接收到未定义的事件类型
+springldap,ERROR,UncategorizedLdapException,未分类LDAP错误: 操作超时,LdapClient,LDAP服务器响应时间过长
+springhateoas,ERROR,MediaTypeException,媒体类型异常: 不支持的格式,MediaTypeHandler,请求的媒体类型与资源不兼容
+springrestdocs,ERROR,OperationPreprocessException,操作预处理失败: 模板渲染错误,OperationPreprocessor,文档模板中存在语法错误
+springkafka,ERROR,ConsumerAwareListenerErrorHandler,消费者感知错误: 提交偏移量失败,ErrorHandler,手动提交模式下偏移量提交异常
+springintegration,ERROR,MessageDeliveryException,消息投递失败: 通道容量已满,QueueChannel,消息通道达到容量上限，无法接收新消息
+springbatch,ERROR,NonTransientResourceException,非瞬时资源异常: 数据库死锁,JdbcCursorItemReader,数据库操作遇到死锁无法继续
+springsession,ERROR,SessionCreationException,会话创建失败: 最大会话数限制,SessionRepository,当前会话数已达到系统配置上限
+springsecurity,ERROR,AuthenticationServiceException,认证服务异常: 用户存储不可用,UserDetailsService,用户数据源连接失败
+springwebflow,ERROR,FlowBuilderException,流程构建异常: 转换条件错误,FlowBuilder,流程定义文件中转换条件表达式解析失败
+springmobile,ERROR,SitePreferenceException,站点偏好异常: Cookie解析失败,SitePreferenceHandler,存储偏好的Cookie格式错误
+springandroid,ERROR,ResourceAccessException,资源访问异常: 网络不可用,RestTemplate,设备网络连接中断
+springroo,ERROR,ScaffoldGenerationException,脚手架生成失败: 模板文件缺失,ScaffoldGenerator,代码生成模板文件不存在
+springshell,ERROR,ScriptExecutionException,脚本执行失败: 语法错误,ScriptEvaluator,Shell脚本中存在语法错误无法执行
+springxd,ERROR,StreamDeploymentException,流部署失败: 资源分配不足,StreamDeployer,集群资源不足无法部署新流
+springflo,ERROR,FlowParseException,流程解析失败: JSON格式错误,FlowParser,流程图定义JSON格式不符合规范
+springcloudstream,ERROR,PollableMessageSourceException,可轮询消息源异常: 接收超时,PollableMessageSource,轮询消息源时等待消息超时
+springvault,ERROR,VaultLoginException,Vault登录失败: 认证方法不支持,AuthenticationSteps,配置的认证方式不被Vault支持
+springstatemachine,ERROR,StateMachineAccessException,状态机访问异常: 状态机被锁定,StateMachinePersist,持久化操作时状态机被其他线程锁定
+springldap,ERROR,SizeLimitExceededException,大小限制异常: 结果集超限,LdapTemplate,LDAP查询返回结果超过服务器限制
+springhateoas,ERROR,RelProviderException,关系提供者异常: 重复关系定义,RelProvider,资源中定义重复的关系类型
+springrestdocs,ERROR,RestOperationsException,REST操作异常: 请求构造失败,RestDocumentationRestTemplate,文档测试中的REST请求构建失败
+springkafka,ERROR,RecordDeserializationException,记录反序列化失败: 数据格式错误,ErrorHandlingDeserializer,Kafka消息值反序列化过程中遇到格式错误
+springintegration,ERROR,MessageTransformationException,消息转换异常: 转换器未找到,MessageTransformerRegistry,未注册适合的消息转换器
+springbatch,ERROR,JobRestartException,作业重启异常: 无效状态,JobRepository,尝试重启已完成的作业导致状态冲突
+springsession,ERROR,SessionDeletionException,会话删除失败: 存储引擎错误,SessionRepository,底层存储引擎删除会话数据时发生异常
+springsecurity,ERROR,LogoutException,退出登录异常: 会话失效失败,LogoutHandler,清除用户会话信息时发生意外错误
+springwebflow,ERROR,FlowArtifactException,流程构件异常: 视图状态配置错误,FlowBuilder,视图状态缺少必要的视图名称配置
+springmobile,ERROR,DeviceRepositoryException,设备仓库异常: 存储失败,DeviceRepository,设备信息保存到数据库时发生错误
+springandroid,ERROR,OAuth2RequestFailureException,OAuth2请求失败: 范围不足,OAuth2RequestAuthenticator,申请的OAuth2权限范围被拒绝
+springroo,ERROR,MetadataGenerationException,元数据生成失败: 注解处理错误,MetadataProvider,无法从实体类注解中提取元数据
+springshell,ERROR,HistoryException,历史命令异常: 文件损坏,History,命令历史文件损坏无法读取
+springxd,ERROR,ModuleDeploymentException,模块部署失败: 类加载错误,ModuleDeployer,模块依赖的类在运行时找不到
+springflo,ERROR,FlowExecutionRepositoryException,流程执行仓库异常: 状态保存失败,FlowExecutionRepository,流程执行状态持久化时发生错误
+springcloudstream,ERROR,ContentTypeException,内容类型异常: 消息转换失败,MessageConverter,无法将消息转换为目标内容类型
+springvault,ERROR,VaultResponseException,Vault响应异常: 权限不足,VaultTemplate,当前令牌无权访问指定路径
+springstatemachine,ERROR,StateMachineRuntimeException,状态机运行时异常: 扩展点错误,StateMachineExtension,自定义扩展点实现抛出异常
+springldap,ERROR,InvalidAttributeValueException,无效属性值: 语法不符合,LdapValidator,属性值不符合LDAP模式定义
+springhateoas,ERROR,EntityLinksException,实体链接异常: 控制器未注册,EntityLinks,尝试为未注册控制器的实体生成链接
+springrestdocs,ERROR,HeaderValidationException,头验证失败: 缺少必需头,HeaderValidator,文档测试中缺少必要的HTTP头
+springkafka,ERROR,ProducerFencedException,生产者被隔离: 事务ID冲突,KafkaProducer,同一事务ID被新生产者实例使用
+springintegration,ERROR,MessageStoreException,消息存储异常: 内存不足,MessageStore,消息存储达到内存上限无法继续
+springbatch,ERROR,FlatFileParseException,平面文件解析异常: 列数不匹配,FlatFileItemReader,数据文件中的列数与配置不匹配
+lombok,WARN,AnnotationProcessingError,@Builder注解处理失败,AnnotationProcessor,实体类中存在final字段导致构建器生成失败
+jdbc,FATAL,ConnectionPoolExhausted,数据库连接池已耗尽,DataSource,连接泄漏导致所有连接被占用无法释放
+springboot,ERROR,BeanCurrentlyInCreationException,Bean正在创建中: CircularService,BeanFactory,循环依赖导致Bean无法完成初始化
+maven,ERROR,ArtifactTransferException,构件传输失败: 连接超时,RepositoryConnector,网络问题导致无法从远程仓库下载依赖
+mybatis,ERROR,TypeHandlerException,类型处理器异常: 枚举转换失败,TypeHandlerRegistry,未注册自定义枚举类型处理器
+java,ERROR,FileNotFoundException,文件未找到: /config/application.yml,FileInputStream,配置文件路径错误或文件不存在
+spring,ERROR,NoSuchBeanDefinitionException,未找到Bean定义: DataSource,BeanFactory,配置类未正确启用数据源自动配置
+jackson,ERROR,InvalidFormatException,无效格式: 日期字符串无法解析,DateTimeFormatter,日期格式与@JsonFormat注解不匹配
+junit,ERROR,TestAbortedException,测试中止: 前置条件不满足,Assume,假设条件验证失败导致跳过测试
+hibernate,ERROR,NonUniqueObjectException,非唯一对象异常: 相同ID的实体已存在,Session,同一会话中尝试保存相同主键的实体
+log4j2,ERROR,ConfigurationException,Log4j2配置错误: appender定义无效,Configurator,XML配置文件中存在语法错误
+redis,ERROR,RedisCommandTimeoutException,Redis命令超时: 操作耗时过长,RedisTemplate,Redis服务器负载过高或网络延迟
+springcloud,ERROR,RibbonException,负载均衡异常: 无可用服务实例,LoadBalancerClient,所有服务实例均不可用
+kafka,ERROR,ConsumerCommitFailedException,消费者提交失败: 偏移量无效,ConsumerCoordinator,消费者组重新平衡导致提交冲突
+gradle,ERROR,ProjectConfigurationException,项目配置异常: 插件版本冲突,ProjectDependency,插件之间存在不兼容的版本要求
+springsecurity,ERROR,AuthenticationCredentialsNotFoundException,认证凭据未找到,AuthenticationManager,安全上下文中不存在认证信息
+jvm,ERROR,MetaspaceOOM,元空间内存溢出: 类加载过多,ClassLoader,动态生成大量类导致元空间耗尽
+mongodb,ERROR,MongoExecutionTimeoutException,查询执行超时: 操作超过30秒,MongoTemplate,数据库索引缺失导致全表扫描
+springbatch,ERROR,NonTransientDataAccessException,非瞬时数据访问异常: 主键冲突,JdbcBatchItemWriter,批量插入时出现重复主键
+elasticsearch,ERROR,ElasticsearchException,索引创建失败: 映射字段类型冲突,IndicesAdminClient,字段类型定义与现有索引不兼容
+tomcat,ERROR,BindException,绑定异常: 地址已在使用,BioEndpoint,多个应用尝试绑定相同端口
+docker,ERROR,ImagePullException,镜像拉取失败: 认证 required,DockerClient,私有仓库需要登录凭证
+nginx,ERROR,UpstreamTimeout,上游服务超时: 连接超时,ProxyModule,后端服务响应时间超过proxy_timeout设置
+zookeeper,ERROR,SessionExpiredException,会话过期: 心跳丢失,CuratorFramework,客户端与ZooKeeper服务器连接中断时间过长
+rabbitmq,ERROR,AlreadyClosedException,连接已关闭: 通道意外终止,Connection,网络波动导致AMQP连接断开
+mybatis-plus,ERROR,SqlInjectorException,SQL注入器异常: 自定义方法冲突,SqlInjector,自定义SQL方法与方法名重复
+springdata,ERROR,QueryCreationException,查询创建异常: 方法名解析失败,QueryLookupStrategy,Repository方法命名不符合规范
+swagger,ERROR,IllegalArgumentException,参数非法: @ApiOperation注解缺失,SwaggerApiReader,控制器方法缺少必要的Swagger注解
+actuator,ERROR,HealthCheckFailedException,健康检查失败: 磁盘空间不足,DiskSpaceHealthIndicator,磁盘使用率超过阈值
+springsession,ERROR,SessionExpiredException,会话过期: Redis TTL到期,RedisIndexedSessionRepository,会话超时时间设置过短
+websocket,ERROR,SessionLimitExceeded,会话数超限: 超过最大连接数,WebSocketConfig,并发连接数超过服务器配置上限
+quartz,ERROR,TriggerMisfiredException,触发器错过触发: 线程池满,Scheduler,任务堆积导致无法及时执行
+springcache,ERROR,CacheEvictException,缓存清除失败: 键模式匹配错误,CacheManager,使用通配符清除时模式语法错误
+validation,ERROR,MethodArgumentNotValidException,方法参数无效: 验证注解失败,MethodValidationInterceptor,控制器参数校验未通过
+springmail,ERROR,MessagingException,消息传递异常: 附件过大,JavaMailSender,邮件附件大小超过服务器限制
+springcloudgateway,ERROR,CircuitBreakerOpen,断路器打开: 服务不可用,CircuitBreakerFilter,下游服务故障率超过阈值
+springadmin,ERROR,InstanceAlreadyRegistered,实例已注册: 重复实例ID,InstanceRegistry,相同实例ID的服务重复注册
+springintegration,ERROR,MessageDeliveryException,消息投递失败: 序列化错误,MessageConverter,消息体包含不可序列化对象
+springwebflux,ERROR,ServerWebInputException,服务器Web输入异常: 表单解析失败,FormHttpMessageReader,multipart表单数据格式错误
+springactuator,ERROR,EndpointIdConflict,端点ID冲突: 重复的端点ID,EndpointDiscoverer,自定义监控端点ID与系统端点重复
+springboot,ERROR,UnsupportedConfigDataLocation,不支持的配置数据位置: 未知协议,ConfigDataLoader,配置文件中使用了不支持的URL协议
+springcloudconfig,ERROR,PropertySourceBindException,属性源绑定失败: 加密属性解密失败,EnvironmentDecrypt,配置中心返回的加密属性无法解密
+springsecurity,ERROR,AccessDeniedException,访问被拒绝: IP地址不在白名单,AuthorizationManager,客户端IP未被授权访问资源
+springsocial,ERROR,DuplicateConnectionException,重复连接异常: 第三方账号已绑定,ConnectionRepository,尝试重复绑定同一第三方平台账号
+springmobile,ERROR,TabletResolverException,平板设备解析失败: User-Agent识别错误,DeviceResolver,无法正确识别平板设备类型
+springandroid,ERROR,SSLHandshakeException,SSL握手失败: 证书链验证失败,RestTemplate,服务器证书链不完整或根证书不受信任
+springroo,ERROR,EntityCreationException,实体创建失败: JPA注解冲突,EntityGenerator,实体类注解配置存在矛盾
+springshell,ERROR,CommandRegistrationException,命令注册失败: 参数类型不匹配,CommandRegistry,命令方法参数类型无法正确解析
+springxd,ERROR,StreamValidationException,流验证失败: 处理器配置错误,StreamDefinitionValidator,流定义中处理器参数验证失败
+springflo,ERROR,NodeExecutionException,节点执行异常: 脚本引擎错误,ScriptNode,JavaScript脚本执行时抛出异常
+springcloudstream,ERROR,BindingTargetException,绑定目标异常: 动态目标解析失败,BindingService,动态目的地名称解析错误
+springvault,ERROR,VaultConfigException,Vault配置异常: 身份验证链配置错误,VaultConfiguration,多个认证方式配置冲突
+springstatemachine,ERROR,StateMachineError,状态机错误: 初始状态未定义,StateMachineFactory,状态机配置缺少初始状态定义
+springldap,ERROR,InvalidSearchFilterException,无效搜索过滤器: LDAP过滤语法错误,FilterParser,LDAP查询过滤器格式不正确
+springhateoas,ERROR,LinkBuilderException,链接构建异常: 控制器映射缺失,ControllerLinkBuilder,无法为未映射的控制器方法生成链接
+springrestdocs,ERROR,OperationException,操作异常: 请求参数缺失,OperationBuilder,文档测试未设置必需的请求参数
+springkafka,ERROR,ListenerContainerStoppedException,监听器容器停止: 消费者组被撤销,ConcurrentMessageListenerContainer,管理员手动撤销消费者组
+springintegration,ERROR,MessageRejectedException,消息被拒绝: 服务激活器异常,ServiceActivatingHandler,服务激活器方法执行失败
+springbatch,ERROR,ItemProcessException,项目处理异常: 业务校验失败,ItemProcessor,处理过程中业务规则验证未通过
+springsession,ERROR,SessionLockException,会话锁定异常: 分布式锁获取超时,RedisSessionRepository,集群环境下会话锁定竞争激烈
+springsecurity,ERROR,ConcurrentLoginException,并发登录异常: 会话数超限,ConcurrentSessionControlStrategy,同一账号同时登录会话数超过限制
+springwebflow,ERROR,FlowArtifactNotFoundException,流程构件未找到: 视图资源缺失,FlowResourceResolver,流程视图文件不存在
+springmobile,ERROR,DeviceTypeResolverException,设备类型解析异常: 自定义解析器错误,DeviceResolver,自定义设备解析器实现抛出异常
+springandroid,ERROR,TokenResponseException,令牌响应异常: 授权服务器错误,OAuth2AccessTokenSupport,OAuth2授权服务器返回错误响应
+springroo,ERROR,FieldCreationException,字段创建失败: 关联映射错误,FieldGenerator,实体关联字段映射配置不正确
+springshell,ERROR,CommandParserException,命令解析异常: 引号不匹配,CommandParser,命令参数中引号未正确闭合
+springxd,ERROR,ModuleExecutionException,模块执行异常: 输入通道关闭,ModuleExecutor,上游模块关闭输出通道导致下游无法接收数据
+springflo,ERROR,TransitionEvaluationException,转移评估异常: SpEL表达式错误,Transition,状态转移条件表达式执行失败
+springcloudstream,ERROR,ContentTypeResolutionException,内容类型解析异常: 消息头缺失,ContentTypeResolver,消息缺少content-type头
+springvault,ERROR,LeaseRenewalException,租约续期异常: 租约不可续期,LeaseManager,动态秘钥租约不允许手动续期
+springstatemachine,ERROR,StateMachinePersistException,状态机持久化异常: 序列化失败,StateMachineContext,状态机上下文包含不可序列化状态
+springldap,ERROR,ContextNotEmptyException,上下文非空异常: 删除操作失败,LdapTemplate,尝试删除非空目录条目
+springhateoas,ERROR,ResourceConversionException,资源转换异常: 嵌套资源循环引用,ResourceProcessor,资源对象之间存在循环引用
+springrestdocs,ERROR,SnippetCreationException,片段创建异常: 响应字段缺失,ResponseFieldsSnippet,API响应中缺少文档定义的字段
+springkafka,ERROR,ProducerInterruptedException,生产者中断异常: 线程被中断,KafkaProducer,生产者发送消息时线程被中断
+springintegration,ERROR,MessageTransformationException,消息转换异常: XML解析失败,XmlPayloadConverter,XML消息格式不正确无法解析
+springbatch,ERROR,JobParametersInvalidException,作业参数无效: 必需参数缺失,JobParametersValidator,启动作业时缺少必需参数
+springsession,ERROR,SessionRetrievalException,会话检索异常: 存储引擎超时,SessionRepository,从持久化存储读取会话数据超时
+springsecurity,ERROR,PreAuthenticatedCredentialsNotFoundException,预认证凭据未找到,PreAuthenticatedAuthenticationProvider,请求头中缺少预认证信息
+springwebflow,ERROR,FlowExecutionRestorationException,流程执行恢复异常: 版本不兼容,FlowExecutionRepository,持久化的流程版本与当前定义不匹配
+springmobile,ERROR,SiteSwitchException,站点切换异常: Cookie路径冲突,SiteSwitcher,多个站点切换器配置路径重叠
+springandroid,ERROR,ResourceServerException,资源服务器异常: 令牌范围不足,OAuth2RestTemplate,OAuth2令牌缺少访问资源的必要范围
+springroo,ERROR,ServiceLayerException,服务层生成失败: 接口方法冲突,ServiceGenerator,服务接口中存在重复方法定义
+springshell,ERROR,CommandNotFoundException,命令未找到: 插件未加载,CommandCatalog,所需命令所在的插件未正确加载
+springxd,ERROR,ContainerAllocationException,容器分配异常: 资源不足,ContainerAllocator,集群中没有足够资源分配新容器
+springflo,ERROR,FlowDeploymentException,流程部署异常: 验证失败,FlowDeployer,流程定义未通过部署前验证
+springcloudstream,ERROR,BindingInitializationException,绑定初始化异常: 目标解析失败,BindingService,绑定目标地址解析错误
+springvault,ERROR,TransitEncryptionException,加密异常: 密钥版本不存在,TransitTemplate,指定密钥版本已被删除
+springstatemachine,ERROR,StateMachineTerminatedException,状态机终止异常: 最终状态到达,StateMachine,状态机到达最终状态后尝试继续处理事件
+springldap,ERROR,InvalidNameException,无效名称异常: DN格式错误,LdapName,识别名字符串不符合LDAP DN格式规范
+springhateoas,ERROR,CurieProviderException,Curie提供者异常: 命名空间冲突,CurieProvider,定义的curie命名空间与现有关系冲突
+springrestdocs,ERROR,PreprocessOperationException,预处理操作异常: 内容替换失败,Preprocessors,文档预处理过程中内容替换错误
+springkafka,ERROR,ListenerContainerPausedException,监听器容器暂停: 手动暂停,ConcurrentMessageListenerContainer,通过JMX或API手动暂停监听器
+springintegration,ERROR,MessageFilterException,消息过滤异常: 表达式评估错误,MessageFilter,过滤条件SpEL表达式执行异常
+springbatch,ERROR,ItemWriteException,项目写入异常: 约束违反,JdbcBatchItemWriter,插入数据违反数据库约束条件
+springsession,ERROR,SessionStorageException,会话存储异常: 存储空间不足,SessionRepository,持久化存储空间不足无法保存会话数据
+springsecurity,ERROR,RememberMeAuthenticationException,记住我认证异常: 令牌无效,RememberMeServices,记住我令牌已过期或篡改
+springwebflow,ERROR,FlowAttributeException,流程属性异常: 范围设置错误,FlowAttribute,流程属性作用域配置冲突
+springmobile,ERROR,DeviceCapabilitiesException,设备能力异常: 特性检测失败,DeviceCapabilities,无法检测设备的特定能力
+springandroid,ERROR,AuthorizationException,授权异常: 用户拒绝授权,AuthorizationRequest,用户在OAuth2授权页面拒绝授权
+springroo,ERROR,RepositoryCreationException,仓库创建失败: 接口签名错误,RepositoryGenerator,Repository接口方法签名不符合Spring Data规范
+springshell,ERROR,CommandHistoryException,命令历史异常: 持久化失败,History,命令历史记录保存到文件时发生IO错误
+springxd,ERROR,ModuleResolutionException,模块解析异常: 依赖冲突,ModuleResolver,模块依赖的库版本冲突
+springflo,ERROR,FlowExecutionException,流程执行异常: 决策节点错误,DecisionNode,决策节点条件评估抛出异常
+springcloudstream,ERROR,BindingProductionException,绑定生产异常: 通道创建失败,BindingProducer,创建消息通道时发生错误
+springvault,ERROR,SecretNotFoundException,秘密未找到: 路径不存在,VaultTemplate,指定的秘密引擎路径不存在
+springstatemachine,ERROR,StateMachineException,状态机异常: 事件分发错误,StateMachineEventPublisher,状态机事件分发过程中发生异常
+springldap,ERROR,OperationNotSupportedException,操作不支持: 控制无效,LdapContext,LDAP服务器不支持请求的控制操作
+springhateoas,ERROR,LinkRelationException,链接关系异常: IANA关系未注册,LinkRelation,使用的链接关系未在IANA注册
+springrestdocs,ERROR,ConstraintViolationException,约束违反异常: 文档约束检查失败,ConstraintValidator,生成的文档违反自定义约束规则
+springkafka,ERROR,RecordTooLargeException,记录过大异常: 消息超过最大大小,Producer,消息大小超过broker允许的最大值
+springintegration,ERROR,MessageRoutingException,消息路由异常: 路由键解析失败,HeaderValueRouter,无法从消息头中提取路由键
+springbatch,ERROR,JobExecutionAlreadyRunningException,作业执行已运行: 重复启动,JobLauncher,尝试启动已处于运行状态的作业
+springsession,ERROR,SessionCreationException,会话创建异常: ID生成冲突,SessionIdGenerator,生成的会话ID与现有会话冲突
+springsecurity,ERROR,CsrfException,CSRF异常: 令牌不匹配,CsrfFilter,请求中的CSRF令牌与会话中存储的不匹配
+springwebflux,ERROR,WebSessionNotFoundException,Web会话未找到: 会话过期,WebSessionManager,WebFlux会话超时导致会话丢失
+springmobile,ERROR,DeviceResolutionException,设备解析异常: 自定义解析器未注册,DeviceResolverManager,未找到适合的设备解析器
+springandroid,ERROR,TokenRequestFailureException,令牌请求失败: 授权码无效,AuthorizationCodeTokenProvider,OAuth2授权码已被使用
+springroo,ERROR,WebLayerException,Web层生成失败: 控制器映射冲突,WebMvcGenerator,生成的控制器请求映射路径重复
+springshell,ERROR,CommandExecutionException,命令执行异常: 权限不足,CommandExecutor,当前用户无权执行该Shell命令
+springxd,ERROR,AdminServerException,管理服务器异常: REST API不可用,AdminServer,管理服务器未启动或端口被占用
+springflo,ERROR,FlowParseException,流程解析异常: 图形格式错误,FlowParser,流程图形数据格式不符合预期
+springcloudstream,ERROR,MessageConversionException,消息转换异常: 类型不匹配,MessageConverter,消息负载类型与目标类型不兼容
+springvault,ERROR,VaultResponseException,Vault响应异常: 权限不足,VaultTemplate,令牌无权访问指定路径
+springstatemachine,ERROR,StateMachineAccessException,状态机访问异常: 状态机未启动,StateMachine,尝试操作未启动的状态机
+springldap,ERROR,CommunicationException,通信异常: LDAP服务器无响应,LdapClient,LDAP服务器连接超时或不可达
+springhateoas,ERROR,ResourceSupportException,资源支持异常: 链接生成失败,ResourceSupport,资源对象链接生成过程中发生错误
+springrestdocs,ERROR,TemplateEngineException,模板引擎异常: 模板渲染失败,TemplateEngine,文档模板中存在语法错误

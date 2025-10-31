@@ -4,13 +4,15 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from ninja import NinjaAPI, Router
+from django.db.models import Q
 
 from . import services
-from .models import APIKey, ConversationSession
+from .models import APIKey, ConversationSession, ExternalLLMAPI
 from .schemas import (
     LoginIn, ChatIn, ChatOut, HistoryOut, ErrorResponse,
     ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
     SessionIn, SessionOut, SessionListOut,
+    APIIn, ModelsListOut, ModelIn,
 )
 from .services import (
     get_or_create_session, get_cached_reply, set_cached_reply,
@@ -18,9 +20,29 @@ from .services import (
     get_history_cfg, parse_session_context, select_history_by_similarity, compose_prompt_with_history,
 )
 
+
 logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.1.0")
+
+
+def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> bool:
+    """Quickly validate an OpenAI-compatible chat endpoint with a 1-token request."""
+    try:
+        from openai import OpenAI
+        client = OpenAI(base_url=base_url, api_key=api_key, timeout=15)
+        # minimal probe
+        resp = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=1,
+            temperature=0.0,
+        )
+        # if no exception, treat as OK
+        return bool(resp and getattr(resp, "id", None))
+    except Exception as e:
+        logger.warning(f"Validate external API failed: {e}")
+        return False
 
 
 def api_key_auth(request):
@@ -166,24 +188,30 @@ def chat(request, data: ChatIn):
 
 
 # 1. 修复 history 接口
-@router.get("/sessions/history", response={200: HistoryOut})
+@router.get("/sessions/history", response={200: HistoryOut, 401: ErrorResponse, 404: ErrorResponse})
 def history(request, session_id: str = "default_session"):
-    """查看对话历史接口：根据session_id返回对话历史"""
-    # 直接使用 session_id 参数，无需通过 data
-    processed_session_id = session_id.strip() or "default_session"
-    user_api_key = request.auth.key
-    session = services.get_or_create_session(processed_session_id, request.auth)
+    """查看对话历史接口：当会话不存在时返回 404，不再隐式创建。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    processed_session_id = (session_id or "").strip() or "default_session"
+    username = request.auth.user
+    session = ConversationSession.objects.filter(session_id=processed_session_id, user=username).first()
+    if not session:
+        return 404, {"error": "会话不存在"}
     return {"history": session.context}
 
 
 # 2. 修复 clear_history 接口
-@router.delete("/sessions/history", response={200: dict})
+@router.delete("/sessions/history", response={200: dict, 401: ErrorResponse, 404: ErrorResponse})
 def clear_history(request, session_id: str = "default_session"):
-    """清空对话历史接口"""
-    # 直接使用 session_id 参数，无需通过 data
-    processed_session_id = session_id.strip() or "default_session"
-    user_api_key = request.auth.key
-    session = services.get_or_create_session(processed_session_id, request.auth)
+    """清空对话历史接口：当会话不存在时返回 404，不再隐式创建。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    processed_session_id = (session_id or "").strip() or "default_session"
+    username = request.auth.user
+    session = ConversationSession.objects.filter(session_id=processed_session_id, user=username).first()
+    if not session:
+        return 404, {"error": "会话不存在"}
     session.clear_context()
     return {"message": "历史记录已清空"}
 
@@ -252,6 +280,14 @@ def list_sessions(request):
     return {"sessions": session_ids}
 
 
+@router.get("/llm/my", response={200: SelectLLMOut, 401: ErrorResponse})
+def get_my_llm(request):
+    """返回当前用户选择的 LLM 配置（通过 Bearer token 识别用户）。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    pref = services.get_or_create_user_pref(request.auth)
+    return {"provider": pref.provider, "model": pref.model or None}
+
 @router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})
 def select_llm(request, data: SelectLLMIn):
     if not request.auth:
@@ -262,6 +298,57 @@ def select_llm(request, data: SelectLLMIn):
         return 400, {"error": f"不允许的 provider: {provider}. 仅允许: {sorted(allowed)}"}
     pref = set_user_pref(request.auth, provider, data.model)
     return {"provider": pref.provider, "model": pref.model or None}
+
+
+# ===== External API management =====
+@router.post("/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse})
+def add_external_api(request, data: APIIn):
+    """添加/更新用户自定义的 OpenAI 兼容接口配置。先校验可用性，再保存。"""
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    base_url = (data.base_url or "").strip()
+    model_name = (data.model_name or "").strip()
+    api_key = (data.api_key or "").strip()
+    alias = (data.alias or None)
+    if not base_url or not model_name or not api_key:
+        return 400, {"error": "base_url、model_name、api_key 不能为空"}
+
+    # quick validation
+    ok = _validate_openai_compat(base_url, api_key, model_name)
+    if not ok:
+        return 400, {"error": "无法连接到该接口或模型不可用"}
+
+    username = request.auth.user
+    obj, created = ExternalLLMAPI.objects.update_or_create(
+        user=username, model_name=model_name,
+        defaults={"base_url": base_url, "api_key": api_key, "alias": alias},
+    )
+    return {"message": "保存成功"}
+
+
+@router.get("/llm/extern", response={200: ModelsListOut, 401: ErrorResponse})
+def list_external_models(request):
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    username = request.auth.user
+    items = ExternalLLMAPI.objects.filter(user=username).order_by("-updated_at")
+    names = [(item.alias or item.model_name).strip() for item in items]
+    return {"models_list": names}
+
+
+@router.delete("/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse})
+def delete_external_model(request, data: ModelIn):
+    if not request.auth:
+        return 401, {"error": "未授权"}
+    key = (data.model_name or "").strip()
+    if not key:
+        return 400, {"error": "model_name 不能为空"}
+    username = request.auth.user
+    qs = ExternalLLMAPI.objects.filter(user=username).filter(Q(model_name=key) | Q(alias=key))
+    if not qs.exists():
+        return 404, {"error": "未找到该模型配置"}
+    qs.delete()
+    return {"message": "已删除"}
 
 
 @api.post("/refresh", response={200: dict, 400: ErrorResponse, 403: ErrorResponse})
