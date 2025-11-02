@@ -93,6 +93,42 @@ class ConversationSession(models.Model):
         return self.session_id
 
 
+class Session(models.Model):
+    """开发版：新会话表，记录 session_id 与 user 的对应关系。"""
+    session_id = models.CharField(max_length=100, db_index=True)
+    user = models.CharField(max_length=100, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'deepseek_api_session'
+        unique_together = ('session_id', 'user')
+        indexes = [
+            models.Index(fields=['user', 'updated_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user}:{self.session_id}"
+
+
+class History(models.Model):
+    """开发版：新历史表，按轮存储对话。"""
+    session_id = models.CharField(max_length=100, db_index=True)
+    user = models.CharField(max_length=100, db_index=True)
+    user_input = models.TextField(blank=True, null=True)
+    response = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'deepseek_api_history'
+        indexes = [
+            models.Index(fields=['session_id', 'user', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user}:{self.session_id}@{self.pk}"
+
+
 class UserLLMPreference(models.Model):
     """存储用户选择的 LLM 提供方/模型。未设置时按配置默认插入。"""
     user = models.OneToOneField(APIKey, on_delete=models.CASCADE, related_name='llm_pref')
