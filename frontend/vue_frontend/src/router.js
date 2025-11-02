@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useStore } from './store';
+import { useAuthStore } from './stores/auth';
 import Login from './views/Login.vue';
 import Chat from './views/Chat.vue';
 
@@ -7,7 +7,8 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: Login,
+    meta: { requiresAuth: false }
   },
   {
     path: '/',
@@ -26,14 +27,16 @@ const router = createRouter({
   routes
 });
 
-// 路由守卫
 router.beforeEach((to, from, next) => {
-  const store = useStore();
+  const authStore = useAuthStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
-  if (requiresAuth && !store.apiKey) {
+  if (requiresAuth && !authStore.apiKey) {
     next('/login');
-  } else {
+  } else if (to.path === '/login' && authStore.apiKey) {
+    next('/');
+  }
+  else {
     next();
   }
 });

@@ -1,176 +1,144 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <h1 class="title">DeepSeek-KAI 客户端</h1>
-      <p class="subtitle">{{ isRegisterMode ? '创建新账户' : '请登录以继续' }}</p>
+  <div class="login-view">
+    <n-card class="login-card" :bordered="false">
+      <!-- Simple Gemini-like title -->
+      <n-h1 class="title">
+        <span class="gemini-title">Hello</span>
+      </n-h1>
+      <n-p class="subtitle">{{ isRegisterMode ? 'Create a new account' : 'Sign in to continue' }}</n-p>
 
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
-
-      <form @submit.prevent="handleSubmit" class="login-form">
-        <div class="form-group">
-          <label for="username">用户名</label>
-          <input
-            type="text"
-            id="username"
-            v-model="username"
-            required
-            placeholder="输入用户名"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="password">密码</label>
-          <input
+      <n-form ref="formRef" :model="formValue" @submit.prevent="handleSubmit">
+        <n-form-item-row label="Username" path="username">
+          <n-input v-model:value="formValue.username" placeholder="Enter your username" size="large" :round="true" />
+        </n-form-item-row>
+        <n-form-item-row label="Password" path="password">
+          <n-input
             type="password"
-            id="password"
-            v-model="password"
-            required
-            :placeholder="isRegisterMode ? '输入新密码' : '输入密码 (默认: secret)'"
+            show-password-on="click"
+            v-model:value="formValue.password"
+            placeholder="Enter your password"
+            size="large"
+            :round="true"
           />
-        </div>
+        </n-form-item-row>
 
-        <button type="submit" class="primary login-button" :disabled="loading">
-          <span v-if="loading" class="loading"></span>
-          <span v-else>{{ isRegisterMode ? '注册' : '登录' }}</span>
-        </button>
-      </form>
+        <n-button block attr-type="submit" :loading="appStore.loading" :disabled="appStore.loading" :round="true" size="large" class="login-button">
+          {{ isRegisterMode ? 'Register' : 'Login' }}
+        </n-button>
+      </n-form>
 
-      <div class="toggle-mode">
-        <button class="link-button" @click="toggleMode">
-          {{ isRegisterMode ? '已有账户？点击登录' : '没有账户？点击注册' }}
-        </button>
-      </div>
-    </div>
+      <n-p class="toggle-mode">
+        <n-button text @click="toggleMode">
+          {{ isRegisterMode ? 'Already have an account? Sign in' : "Don't have an account? Sign up" }}
+        </n-button>
+      </n-p>
+    </n-card>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from '../store';
-import api from '../api';
-
-const username = ref('');
-const password = ref('');
-const loading = ref(false);
-const error = ref('');
-const successMessage = ref(''); // 用于显示注册成功消息
-const isRegisterMode = ref(false); // 切换登录/注册
+import { NCard, NForm, NFormItemRow, NInput, NButton, NH1, NP, useMessage } from 'naive-ui';
+import { useAuthStore } from '../stores/auth';
+import { useAppStore } from '../stores/app';
+import * as api from '../api';
 
 const router = useRouter();
-const store = useStore();
+const authStore = useAuthStore();
+const appStore = useAppStore();
+const message = useMessage();
+
+const isRegisterMode = ref(false);
+const formRef = ref(null);
+const formValue = ref({
+  username: '',
+  password: '',
+});
 
 const toggleMode = () => {
   isRegisterMode.value = !isRegisterMode.value;
-  error.value = '';
-  successMessage.value = '';
+  formValue.value.password = '';
 };
 
 const handleSubmit = async () => {
-  loading.value = true;
-  error.value = '';
-  successMessage.value = '';
-
+  appStore.setLoading(true);
   try {
     if (isRegisterMode.value) {
-      // 注册逻辑
-      await api.register(username.value, password.value);
-      successMessage.value = '注册成功！请使用您的新账户登录。';
-      isRegisterMode.value = false; // 切换回登录模式
-      password.value = ''; // 清空密码
+      await api.register(formValue.value.username, formValue.value.password);
+      message.success('Registration successful! Please log in.');
+      isRegisterMode.value = false;
+      formValue.value.password = '';
     } else {
-      // 登录逻辑
-      const response = await api.login(username.value, password.value);
-      store.setApiKey(response.data.api_key);
-      router.push('/');
+      const response = await api.login(formValue.value.username, formValue.value.password);
+      const authHeader = response.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        authStore.setApiKey(token);
+        router.push('/');
+      } else {
+        throw new Error('Invalid credentials or token not received.');
+      }
     }
   } catch (err) {
-    error.value = err.response?.data?.error || (isRegisterMode.value ? '注册失败' : '登录失败，请检查用户名和密码');
+    const errorMessage = err.response?.data?.error || err.message || 'An error occurred.';
+    message.error(errorMessage);
   } finally {
-    loading.value = false;
+    appStore.setLoading(false);
   }
 };
 </script>
 
 <style scoped>
-.login-container {
+.login-view {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 1rem;
+  background-color: #f8fafd; /* Light background */
 }
-
 .login-card {
   width: 100%;
   max-width: 400px;
-  text-align: center;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
-
 .title {
-  color: var(--primary-color);
-  margin-bottom: 0.5rem;
-  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
-
+/* Style title like Gemini */
+.gemini-title {
+    background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6, #e94235, #fbbc05);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5rem;
+}
 .subtitle {
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
+  text-align: center;
+  color: #5f6368; /* Darker gray for readability */
+  margin-bottom: 24px;
 }
-
-/* 成功消息样式 */
-.success-message {
-  background-color: #dff0d8;
-  color: #3c763d;
-  border: 1px solid #d6e9c6;
-  padding: 0.75rem;
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  text-align: left;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
 .login-button {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  margin-top: 1rem;
-}
-
-.loading {
-  margin-right: 0.5rem;
-  vertical-align: middle;
-}
-
-.toggle-mode {
-  margin-top: 1.5rem;
-}
-
-.link-button {
-  background: none;
+  margin-top: 16px;
+  /* Bright gradient for login button */
+  background: linear-gradient(135deg, #4285f4, #9b59b6);
+  color: white;
+  font-weight: 500;
   border: none;
-  color: var(--primary-color);
-  cursor: pointer;
-  padding: 0;
-  font-size: 0.9rem;
 }
-
-.link-button:hover {
-  text-decoration: underline;
+.login-button:hover {
+  background: linear-gradient(135deg, #3a75d9, #8a4eae);
+}
+.login-button.n-button--disabled {
+  background: #f0f0f0;
+  color: #aaa;
+  opacity: 1;
+}
+.toggle-mode {
+  text-align: center;
+  margin-top: 24px;
 }
 </style>
