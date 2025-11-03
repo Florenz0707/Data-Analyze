@@ -106,12 +106,34 @@ export const useChatStore = defineStore('chat', {
         appStore.setLoading(true);
         try {
             const response = await api.getHistory(sessionId);
-            const history = JSON.parse(response.data.history || '[]');
-            this.messages[sessionId] = history.map(item => ({
-                isUser: item.role === 'user',
-                content: item.content,
-                timestamp: new Date().toLocaleString(),
-            }));
+            
+            // Updated logic to parse the new API response
+            const turns = response.data.turns || [];
+            const newMessages = [];
+            // Mimic old timestamp logic, as API doesn't provide timestamps
+            const now = new Date().toLocaleString(); 
+            console.log('Loading history for session:', sessionId, 'Turns:', turns);
+
+            for (const turn of turns) {
+                // Add user message from the turn
+                if (turn.user_input) {
+                    newMessages.push({
+                        isUser: true,
+                        content: turn.user_input,
+                        timestamp: now,
+                    });
+                }
+                // Add bot response from the turn
+                if (turn.response) {
+                    newMessages.push({
+                        isUser: false,
+                        content: turn.response,
+                        timestamp: now,
+                    });
+                }
+            }
+            this.messages[sessionId] = newMessages;
+
         } catch (error) {
             appStore.setError('Failed to load chat history.');
         } finally {
