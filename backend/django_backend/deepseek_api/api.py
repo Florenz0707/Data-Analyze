@@ -4,12 +4,13 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from ninja import NinjaAPI, Router
+from django.utils import timezone
 from django.db.models import Q
 
 from . import services
-from .models import APIKey, ConversationSession, ExternalLLMAPI
+from .models import APIKey, ConversationSession, ExternalLLMAPI, Session, History
 from .schemas import (
-    LoginIn, ChatIn, ChatOut, HistoryOut, ErrorResponse,
+    LoginIn, ChatIn, ChatOut, HistoryListOut, ErrorResponse,
     ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
     SessionIn, SessionOut, SessionListOut,
     APIIn, ModelsListOut, ModelIn,
@@ -144,75 +145,104 @@ def chat(request, data: ChatIn):
         return 401, {"error": "请先登录获取API Key"}
 
     # 2. 解析参数（确保 session_id 有效）
-    session_id = data.session_id.strip() or "default_session"
-    user_input = data.user_input.strip()
+    sid = (data.session_id or "").strip() or "default_session"
+    user_input = (data.user_input or "").strip()
     if not user_input:
         return 400, {"error": "请输入消息内容"}
 
-    # 3. 获取会话（加载旧会话或创建新会话）
-    user = request.auth  # 从认证获取当前用户（APIKey对象）
-    session = get_or_create_session(session_id, user)
+    # 3. 获取或创建新会话（基于新表 Session）
+    username = request.auth.user
+    session, _ = Session.objects.get_or_create(session_id=sid, user=username)
 
-    # 4. 依据配置/入参决定是否注入历史
+    # 4. 构造历史上下文（基于新表 History）
     hist_cfg = get_history_cfg()
     use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
-    turns = parse_session_context(session.context)
-    selected = []
+    qs = History.objects.filter(session_id=sid, user=username).order_by("created_at", "id")
+    turns_all = [(h.user_input or "", h.response or "") for h in qs]
     if use_history_mode == "on":
-        # 强制纳入最近 max_turns 轮，但仍受 token 预算限制（compose 时截断）
-        selected = turns[-int(hist_cfg.get("max_turns", 8)):]
+        selected = turns_all[-int(hist_cfg.get("max_turns", 8)):]
     elif use_history_mode == "auto":
-        selected = select_history_by_similarity(user_input, turns, hist_cfg)
-    else:  # off
+        selected = select_history_by_similarity(user_input, turns_all, hist_cfg)
+    else:
         selected = []
     query = compose_prompt_with_history(selected, user_input, hist_cfg)
     logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
 
     # 5. 调用大模型（带缓存）。此处使用用户绑定的 LLM（若未设置，则自动创建默认偏好）。
-    cached_reply = get_cached_reply(query, session_id, user)
+    user_obj = request.auth
+    cached_reply = get_cached_reply(query, sid, user_obj)
     if cached_reply:
         reply = cached_reply
     else:
         try:
-            reply = generate_with_user_llm(user, query)
-            set_cached_reply(query, reply, session_id, user)
+            reply = generate_with_user_llm(user_obj, query)
+            set_cached_reply(query, reply, sid, user_obj)
         except RuntimeError as e:
             return 503, {"error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"}
     logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
-    # 6. 保存上下文到会话（更新历史记录）
-    session.context += f"用户：{user_input}\n回复：{reply}\n"
-    session.save()
+    # 6. 写入结构化历史并更新会话时间
+    History.objects.create(session_id=sid, user=username, user_input=user_input, response=reply)
+    session.updated_at = timezone.now()
+    session.save(update_fields=["updated_at"])
 
     return {"reply": reply}
 
 
-# 1. 修复 history 接口
-@router.get("/sessions/history", response={200: HistoryOut, 401: ErrorResponse, 404: ErrorResponse})
-def history(request, session_id: str = "default_session"):
-    """查看对话历史接口：当会话不存在时返回 404，不再隐式创建。"""
+@router.get("/sessions/history", response={200: HistoryListOut, 401: ErrorResponse, 404: ErrorResponse})
+def history(request, session_id: str, limit: int = 200, before_id: int | None = None, after_id: int | None = None):
+    """结构化获取对话历史：
+    - 基于新表 deepseek_api_session / deepseek_api_history
+    - 支持分页：before_id/after_id 二选一，limit 默认 200
+    """
     if not request.auth:
         return 401, {"error": "未授权"}
-    processed_session_id = (session_id or "").strip() or "default_session"
+
+    sid = (session_id or "").strip() or "default_session"
     username = request.auth.user
-    session = ConversationSession.objects.filter(session_id=processed_session_id, user=username).first()
-    if not session:
+
+    # 校验会话存在
+    if not Session.objects.filter(session_id=sid, user=username).exists():
         return 404, {"error": "会话不存在"}
-    return {"history": session.context}
+
+    # 分页与排序
+    qs = History.objects.filter(session_id=sid, user=username)
+    if before_id is not None:
+        qs = qs.filter(id__lt=before_id).order_by("-id")
+    elif after_id is not None:
+        qs = qs.filter(id__gt=after_id).order_by("id")
+    else:
+        qs = qs.order_by("id")
+
+    limit = max(1, min(int(limit or 200), 1000))
+    items = list(qs[:limit])
+
+    # 若使用 before_id 且倒序取，需要再翻转为升序返回
+    if before_id is not None:
+        items = list(reversed(items))
+
+    turns = [
+        {"user_input": it.user_input or "", "response": it.response or ""}
+        for it in items
+    ]
+
+    return {"turns": turns}
 
 
-# 2. 修复 clear_history 接口
 @router.delete("/sessions/history", response={200: dict, 401: ErrorResponse, 404: ErrorResponse})
 def clear_history(request, session_id: str = "default_session"):
-    """清空对话历史接口：当会话不存在时返回 404，不再隐式创建。"""
+    """清空结构化历史：仅删除 deepseek_api_history 中该会话的记录，Session 保留。
+    当会话不存在时返回 404。"""
     if not request.auth:
         return 401, {"error": "未授权"}
-    processed_session_id = (session_id or "").strip() or "default_session"
+
+    sid = (session_id or "").strip() or "default_session"
     username = request.auth.user
-    session = ConversationSession.objects.filter(session_id=processed_session_id, user=username).first()
-    if not session:
+
+    if not Session.objects.filter(session_id=sid, user=username).exists():
         return 404, {"error": "会话不存在"}
-    session.clear_context()
+
+    History.objects.filter(session_id=sid, user=username).delete()
     return {"message": "历史记录已清空"}
 
 

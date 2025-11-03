@@ -18,8 +18,13 @@ class ChatOut(Schema):
     reply: str
 
 
-class HistoryOut(Schema):
-    history: str
+class HistoryItem(Schema):
+    user_input: str
+    response: str
+
+
+class HistoryListOut(Schema):
+    turns: List[HistoryItem]
 
 
 class ErrorResponse(Schema):
@@ -57,7 +62,6 @@ class SessionListOut(Schema):
     sessions: List[str]
 
 
-# ===== External API Schemas =====
 class APIIn(Schema):
     base_url: str
     model_name: str
