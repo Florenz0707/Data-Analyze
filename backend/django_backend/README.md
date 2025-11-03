@@ -1,183 +1,120 @@
-# 项目说明与配置指南（适配最新的 config/llm_config.yaml）
+# 数据分析后端（Django）README（简版）
 
-本项目提供“日志检索 + LLM 分析”的一体化能力，支持本地/云端多种推理后端，并且允许“对话模型（LLM）”与“向量嵌入模型（Embeddings）独立选择、灵活混搭”。
+本项目提供“系统日志检索 + 向量检索 + 大语言模型分析”的一体化后端服务，支持多种推理与嵌入后端（本地 Transformers、Ollama、OpenAI 兼容、DashScope 等），并可独立选择对话模型与向量嵌入模型，灵活混搭。
 
-核心文件：
 
-- 代码入口与业务逻辑：topklogsystem.py
-- 全局配置：config/llm_config.yaml
-- 系统提示词模板：config/system_prompt.yaml（包含占位符 {log_context}/{query}/{MAX_PARTS_NUM}/{MAX_PART_LENGTH}）
-- 回答模板：config/response_template.md
-- API Key 文件（本地开发用）：api_key.env（可用系统环境变量替代）
+## 1. 功能概览
+- 日志数据索引与检索：使用向量数据库（Chroma）对日志内容建索引并进行 Top‑K 召回。
+- LLM 分析与答复：将检索到的日志上下文与用户问题交由 LLM 生成结构化答复，且支持输出清洗与模板化。
+- 多 Provider 支持：
+  - 本地/离线：Transformers（HF）、Ollama
+  - 云端/在线：OpenAI 兼容端点、阿里云 DashScope
+- 配置即插即用：通过 config/llm_config.yaml 一处集中切换 LLM 与 Embeddings 提供方、模型及参数。
+- Django API：以 Django + django-ninja 提供简洁的后端接口与管理命令（如 initdb）。
 
-## 一、环境与依赖
 
-基础依赖（关键项）：
+## 2. 关键目录与文件
+- manage.py：Django 入口
+- deepseek_project/：Django 配置（settings/urls/asgi/wsgi）
+- deepseek_api/：后端应用（API、Models、Services、管理命令等）
+  - management/commands/initdb.py：初始化示例数据或表结构的管理命令
+- topklogsystem.py：日志检索 + LLM 生成的脚本式入口（便于本地快速验证链路）
+- config/
+  - llm_config.yaml：核心配置（LLM/Embedding Provider、模型、参数、代理等）
+  - system_prompt.yaml：系统提示词模板（含 {log_context}/{query}/{MAX_PARTS_NUM}/{MAX_PART_LENGTH} 占位符）
+  - response_template.md：答案渲染模板
+  - available_local_models.json / generate_local_model.py / generate_llm_config.py：本地模型与配置辅助脚本
+- data/
+  - log/：示例日志数据
+  - vector_stores/：向量索引持久化目录（如 chroma.sqlite3）
+- api_key.env：本地开发用的 API Key 环境变量文件（可用系统环境变量替代）
+- pyproject.toml：Python 依赖与项目信息（PEP 621）
+- uv.lock：依赖锁定文件（建议使用 uv 同步）
 
-- llama-index
-- langchain-openai（用于 OpenAI 兼容协议，以及作为 DashScope Chat 的兼容客户端）
-- langchain-huggingface
-- langchain-ollama
-- transformers
-- sentence-transformers（Hugging Face Embeddings 常用）
-- chromadb
-- pandas
-- python-dotenv（加载 api_key.env）
-- openai（DashScope Embeddings 专用适配使用 openai 官方 SDK）
 
-安装示例（根据你的环境调整）：
+## 3. 配置说明（config/llm_config.yaml）
 
-- pip install llama-index langchain-openai langchain-huggingface langchain-ollama transformers sentence-transformers
-  chromadb pandas python-dotenv openai
+首次生成配置与本地模型清单：
+- 生成 llm_config.yaml（首次克隆仓库或不存在时）
+  - 命令：uv run python config/generate_llm_config.py
+  - 作用：在 config/ 目录下创建/覆盖 llm_config.yaml，并给出可用 Provider/模型的示例条目，便于后续按需修改。
+- 生成 available_local_models.json（用于枚举本地可用的 HF/Ollama 模型等）
+  - 命令：uv run python config/generate_local_model.py
+  - 作用：在 config/ 目录下生成/刷新 available_local_models.json，供配置与选择参考。
 
-## 二、配置总览：config/llm_config.yaml
+- LLM_PROVIDER：对话模型提供方（transformers | ollama | openai_compat | dashscope）
+- EMBEDDING_PROVIDER：向量嵌入提供方（auto | hf | ollama | openai_compat | dashscope）
+  - auto 表示与 LLM_PROVIDER 保持一致
+- TRANSFORMERS_CONFIG：本地 HF 生成/嵌入模型与推理参数
+- OLLAMA_CONFIG：Ollama 生成与嵌入模型、主机端口等
+- OPENAI_COMPAT_CONFIG：OpenAI 或兼容端点（base_url、api_key、模型、重试/超时等）
+- DASHSCOPE_CONFIG：DashScope 兼容模式（chat/embedding 模型、维度、超时等）
+- LLM_MAX_PARTS_NUM / LLM_MAX_PART_LENGTH：生成结果清洗的段落和单条长度限制（会渲染到 system_prompt.yaml）
+- 代理：HTTP_PROXY/HTTPS_PROXY 可选
 
-关键顶层键：
+提示：如更换 EMBEDDING_PROVIDER 或 embedding_model/embedding_dimensions，须删除 data/vector_stores 后重建索引，避免维度不匹配。
 
-- HTTP_PROXY / HTTPS_PROXY：可选，若需走代理。
-- LLM_PROVIDER：选择对话模型提供方。
-    - 可选值：
-        - transformers（本地 HF）
-        - ollama（本地/远程 Ollama）
-        - openai_compat（OpenAI 兼容协议，如 OpenAI/DeepSeek/自建网关）
-        - dashscope（阿里云百炼；Chat 走 OpenAI 兼容，Embeddings 走专用适配）
-- EMBEDDING_PROVIDER：选择向量嵌入提供方，支持独立于 LLM。
-    - 可选值：auto | hf | ollama | openai_compat | dashscope
-    - auto 表示“跟随 LLM_PROVIDER”（保持历史行为）。
-- LLM_GENERATION_RETRIES / LLM_MIN_OUTPUT_CHARS：生成鲁棒性设置。
-- LLM_MAX_PARTS_NUM / LLM_MAX_PART_LENGTH：输出清洗阶段控制每段条数与每条字符数（会渲染到 system_prompt 中的
-  {MAX_PARTS_NUM}/{MAX_PART_LENGTH}）。
-- 路径相关：LOG_PATH、SYSTEM_PROMPT_PATH、RESPONSE_TEMPLATE_PATH。
 
-各 Provider 专属配置块：
+## 4. 环境准备
+- Python：建议 3.13（与 pyproject.toml 对齐）
+- 可选 GPU：如使用本地 Transformers 推理，建议安装匹配 CUDA 的 PyTorch
+- 建议包管理器：uv（已提供 uv.lock）
+- 本地密钥：在项目根目录创建并填写 api_key.env，或在系统环境中设置：
+  - OPENAI_API_KEY / OPENAI_BASE_URL（如使用 OpenAI 兼容端点）
+  - DASHSCOPE_API_KEY / DASHSCOPE_BASE_URL（如使用 DashScope）
+  - HUGGING_FACE_HUB_TOKEN（如使用受限 HF 模型）
 
-- TRANSFORMERS_CONFIG（当 LLM_PROVIDER=transformers 时生效；同时 hf Embeddings 也从此处读取 embedding_model）
-    - llm_model：HF 文本生成模型仓库名或本地路径
-    - 生成参数：max_new_tokens/temperature/top_p/repetition_penalty/do_sample
-    - 设备设置：device/device_map/torch_dtype/trust_remote_code
-    - embedding_model：HF Embeddings 模型名（如 sentence-transformers/all-MiniLM-L6-v2、BAAI/bge-base-zh-v1.5）
-- OLLAMA_CONFIG（当 LLM_PROVIDER=ollama 或 EMBEDDING_PROVIDER=ollama）
-    - model：Ollama LLM 模型名
-    - embedding_model：Ollama Embeddings 模型名（如 bge-large:latest）
-    - host/port/api_key 等（如你的服务做了鉴权）
-- OPENAI_COMPAT_CONFIG（当 LLM_PROVIDER 或 EMBEDDING_PROVIDER 为 openai_compat）
-    - base_url：OpenAI 或兼容端点（如 https://api.openai.com/v1 或你的自建网关）
-    - api_key_env_name：从环境变量或 api_key.env 中读取的 Key 名（默认 OPENAI_API_KEY）
-    - organization/timeout/max_retries
-    - model：生成模型（如 gpt-4o-mini）
-    - embedding_model：向量模型（如 text-embedding-3-large）
-    - embedding_dimensions：可选，部分兼容端点需要显式维度（如 1024/1536/3072）
-- DASHSCOPE_CONFIG（当 LLM_PROVIDER 或 EMBEDDING_PROVIDER 为 dashscope）
-    - base_url：DashScope 兼容端点（北京/新加坡不同）
-    - api_key_env_name：默认 DASHSCOPE_API_KEY
-    - timeout/max_retries
-    - chat_model：如 qwen-turbo/qwen-plus/qwen-max
-    - embedding_model：如 text-embedding-v4
-    - embedding_dimensions：如 1024（按官方文档实际设置）
 
-## 三、API Key 管理：api_key.env
+## 5. 使用包管理器安装依赖（基于 pyproject.toml）
 
-- 本地开发可在根目录放置 api_key.env，项目启动会自动加载。
-- 支持的变量（常见）：
-    - OPENAI_API_KEY / OPENAI_ORG / OPENAI_BASE_URL
-    - DASHSCOPE_API_KEY / DASHSCOPE_BASE_URL
-- 生产环境建议使用系统环境变量注入，不要将 api_key.env 提交到仓库。
+首选：uv（快速、跨平台、原生支持 PEP 621）
+- 安装 uv：
+  - pip install --upgrade uv
+- 创建并使用虚拟环境：
+  - uv venv .venv
+  - Windows：.venv\Scripts\activate
+  - macOS/Linux：source .venv/bin/activate
+- 同步依赖（读取 pyproject.toml，优先使用 uv.lock）：
+  - 使用锁定版本：uv sync --frozen
+  - 首次或需更新锁：uv sync
 
-## 四、独立配置示例
+备选 1：pip（若不使用 uv）
+- 创建虚拟环境并激活：
+  - python -m venv .venv
+  - Windows：.venv\Scripts\activate
+  - macOS/Linux：source .venv/bin/activate
+- 升级 pip：python -m pip install -U pip
+- 安装依赖（两种方式，任选其一）：
+  - 使用已给出的 requirements.txt：pip install -r requirements.txt
+  - 直接依据 pyproject（部分环境需构建后端，可能不如 uv 稳定）：pip install .
 
-1) LLM 用云端（OpenAI 兼容），Embedding 用本地 HF：
+备选 2：Poetry（如你偏好，但本仓库未附带 poetry.lock，需自行管理）
+- poetry install
 
-```
-LLM_PROVIDER: openai_compat
-EMBEDDING_PROVIDER: hf
 
-TRANSFORMERS_CONFIG:
-  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+## 6. 运行与常用命令
 
-OPENAI_COMPAT_CONFIG:
-  base_url: https://api.openai.com/v1
-  api_key_env_name: OPENAI_API_KEY
-  model: gpt-4o-mini
-```
+方式 A：启动 Django API 服务
+- 数据迁移：
+  - uv run python manage.py migrate    （或激活虚拟环境后直接 python manage.py migrate）
+- 可选：初始化命令（如有需要）
+  - uv run python manage.py initdb
+    - 仅迁移不写入种子：uv run python manage.py initdb --no-seed
+    - 在 ORM 种子后尝试执行原始 SQL（谨慎使用）：uv run python manage.py initdb --use-sql --sql init.sql
+- 启动开发服务器：
+  - uv run python manage.py runserver 0.0.0.0:8000
 
-2) 全部用 DashScope（生成 + 向量）：
+方式 B：脚本方式快速验证链路（检索 + 生成）
+- uv run python topklogsystem.py
+- 或在代码中：from topklogsystem import TopKLogSystem; TopKLogSystem.query("你的问题")
 
-```
-LLM_PROVIDER: dashscope
-EMBEDDING_PROVIDER: dashscope
 
-DASHSCOPE_CONFIG:
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  api_key_env_name: DASHSCOPE_API_KEY
-  chat_model: qwen-turbo
-  embedding_model: text-embedding-v4
-  embedding_dimensions: 1024
-```
+## 7. 常见问题
+- 更换嵌入模型后报错或召回异常：删除 data/vector_stores 并重建索引。
+- DashScope embeddings 兼容性问题：请将 EMBEDDING_PROVIDER 设为 dashscope，并在 DASHSCOPE_CONFIG 中指定正确的 embedding_model 与维度。
+- HF 模型权限错误（401 或 gated repo）：更换为公开模型，或配置 HUGGING_FACE_HUB_TOKEN 并确保账号有访问权限。
+- 代理：在 llm_config.yaml 配置 HTTP_PROXY/HTTPS_PROXY，程序会在启动时注入环境变量。
 
-3) 本地 HF 生成 + 本地 HF 向量（纯离线）：
 
-```
-LLM_PROVIDER: transformers
-EMBEDDING_PROVIDER: hf
-
-TRANSFORMERS_CONFIG:
-  llm_model: Qwen/Qwen2.5-1.5B-Instruct
-  embedding_model: sentence-transformers/all-MiniLM-L6-v2
-```
-
-4) 本地或远程 Ollama 生成 + Ollama 向量：
-
-```
-LLM_PROVIDER: ollama
-EMBEDDING_PROVIDER: ollama
-
-OLLAMA_CONFIG:
-  model: deepseek-r1:7b
-  embedding_model: bge-large:latest
-  host: http://localhost:11434
-  port: 11434
-```
-
-注意：更换 EMBEDDING_PROVIDER 或 embedding_model/embedding_dimensions 后，需要删除 ./data/vector_stores 并重建索引，避免维度不匹配。
-
-## 五、运行
-
-- 启动：
-
-```
-python topklogsystem.py
-```
-
-- 调用：
-    - TopKLogSystem.query("你的问题") 将完成“检索 -> 生成 -> 清洗”的整链路。
-
-## 六、常见问题 & 排错
-
-- DashScope embeddings 返回 400（contents is neither str nor list of str）
-    - 原因：DashScope 的 “OpenAI 兼容模式” 对 embeddings 的兼容与 OpenAI 有差异。
-    - 解决：已内置 dashscope 分支，Embeddings 通过 openai 官方 SDK 直连其 embeddings 接口；请使用 EMBEDDING_PROVIDER:
-      dashscope 并配置 DASHSCOPE_CONFIG.embedding_model。
-
-- Hugging Face 模型 401 或 gated repo 提示
-    - 原因：你使用的是受限模型（例如 google/embeddinggemma-300m）。
-    - 解决：
-        - 更换为公开可用的模型（如 sentence-transformers/all-MiniLM-L6-v2、BAAI/bge-base-zh-v1.5 等）；或
-        - 配置 HUGGING_FACE_HUB_TOKEN 或执行 huggingface-cli login，并确保账号已获模型访问权限。
-
-- 更换向量模型后结果异常/报错
-    - 删除 ./data/vector_stores 并重建索引。
-
-- 代理问题
-    - 在 llm_config.yaml 配置 HTTP_PROXY/HTTPS_PROXY，程序会在启动时注入环境变量。
-
-## 七、输出格式控制
-
-- 通过以下配置影响输出清洗：
-    - LLM_MAX_PARTS_NUM：每个段落最多条目数
-    - LLM_MAX_PART_LENGTH：每条条目最大字符数（中文按字符截断）
-- system_prompt.yaml 中 {MAX_PARTS_NUM}/{MAX_PART_LENGTH} 会根据配置自动渲染；清洗逻辑也会基于这些限制整理输出。
-
----
-
-如需进一步扩展（新增云厂商、细化限流/重试策略、启用流式输出等），可在 llm_provider_factory.py 中按现有模式新增 Provider
-构建方法，并在配置文件中新增对应配置块即可。
+## 8. 许可
+仅用于教学与研究示例。请在相应平台遵循模型与数据集的使用条款。
