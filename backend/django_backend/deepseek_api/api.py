@@ -274,9 +274,9 @@ def create_session(request, data: SessionIn):
         return 400, {"error": "session_id 不能为空"}
     username = request.auth.user  # 使用用户名
     # 判断是否已存在
-    if ConversationSession.objects.filter(session_id=session_id, user=username).exists():
+    if Session.objects.filter(session_id=session_id, user=username).exists():
         return 409, {"error": "会话已存在"}
-    ConversationSession.objects.create(session_id=session_id, user=username, context="")
+    Session.objects.create(session_id=session_id, user=username)
     return 201, {"session_id": session_id}
 
 
@@ -289,7 +289,7 @@ def delete_session(request, data: SessionIn):
     if not session_id:
         return 400, {"error": "session_id 不能为空"}
     username = request.auth.user
-    qs = ConversationSession.objects.filter(session_id=session_id, user=username)
+    qs = Session.objects.filter(session_id=session_id, user=username)
     if not qs.exists():
         return 404, {"error": "会话不存在"}
     qs.delete()
@@ -298,12 +298,12 @@ def delete_session(request, data: SessionIn):
 
 @router.get("/sessions", response={200: SessionListOut, 401: ErrorResponse})
 def list_sessions(request):
-    """根据 username 列出该用户的全部会话 ID，按最近更新时间倒序。"""
+    """根据 username 列出该用户的全部会话 ID，按最近更新时间倒序（读取 deepseek_api_session）。"""
     if not request.auth:
         return 401, {"error": "未授权"}
     username = request.auth.user
     session_ids = list(
-        ConversationSession.objects.filter(user=username)
+        Session.objects.filter(user=username)
         .order_by("-updated_at")
         .values_list("session_id", flat=True)
     )
