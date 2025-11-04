@@ -1,8 +1,8 @@
 <template>
   <div class="chat-area">
     <div class="header">
-      <!-- Minimal header -->
-      <n-h2>{{ chatStore.currentSession || 'Chat' }}</n-h2>
+      <!-- 修改：使用 getter 显示会话名称 -->
+      <n-h2>{{ sessionDisplayName }}</n-h2>
     </div>
 
     <!-- Messages container grows and scrolls -->
@@ -48,19 +48,20 @@ import { NScrollbar, NH2, NEmpty, NSpin, NP, NH1, NIcon } from 'naive-ui';
 import { SparklesOutline as SparklesIcon } from '@vicons/ionicons5';
 import { useChatStore } from '../stores/chat';
 import { useAppStore } from '../stores/app';
-// Removed ModelStore imports
+// 导入 storeToRefs 来使用 getters
+import { storeToRefs } from 'pinia';
 import ChatMessage from './ChatMessage.vue';
 import MessageInput from './MessageInput.vue';
-import * as api from '../api';
+// api 已移至 store
+// import * as api from '../api';
 
 const chatStore = useChatStore();
 const appStore = useAppStore();
-// Removed ModelStore setup
 
+// 使用 storeToRefs 来获取响应式的 getter
+const { sessionDisplayName } = storeToRefs(chatStore);
 const messages = computed(() => chatStore.messages[chatStore.currentSession] || []);
 const scrollbarRef = ref(null);
-
-// --- Model Selection Logic Removed ---
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -73,7 +74,11 @@ const scrollToBottom = () => {
 
 watch(() => chatStore.currentSession, (newSession) => {
   if (newSession) {
+    // loadHistory 现在会处理临时会话ID
     chatStore.loadHistory(newSession).then(scrollToBottom);
+  } else {
+    // 如果没有会话 (例如初始化时)，也确保滚动 (清空时)
+    scrollToBottom();
   }
 }, { immediate: true });
 
@@ -82,24 +87,14 @@ watch(messages, () => {
 }, { deep: true });
 
 
-const handleSendMessage = async (text) => {
-  const userMessage = { isUser: true, content: text, timestamp: new Date().toLocaleString() };
-  chatStore.addMessage(chatStore.currentSession, userMessage);
-
-  appStore.setLoading(true);
-  try {
-    const response = await api.chat(chatStore.currentSession, text);
-    const botMessage = { isUser: false, content: response.data.reply, timestamp: new Date().toLocaleString() };
-    chatStore.addMessage(chatStore.currentSession, botMessage);
-  } catch (error) {
-    appStore.setError('Failed to send message.');
-  } finally {
-    appStore.setLoading(false);
-  }
+// 修改：handleSendMessage 现在只调用 store action
+const handleSendMessage = (text) => {
+  chatStore.sendMessage(text);
 };
 </script>
 
 <style scoped>
+/* ... 样式保持不变 ... */
 .chat-area {
   display: flex;
   flex-direction: column;

@@ -23,14 +23,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+// 修改：导入 watch
+import { ref, watch } from 'vue';
 import { NInput, NButton, NIcon } from 'naive-ui';
 import { SendOutline as SendIcon } from '@vicons/ionicons5';
 import { useAppStore } from '../stores/app';
+// 修改：导入 chatStore
+import { useChatStore } from '../stores/chat';
 
 const emit = defineEmits(['send']);
 const appStore = useAppStore();
+// 修改：设置 chatStore
+const chatStore = useChatStore();
 const text = ref('');
+
+// 修改：添加 watch 来监听会话变更
+watch(() => chatStore.currentSession, (newSession) => {
+  // 当切换到新的临时会话时，清空输入框
+  if (newSession === 'temp:new_chat') {
+    text.value = '';
+  }
+});
 
 const handleSend = () => {
   if (text.value.trim() && !appStore.loading) {
@@ -41,6 +54,7 @@ const handleSend = () => {
 </script>
 
 <style scoped>
+/* ... 样式保持不变 ... */
 .message-input {
   display: flex;
   align-items: flex-end; /* Align to bottom for multiline */

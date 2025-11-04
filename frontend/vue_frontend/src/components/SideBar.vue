@@ -28,17 +28,19 @@
           New Chat
         </n-button>
       </div>
+      
+      <!-- 修改：使用 processedSessions getter 渲染列表 -->
       <n-scrollbar class="session-list">
         <div
-          v-for="session in chatStore.sessions"
-          :key="session"
+          v-for="session in chatStore.processedSessions"
+          :key="session.id"
           class="session-item"
-          :class="{ active: session === chatStore.currentSession }"
-          @click="chatStore.setCurrentSession(session)"
+          :class="{ active: session.id === chatStore.currentSession }"
+          @click="chatStore.setCurrentSession(session.id)"
         >
-          <span class="session-name">{{ session }}</span>
+          <span class="session-name">{{ session.displayName }}</span>
           <n-button-group class="session-actions">
-            <n-button text @click.stop="handleDelete(session)">
+            <n-button text @click.stop="handleDelete(session.id)">
               <template #icon><n-icon :component="TrashIcon" /></template>
             </n-button>
           </n-button-group>
@@ -47,7 +49,7 @@
       
       <!-- Model Settings directy in sidebar -->
       <div class="model-settings">
-        <!-- 修改：添加一个带管理按钮的头部 -->
+        <!-- ... model settings ... -->
         <div class="model-settings-header">
           <p>Model Settings</p>
           <n-button text @click="showManageModelsModal = true" title="Manage Custom Models">
@@ -55,10 +57,6 @@
           </n-button>
         </div>
         
-        <!-- 
-          修改 providerOptions 以使用分组
-          并添加 :filterable 使其可搜索
-        -->
         <n-select
             v-model:value="modelStore.selectedProvider"
             :options="providerOptions"
@@ -86,7 +84,7 @@
       </div>
     </div>
 
-    <!-- 新增：管理自定义模型的模态框 -->
+    <!-- ... model management modal ... -->
     <n-modal 
       v-model:show="showManageModelsModal" 
       title="Manage Custom Models" 
@@ -139,24 +137,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'; // 新增 ref
+import { computed, onMounted, ref } from 'vue';
 import { 
   NButton, NScrollbar, NButtonGroup, NIcon, useDialog, NSelect,
-  NModal, NTabs, NTabPane, NList, NListItem, NForm, NFormItem, NInput, useMessage // 新增
+  NModal, NTabs, NTabPane, NList, NListItem, NForm, NFormItem, NInput, useMessage
 } from 'naive-ui';
 import { 
     TrashOutline as TrashIcon, 
     LogOutOutline as LogoutIcon,
     AddOutline as AddIcon,
     MenuOutline as MenuIcon,
-    SettingsOutline as SettingsIcon // 新增
+    SettingsOutline as SettingsIcon
 } from '@vicons/ionicons5';
 import { useChatStore } from '../stores/chat';
 import { useAuthStore } from '../stores/auth';
-import { useModelStore } from '../stores/model'; // Import model store
+import { useModelStore } from '../stores/model';
 import { useRouter } from 'vue-router';
+// import { useAppStore } from '../stores/app'; // 移除了 appStore，因为 "click again" 逻辑被简化
 
-// Define props and emits for collapse functionality
 const props = defineProps({
   isCollapsed: Boolean
 });
@@ -164,18 +162,17 @@ const emit = defineEmits(['toggle-collapse']);
 
 const chatStore = useChatStore();
 const authStore = useAuthStore();
-const modelStore = useModelStore(); // Initialize model store
+const modelStore = useModelStore();
+// const appStore = useAppStore(); // 移除了 appStore
 const router = useRouter();
 const dialog = useDialog();
-const message = useMessage(); // 新增
+const message = useMessage();
 
-// --- Model Selection Logic (Moved from ChatArea) ---
+// --- Model Selection Logic ---
 onMounted(() => {
     modelStore.fetchAll();
 });
 
-// *** 修改 providerOptions ***
-// 使用分组来区分标准提供方和自定义模型
 const providerOptions = computed(() => {
   const providerGroup = {
     type: 'group',
@@ -212,13 +209,11 @@ const modelOptions = computed(() => {
 });
 
 const handleSelectModel = () => {
-    // 当选择的是自定义模型时，modelStore.selectedModel 会是 null（因为 isLocalProvider 为 false）
-    // 这符合 /api/llm/select 接口对于远程/自定义提供方的预期
     modelStore.selectModel(modelStore.selectedProvider, modelStore.selectedModel);
 };
 // --- End Model Selection Logic ---
 
-// --- 新增：自定义模型管理 ---
+// --- Custom Model Management ---
 
 const showManageModelsModal = ref(false);
 const isSavingModel = ref(false);
@@ -230,8 +225,6 @@ const addModelData = ref({
   alias: ''
 });
 
-// 根据 openapi.yaml, base_url, model_name, 和 api_key 是必需的
-// 但为了灵活性 (例如 Ollama 不需要 key), 我们只在前端强制要求 alias, model_name 和 base_url
 const addModelFormRules = {
   alias: { required: true, message: "A unique Model Name (Alias) is required", trigger: 'blur' },
   model_name: { required: true, message: 'Model Name (on provider) is required', trigger: 'blur' },
@@ -250,7 +243,6 @@ const handleSaveCustomModel = () => {
         await modelStore.addCustomModel(addModelData.value);
         message.success('Model added successfully!');
         resetAddModelForm();
-        // 保持模态框打开，以便用户可以切换到列表查看或添加另一个
       } catch (error) {
         message.error('Failed to add model. See console for details.');
       } finally {
@@ -263,7 +255,7 @@ const handleSaveCustomModel = () => {
 };
 
 const handleDeleteCustomModel = (modelName) => {
-  dialog.warning({ // 使用 warning 级别的对话框
+  dialog.warning({
     title: 'Confirm Delete',
     content: `Are you sure you want to delete the custom model "${modelName}"? This action cannot be undone.`,
     positiveText: 'Delete',
@@ -276,21 +268,21 @@ const handleDeleteCustomModel = (modelName) => {
   });
 };
 
-// --- 结束：自定义模型管理 ---
+// --- End Custom Model Management ---
 
 
+// 修改：handleNewChat 现在只调用 store action
 const handleNewChat = () => {
-  const newSessionId = `session_${Date.now()}`;
-  chatStore.createSession(newSessionId);
+  chatStore.startNewChat();
 };
 
 const handleDelete = (sessionId) => {
-  dialog.create({ // Use .create for neutral, themed style
+  dialog.create({
     title: 'Confirm Delete',
     content: `Are you sure you want to delete session "${sessionId}"?`,
     positiveText: 'Delete',
     negativeText: 'Cancel',
-    positiveButtonProps: { type: 'error' }, // Keep delete button red
+    positiveButtonProps: { type: 'error' },
     onPositiveClick: () => {
       chatStore.deleteSession(sessionId);
     },
@@ -298,12 +290,12 @@ const handleDelete = (sessionId) => {
 };
 
 const handleLogout = () => {
-    dialog.create({ // Use .create for neutral, themed style
+    dialog.create({
         title: 'Confirm Logout',
         content: 'Are you sure you want to log out?',
         positiveText: 'Logout',
         negativeText: 'Cancel',
-        positiveButtonProps: { type: 'error' }, // Keep logout button red
+        positiveButtonProps: { type: 'error' },
         onPositiveClick: () => {
             authStore.clearApiKey();
             chatStore.clearUserChatData();
@@ -314,6 +306,7 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
+/* ... 样式保持不变 ... */
 .sidebar {
   height: 100%;
   background-color: #f8fafd;
@@ -462,4 +455,3 @@ const handleLogout = () => {
   font-weight: 500;
 }
 </style>
-
