@@ -63,6 +63,8 @@ def validate(cases: list[dict]) -> dict:
 
     known_log_ids = inventory_log_ids()
     reviewed_by_two = 0
+    human_reviewed = 0
+    ai_assisted_reviewed = 0
     conflicts = []
     for index, case in enumerate(cases, 1):
         label = case.get("case_id") or f"line {index}"
@@ -97,8 +99,25 @@ def validate(cases: list[dict]) -> dict:
             errors.append(f"{label}: incomplete annotation metadata")
             continue
         reviewers = annotation.get("reviewers") or []
-        if len(set(reviewers)) >= 2 and annotation.get("status") in {"reviewed", "conflict"}:
-            reviewed_by_two += 1
+        reviewer_types = annotation.get("reviewer_types") or {}
+        if not isinstance(reviewer_types, dict):
+            errors.append(f"{label}: reviewer_types must be an object")
+            reviewer_types = {}
+        unknown_type_reviewers = sorted(set(reviewer_types) - set(reviewers))
+        if unknown_type_reviewers:
+            errors.append(
+                f"{label}: reviewer_types contains reviewers not listed in reviewers: "
+                f"{unknown_type_reviewers}"
+            )
+        human_count = sum(1 for reviewer in reviewers if reviewer_types.get(reviewer) == "human")
+        ai_count = sum(1 for reviewer in reviewers if reviewer_types.get(reviewer) == "ai_assisted")
+        if annotation.get("status") in {"reviewed", "conflict"}:
+            if human_count >= 2:
+                reviewed_by_two += 1
+            if human_count >= 1:
+                human_reviewed += 1
+            if ai_count >= 1:
+                ai_assisted_reviewed += 1
         if annotation.get("status") == "conflict":
             conflicts.append(label)
         serialized = json.dumps(case, ensure_ascii=False)
@@ -112,6 +131,9 @@ def validate(cases: list[dict]) -> dict:
     if len(cases) < 50:
         errors.append(f"dataset has {len(cases)} cases; at least 50 are required")
     negative_count = sum(bool(case.get("is_negative")) for case in cases)
+    positive_count = len(cases) - negative_count
+    if positive_count == 0:
+        errors.append("dataset must contain at least one positive case")
     negative_ratio = negative_count / len(cases) if cases else 0.0
     if negative_ratio < 0.20:
         errors.append(f"negative ratio {negative_ratio:.1%} is below 20%")
@@ -127,6 +149,8 @@ def validate(cases: list[dict]) -> dict:
         "field_complete_count": len(cases) - sum("missing fields" in error for error in errors),
         "dual_reviewed_count": reviewed_by_two,
         "dual_review_ratio": round(review_ratio, 4),
+        "human_reviewed_count": human_reviewed,
+        "ai_assisted_reviewed_count": ai_assisted_reviewed,
         "conflicts": conflicts,
         "known_log_count": len(known_log_ids),
         "errors": errors,

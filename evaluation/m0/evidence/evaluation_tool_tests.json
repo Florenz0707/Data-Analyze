@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "command": "backend/django_backend/.venv/bin/python evaluation/m0/test_evaluation_tools.py",
+  "test_count": 3,
+  "passed": 3,
+  "failed": 0,
+  "covered_boundaries": [
+    "empty ranked results return zero metrics",
+    "no positive cases fail with an actionable error",
+    "cases without relevant logs do not contribute ranking metrics"
+  ]
+}

@@ -84,6 +84,14 @@ def embed_queries(
 def rank_metrics(relevant: set[str], ranked: list[list[str]]) -> dict[str, float]:
     if not relevant:
         return {}
+    if not ranked:
+        return {
+            "recall_at_1": 0.0,
+            "recall_at_5": 0.0,
+            "recall_at_10": 0.0,
+            "mrr_at_10": 0.0,
+            "ndcg_at_10": 0.0,
+        }
     flattened_prefixes = []
     seen = set()
     for ids_at_rank in ranked:
@@ -111,6 +119,8 @@ def rank_metrics(relevant: set[str], ranked: list[list[str]]) -> dict[str, float
 
 def summarize(per_case: list[dict]) -> dict[str, float]:
     positives = [item for item in per_case if not item["is_negative"]]
+    if not positives:
+        raise ValueError("retrieval metrics require at least one positive case")
     keys = ("recall_at_1", "recall_at_5", "recall_at_10", "mrr_at_10", "ndcg_at_10")
     return {key: statistics.fmean(item[key] for item in positives) for key in keys}
 

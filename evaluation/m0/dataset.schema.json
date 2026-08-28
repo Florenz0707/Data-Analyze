@@ -64,6 +64,12 @@
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1 }
         },
+        "reviewer_types": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": ["human", "ai_assisted"]
+          }
+        },
         "status": {
           "enum": ["draft", "pending_human_review", "reviewed", "conflict"]
         }

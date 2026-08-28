@@ -7,6 +7,7 @@
 - `dataset.schema.json`：单条评测样本的 JSON Schema；
 - `gold_queries.jsonl`：第一版 50 条固定查询，其中 10 条为知识库无证据的 Windows 事件负样本；
 - `validate_dataset.py`：检查字段、分类、负样本比例、日志 ID、疑似密钥和双人标注覆盖；
+- `test_evaluation_tools.py`：回归测试评测指标在空检索结果、无正样本和无相关日志样本下的边界语义；
 - `collect_environment.py`：生成脱敏的环境、模型、数据哈希与 Chroma 清单；
 - `run_retrieval_baseline.py`：通过当前 Ollama Embedding 和 Chroma 索引计算 Recall、MRR、NDCG；
 - `run_api_baseline.py`：通过 8081/8082 采集回答结构、失败率、缓存与热请求延迟；
@@ -22,6 +23,7 @@
 
 ```bash
 backend/django_backend/.venv/bin/python evaluation/m0/validate_dataset.py
+backend/django_backend/.venv/bin/python evaluation/m0/test_evaluation_tools.py
 backend/django_backend/.venv/bin/python evaluation/m0/collect_environment.py
 backend/django_backend/.venv/bin/python evaluation/m0/run_retrieval_baseline.py --repeats 2
 M0_EVAL_PASSWORD='<仅用于本地评测的密码>' backend/django_backend/.venv/bin/python evaluation/m0/run_api_baseline.py
