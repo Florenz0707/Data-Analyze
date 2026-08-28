@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28T10:08:06.843345+00:00",
+  "source_count": 1708,
+  "indexed_count": 1708,
+  "embedding_provider": "ollama",
+  "embedding_model": "bge-large:latest",
+  "batch_size": 32,
+  "embedding_seconds": 25.818423030970735,
+  "chroma_add_seconds": 2.0692283240059623,
+  "total_seconds": 28.057009695010493,
+  "peak_rss_kib": 177876,
+  "peak_rss_delta_kib": 63652,
+  "storage": "temporary directory removed after successful measurement"
+}

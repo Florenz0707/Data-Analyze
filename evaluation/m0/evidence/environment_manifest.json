@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28T10:25:58.893227+00:00",
+  "git_commit": "6dedd5fcfefdf2ec5b6cff1035a9260882486a7a",
+  "ports": {
+    "backend": 8081,
+    "frontend": 8082,
+    "ollama": 11434
+  },
+  "host": {
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel": "6.6.87.2-microsoft-standard-WSL2",
+    "architecture": "x86_64",
+    "cpu_model": "13th Gen Intel(R) Core(TM) i7-13700H",
+    "logical_cpu_count": 20,
+    "memory": {
+      "MemTotal": "16268444 kB",
+      "SwapTotal": "4194304 kB"
+    },
+    "gpu": "not detected in WSL"
+  },
+  "toolchain": {
+    "python": "Python 3.13.11",
+    "node": "v20.20.2",
+    "npm": "10.9.8",
+    "uv": "uv 0.9.24",
+    "pre_commit": "pre-commit 4.5.1"
+  },
+  "configuration": {
+    "path": "backend/django_backend/config/llm_config.yaml",
+    "sha256": "e9a6f04b3103a57cef8d7496c79ec4dcd495e209ab003a8cba9563ef04e83ce4",
+    "llm_provider": "ollama",
+    "embedding_provider": "ollama",
+    "llm_model": "deepseek-r1:7b",
+    "embedding_model": "bge-large:latest",
+    "response_top_k": 10,
+    "generation_retries": 5,
+    "min_output_chars": 100,
+    "max_parts": 5,
+    "max_part_length": 70
+  },
+  "ollama": {
+    "version": "0.13.5",
+    "models": [
+      {
+        "name": "bge-large:latest",
+        "digest": "b3d71c92805938e2c9d78e6f35e82d7cc1bd77e05b47dd2ab3016240f4021c15",
+        "bytes": 670532029,
+        "parameter_size": "334.09M",
+        "quantization": "F16"
+      },
+      {
+        "name": "deepseek-r1:7b",
+        "digest": "755ced02ce7befdb13b7ca74e1e4d08cddba4986afdb63a480f2c93d3140383f",
+        "bytes": 4683075440,
+        "parameter_size": "7.6B",
+        "quantization": "Q4_K_M"
+      }
+    ]
+  },
+  "log_files": [
+    {
+      "path": "backend/django_backend/data/log/20200.csv",
+      "bytes": 55375,
+      "rows": 570,
+      "sha256": "2cc4e21aeee3d4ef3fa179876362aad3654a29dea4a4c1739226fb429662f499"
+    },
+    {
+      "path": "backend/django_backend/data/log/java_error_deepseek.csv",
+      "bytes": 38273,
+      "rows": 274,
+      "sha256": "dee646ddf440e54022df5894d84b3f4fa6a6def16d8811931a12eae04a302f28"
+    },
+    {
+      "path": "backend/django_backend/data/log/linuxcomand_error_deepseek.csv",
+      "bytes": 37104,
+      "rows": 365,
+      "sha256": "ba86c33c31e093b0734012dbca3549f3056c5600e0c2438c5ed66dfc1fc667c9"
+    },
+    {
+      "path": "backend/django_backend/data/log/python_error_deepseek.csv",
+      "bytes": 38698,
+      "rows": 409,
+      "sha256": "42bec3541a0f99fe4b638c4d4d42ee6f744b5f21f0bb3382c22a95a9aabfbb79"
+    },
+    {
+      "path": "backend/django_backend/data/log/python_error_doubao.csv",
+      "bytes": 17302,
+      "rows": 90,
+      "sha256": "be42b7700c59c604930cc0baffc8d02527c7582b3a7e83b9bd3b43019c901609"
+    }
+  ],
+  "vector_store": {
+    "path": "backend/django_backend/data/vector_stores/chroma.sqlite3",
+    "bytes": 15273984,
+    "sha256": "8b76ddf59cbed4a327029c124b7881d2bb2b29657795ed6ba74bc9531a3474c7",
+    "logical_document_sha256": "168f9cbe9c57d9944a8e78dc9c831f9805369d359bdff7737ed7e24a026d8fb2",
+    "collections": [
+      {
+        "id": "baffdd24-3fb5-4b99-8b00-a98f5b9e4813",
+        "name": "log_collection_bge_large_latest",
+        "dimension": 1024
+      }
+    ],
+    "embedding_count": 1708
+  },
+  "log_row_total": 1708
+}

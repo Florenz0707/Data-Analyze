@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-08-28T18:26:00+08:00",
+  "purpose": "Remove synthetic API evaluation records after exporting the human review packet.",
+  "users": {
+    "m0_evaluation": {
+      "history": 3,
+      "sessions": 2,
+      "api_keys_and_children": 3,
+      "django_users": 1
+    },
+    "m0_evaluation_full": {
+      "history": 51,
+      "sessions": 50,
+      "api_keys_and_children": 3,
+      "django_users": 1
+    }
+  },
+  "result": "Synthetic users and their local database records were removed after export."
+}

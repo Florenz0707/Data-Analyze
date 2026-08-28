@@ -1,3 +1,5 @@
 .history
 .ruff_cache/
 .eslintcache
+__pycache__/
+*.py[cod]

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28T10:25:42.956416+00:00",
+  "endpoint": "http://127.0.0.1:18081/api/openapi.json",
+  "ready_seconds": 4.881609000003664,
+  "peak_process_rss_kib": 782384,
+  "exit_code_after_sigterm": -15,
+  "conditions": "separate --noreload Django process with RUN_MAIN=true to exercise AppConfig preload; existing Ollama daemon and model cache were not stopped"
+}
