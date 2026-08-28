@@ -5,11 +5,18 @@
       <n-h1 class="title">
         <span class="gemini-title">Hello</span>
       </n-h1>
-      <n-p class="subtitle">{{ isRegisterMode ? 'Create a new account' : 'Sign in to continue' }}</n-p>
+      <n-p class="subtitle">{{
+        isRegisterMode ? 'Create a new account' : 'Sign in to continue'
+      }}</n-p>
 
       <n-form ref="formRef" :model="formValue" @submit.prevent="handleSubmit">
         <n-form-item-row label="Username" path="username">
-          <n-input v-model:value="formValue.username" placeholder="Enter your username" size="large" :round="true" />
+          <n-input
+            v-model:value="formValue.username"
+            placeholder="Enter your username"
+            size="large"
+            :round="true"
+          />
         </n-form-item-row>
         <n-form-item-row label="Password" path="password">
           <n-input
@@ -22,14 +29,24 @@
           />
         </n-form-item-row>
 
-        <n-button block attr-type="submit" :loading="appStore.loading" :disabled="appStore.loading" :round="true" size="large" class="login-button">
+        <n-button
+          block
+          attr-type="submit"
+          :loading="appStore.loading"
+          :disabled="appStore.loading"
+          :round="true"
+          size="large"
+          class="login-button"
+        >
           {{ isRegisterMode ? 'Register' : 'Login' }}
         </n-button>
       </n-form>
 
       <n-p class="toggle-mode">
         <n-button text @click="toggleMode">
-          {{ isRegisterMode ? 'Already have an account? Sign in' : "Don't have an account? Sign up" }}
+          {{
+            isRegisterMode ? 'Already have an account? Sign in' : "Don't have an account? Sign up"
+          }}
         </n-button>
       </n-p>
     </n-card>
@@ -111,10 +128,10 @@ const handleSubmit = async () => {
 }
 /* Style title like Gemini */
 .gemini-title {
-    background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6, #e94235, #fbbc05);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 2.5rem;
+  background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6, #e94235, #fbbc05);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2.5rem;
 }
 .subtitle {
   text-align: center;

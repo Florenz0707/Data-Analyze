@@ -12,7 +12,7 @@ export const deleteSession = (sessionId) => {
   return apiClient.request({
     method: 'DELETE',
     url: '/sessions',
-    data: { session_id: sessionId }
+    data: { session_id: sessionId },
   });
 };
 

@@ -33,7 +33,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.chat-view, .chat-layout {
+.chat-view,
+.chat-layout {
   height: 100vh;
   background-color: #f8fafd; /* Bright, light background */
 }

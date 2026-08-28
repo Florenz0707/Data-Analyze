@@ -8,10 +8,10 @@
       @keypress.enter.prevent="handleSend"
       class="chat-textarea"
     />
-    <n-button 
-      circle 
-      @click="handleSend" 
-      :disabled="!text.trim() || appStore.loading" 
+    <n-button
+      circle
+      @click="handleSend"
+      :disabled="!text.trim() || appStore.loading"
       class="send-button"
       :loading="appStore.loading"
     >
@@ -38,12 +38,15 @@ const chatStore = useChatStore();
 const text = ref('');
 
 // 修改：添加 watch 来监听会话变更
-watch(() => chatStore.currentSession, (newSession) => {
-  // 当切换到新的临时会话时，清空输入框
-  if (newSession === 'temp:new_chat') {
-    text.value = '';
-  }
-});
+watch(
+  () => chatStore.currentSession,
+  (newSession) => {
+    // 当切换到新的临时会话时，清空输入框
+    if (newSession === 'temp:new_chat') {
+      text.value = '';
+    }
+  },
+);
 
 const handleSend = () => {
   if (text.value.trim() && !appStore.loading) {
@@ -62,7 +65,7 @@ const handleSend = () => {
   background-color: #f8fafd; /* Brighter background */
   border-radius: 24px; /* Rounded pill shape */
   padding: 8px 8px 8px 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .chat-textarea {
@@ -76,7 +79,7 @@ const handleSend = () => {
 }
 
 .chat-textarea :deep(.n-input__input-el) {
-    padding-right: 0;
+  padding-right: 0;
 }
 
 .send-button {
@@ -84,7 +87,7 @@ const handleSend = () => {
   /* Bright gradient send button */
   background: linear-gradient(135deg, #4285f4, #9b59b6);
   color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 .send-button:hover {
   background: linear-gradient(135deg, #3a75d9, #8a4eae);

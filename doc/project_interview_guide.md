@@ -49,24 +49,24 @@
 
 ### 1.4 项目输入与输出
 
-| 项目 | 内容 |
-|---|---|
-| 主要输入 | 故障日志、异常信息、自然语言排障问题 |
+| 项目     | 内容                                                                  |
+| -------- | --------------------------------------------------------------------- |
+| 主要输入 | 故障日志、异常信息、自然语言排障问题                                  |
 | 知识来源 | 项目内 CSV 日志、Kaggle 数据集、生成的 Python/Java/Linux 命令故障数据 |
-| 中间产物 | Query Embedding、Top-K 相似日志、相关历史片段、组合 Prompt |
-| 最终输出 | 问题诊断、可能原因、排查步骤、临时缓解措施、最终修复建议 |
-| 交互形式 | 多会话 Web 聊天界面 |
+| 中间产物 | Query Embedding、Top-K 相似日志、相关历史片段、组合 Prompt            |
+| 最终输出 | 问题诊断、可能原因、排查步骤、临时缓解措施、最终修复建议              |
+| 交互形式 | 多会话 Web 聊天界面                                                   |
 
 ### 1.5 技术栈
 
-| 层级 | 技术 |
-|---|---|
-| 前端 | Vue 3、Vite、Pinia、Vue Router、Axios、Naive UI、Markdown-It |
-| API | Django 5、Django Ninja、Django ORM |
-| RAG | LlamaIndex、LangChain Adapter、ChromaDB |
-| 模型 | Transformers、Ollama、OpenAI 兼容 API、DashScope |
+| 层级 | 技术                                                               |
+| ---- | ------------------------------------------------------------------ |
+| 前端 | Vue 3、Vite、Pinia、Vue Router、Axios、Naive UI、Markdown-It       |
+| API  | Django 5、Django Ninja、Django ORM                                 |
+| RAG  | LlamaIndex、LangChain Adapter、ChromaDB                            |
+| 模型 | Transformers、Ollama、OpenAI 兼容 API、DashScope                   |
 | 存储 | SQLite、Chroma Persistent Store、浏览器 LocalStorage、Django Cache |
-| 数据 | Pandas、CSV/JSON/Markdown/TXT 日志文件 |
+| 数据 | Pandas、CSV/JSON/Markdown/TXT 日志文件                             |
 
 ---
 
@@ -122,13 +122,13 @@ RAG 的作用不是让模型“记住”日志，而是在每次回答前动态�
 
 当前项目没有保存以下指标，面试中应将其作为未来评测方案：
 
-| 指标层级 | 可选指标 | 含义 |
-|---|---|---|
-| 检索 | Recall@K、MRR、NDCG | 正确历史案例是否被召回、排序是否靠前 |
-| 生成 | 原因命中率、步骤可执行率、事实一致性 | 最终诊断是否正确且可执行 |
-| 系统 | 首 Token 延迟、总响应时间、索引构建时间 | 用户等待成本和系统性能 |
-| 业务 | 平均定位时间、一次解决率、人工搜索次数 | 是否真正提升排障效率 |
-| 体验 | 用户采纳率、满意度、追问率 | 输出是否清晰、是否需要反复沟通 |
+| 指标层级 | 可选指标                                | 含义                                 |
+| -------- | --------------------------------------- | ------------------------------------ |
+| 检索     | Recall@K、MRR、NDCG                     | 正确历史案例是否被召回、排序是否靠前 |
+| 生成     | 原因命中率、步骤可执行率、事实一致性    | 最终诊断是否正确且可执行             |
+| 系统     | 首 Token 延迟、总响应时间、索引构建时间 | 用户等待成本和系统性能               |
+| 业务     | 平均定位时间、一次解决率、人工搜索次数  | 是否真正提升排障效率                 |
+| 体验     | 用户采纳率、满意度、追问率              | 输出是否清晰、是否需要反复沟通       |
 
 ---
 
@@ -209,13 +209,13 @@ RAG 即 Retrieval-Augmented Generation，基本流程为：
 
 它与微调的区别：
 
-| 对比项 | RAG | 微调 |
-|---|---|---|
-| 主要目的 | 动态注入知识 | 调整模型行为或能力 |
-| 更新知识 | 更新索引即可 | 通常需要重新训练 |
-| 可追溯性 | 可以返回检索证据 | 参数知识较难追踪 |
-| 成本 | 需要检索和上下文成本 | 需要训练与模型维护成本 |
-| 本项目 | 已采用 | 未采用 |
+| 对比项   | RAG                  | 微调                   |
+| -------- | -------------------- | ---------------------- |
+| 主要目的 | 动态注入知识         | 调整模型行为或能力     |
+| 更新知识 | 更新索引即可         | 通常需要重新训练       |
+| 可追溯性 | 可以返回检索证据     | 参数知识较难追踪       |
+| 成本     | 需要检索和上下文成本 | 需要训练与模型维护成本 |
+| 本项目   | 已采用               | 未采用                 |
 
 ### 3.8 Prompt Engineering
 
@@ -262,13 +262,13 @@ Provider 抽象将业务流程与具体模型厂商解耦。当前工厂支持�
 
 ### 3.12 Agent、Workflow、Tool Calling 与 Multi-Agent
 
-| 概念 | 含义 | 当前项目状态 |
-|---|---|---|
-| RAG 应用 | 检索知识后生成回答 | 已实现 |
-| Agent | 模型根据目标进行规划、选择动作并循环执行 | 未完整实现 |
-| Workflow | 预定义或动态编排多个处理节点 | 未实现正式工作流引擎 |
-| Tool Calling | 模型以结构化参数调用外部函数或 API | 未实现 |
-| Multi-Agent | 多个角色 Agent 协作、交接或辩论 | 未实现 |
+| 概念         | 含义                                     | 当前项目状态         |
+| ------------ | ---------------------------------------- | -------------------- |
+| RAG 应用     | 检索知识后生成回答                       | 已实现               |
+| Agent        | 模型根据目标进行规划、选择动作并循环执行 | 未完整实现           |
+| Workflow     | 预定义或动态编排多个处理节点             | 未实现正式工作流引擎 |
+| Tool Calling | 模型以结构化参数调用外部函数或 API       | 未实现               |
+| Multi-Agent  | 多个角色 Agent 协作、交接或辩论          | 未实现               |
 
 如果面试官问“这是不是 Agent”，推荐回答：
 
@@ -347,34 +347,34 @@ flowchart TB
 
 ### 4.3 代码结构与职责
 
-| 路径 | 主要职责 |
-|---|---|
-| `frontend/vue_frontend/src/views` | 登录页和聊天主页面 |
-| `frontend/vue_frontend/src/components` | 侧边栏、消息区、输入框、消息渲染 |
-| `frontend/vue_frontend/src/stores` | 认证、会话、模型和全局 UI 状态 |
-| `frontend/vue_frontend/src/api` | Axios 实例和接口封装 |
-| `backend/django_backend/deepseek_api/api.py` | Django Ninja 路由与请求编排 |
+| 路径                                              | 主要职责                            |
+| ------------------------------------------------- | ----------------------------------- |
+| `frontend/vue_frontend/src/views`                 | 登录页和聊天主页面                  |
+| `frontend/vue_frontend/src/components`            | 侧边栏、消息区、输入框、消息渲染    |
+| `frontend/vue_frontend/src/stores`                | 认证、会话、模型和全局 UI 状态      |
+| `frontend/vue_frontend/src/api`                   | Axios 实例和接口封装                |
+| `backend/django_backend/deepseek_api/api.py`      | Django Ninja 路由与请求编排         |
 | `backend/django_backend/deepseek_api/services.py` | Token、缓存、历史选择和模型调用服务 |
-| `backend/django_backend/deepseek_api/models.py` | 数据库模型 |
-| `backend/django_backend/topklogsystem.py` | RAG 主流程 |
-| `backend/django_backend/llm_provider_factory.py` | LLM 与 Embedding Provider 构建 |
-| `backend/django_backend/config` | Prompt、回答模板和配置生成脚本 |
-| `backend/django_backend/data/log` | 日志知识数据 |
+| `backend/django_backend/deepseek_api/models.py`   | 数据库模型                          |
+| `backend/django_backend/topklogsystem.py`         | RAG 主流程                          |
+| `backend/django_backend/llm_provider_factory.py`  | LLM 与 Embedding Provider 构建      |
+| `backend/django_backend/config`                   | Prompt、回答模板和配置生成脚本      |
+| `backend/django_backend/data/log`                 | 日志知识数据                        |
 
 ### 4.4 数据存储划分
 
-| 数据 | 存储位置 | 原因 |
-|---|---|---|
-| Django 用户与密码哈希 | SQLite/Django Auth | 关系数据和框架内置认证能力 |
-| Access/Refresh Token | `APIKey` 表 | 需要过期校验和用户关联 |
-| 会话列表 | `Session` 表 | 支持用户隔离和更新时间排序 |
-| 每轮对话 | `History` 表 | 结构化读取和分页 |
-| 用户模型偏好 | `UserLLMPreference` 表 | 每个 Token 用户一份模型配置 |
-| 外部模型配置 | `ExternalLLMAPI` 表 | 保存用户自定义接口信息 |
-| 日志向量 | Chroma | 支持语义近邻检索 |
-| 前端当前 Token | LocalStorage | 页面刷新后保持登录状态 |
-| 前端会话状态 | Pinia + LocalStorage | 响应式 UI 和本地回退 |
-| 重复回复 | Django Cache | 减少重复 LLM 调用 |
+| 数据                  | 存储位置               | 原因                        |
+| --------------------- | ---------------------- | --------------------------- |
+| Django 用户与密码哈希 | SQLite/Django Auth     | 关系数据和框架内置认证能力  |
+| Access/Refresh Token  | `APIKey` 表            | 需要过期校验和用户关联      |
+| 会话列表              | `Session` 表           | 支持用户隔离和更新时间排序  |
+| 每轮对话              | `History` 表           | 结构化读取和分页            |
+| 用户模型偏好          | `UserLLMPreference` 表 | 每个 Token 用户一份模型配置 |
+| 外部模型配置          | `ExternalLLMAPI` 表    | 保存用户自定义接口信息      |
+| 日志向量              | Chroma                 | 支持语义近邻检索            |
+| 前端当前 Token        | LocalStorage           | 页面刷新后保持登录状态      |
+| 前端会话状态          | Pinia + LocalStorage   | 响应式 UI 和本地回退        |
+| 重复回复              | Django Cache           | 减少重复 LLM 调用           |
 
 ### 4.5 启动流程
 
@@ -461,12 +461,12 @@ sequenceDiagram
 
 当前 Store 划分：
 
-| Store | 状态 |
-|---|---|
-| `auth` | API Key |
-| `chat` | 当前会话、会话列表、各会话消息 |
-| `model` | Provider、模型列表、用户模型偏好 |
-| `app` | Loading、错误信息、主题、初始化状态 |
+| Store   | 状态                                |
+| ------- | ----------------------------------- |
+| `auth`  | API Key                             |
+| `chat`  | 当前会话、会话列表、各会话消息      |
+| `model` | Provider、模型列表、用户模型偏好    |
+| `app`   | Loading、错误信息、主题、初始化状态 |
 
 ### 5.3 新会话的延迟创建
 
@@ -562,22 +562,22 @@ Vue 响应式状态变化后，会触发组件重新执行渲染逻辑并生成�
 
 ### 6.1 API 分组
 
-| 方法 | 路径 | 功能 |
-|---|---|---|
-| POST | `/api/users/register` | 注册用户 |
-| POST | `/api/users/login` | 登录并返回 Access Token、设置 Refresh Cookie |
-| POST | `/api/refresh` | 使用 Refresh Token 延长 Access Token 有效期 |
-| POST | `/api/llm/chat` | 执行多轮 RAG 对话 |
-| GET | `/api/sessions` | 获取当前用户会话列表 |
-| POST | `/api/sessions` | 创建会话 |
-| DELETE | `/api/sessions` | 删除会话 |
-| GET | `/api/sessions/history` | 获取结构化会话历史 |
-| DELETE | `/api/sessions/history` | 清空会话历史 |
-| GET | `/api/llm/providers` | 获取允许的 Provider |
-| GET | `/api/llm/local_models` | 获取本地模型列表 |
-| GET | `/api/llm/my` | 获取用户当前模型偏好 |
-| POST | `/api/llm/select` | 更新用户模型偏好 |
-| GET/POST/DELETE | `/api/llm/extern` | 管理用户自定义兼容接口 |
+| 方法            | 路径                    | 功能                                         |
+| --------------- | ----------------------- | -------------------------------------------- |
+| POST            | `/api/users/register`   | 注册用户                                     |
+| POST            | `/api/users/login`      | 登录并返回 Access Token、设置 Refresh Cookie |
+| POST            | `/api/refresh`          | 使用 Refresh Token 延长 Access Token 有效期  |
+| POST            | `/api/llm/chat`         | 执行多轮 RAG 对话                            |
+| GET             | `/api/sessions`         | 获取当前用户会话列表                         |
+| POST            | `/api/sessions`         | 创建会话                                     |
+| DELETE          | `/api/sessions`         | 删除会话                                     |
+| GET             | `/api/sessions/history` | 获取结构化会话历史                           |
+| DELETE          | `/api/sessions/history` | 清空会话历史                                 |
+| GET             | `/api/llm/providers`    | 获取允许的 Provider                          |
+| GET             | `/api/llm/local_models` | 获取本地模型列表                             |
+| GET             | `/api/llm/my`           | 获取用户当前模型偏好                         |
+| POST            | `/api/llm/select`       | 更新用户模型偏好                             |
+| GET/POST/DELETE | `/api/llm/extern`       | 管理用户自定义兼容接口                       |
 
 ### 6.2 Django Ninja 的作用
 
@@ -722,13 +722,13 @@ Embedding 不可用时使用词集合重叠率
 
 当前主要数据文件：
 
-| 数据文件 | 约行数 | 约大小 | 内容 |
-|---|---:|---:|---|
-| `windows_event_log.csv` | 669,853 | 74 MB | Windows 事件日志 |
-| `Computer_events.csv` | 19,063 | 2.9 MB | 计算机事件详细字段 |
-| `Computer_events_column_reduced.csv` | 18,316 | 2.0 MB | 精简字段事件数据 |
-| `python_bug_fix_pairs.csv` | 6,237 | 264 KB | Python Bug/Fix 对 |
-| 其他生成日志 | 约 1,700 | 约 196 KB | Python、Java、Linux 命令等错误 |
+| 数据文件                             |   约行数 |    约大小 | 内容                           |
+| ------------------------------------ | -------: | --------: | ------------------------------ |
+| `windows_event_log.csv`              |  669,853 |     74 MB | Windows 事件日志               |
+| `Computer_events.csv`                |   19,063 |    2.9 MB | 计算机事件详细字段             |
+| `Computer_events_column_reduced.csv` |   18,316 |    2.0 MB | 精简字段事件数据               |
+| `python_bug_fix_pairs.csv`           |    6,237 |    264 KB | Python Bug/Fix 对              |
+| 其他生成日志                         | 约 1,700 | 约 196 KB | Python、Java、Linux 命令等错误 |
 
 数据总量约 71 万条。由于同时保留完整和精简版 Computer Events，部分内容可能重复。
 
@@ -860,12 +860,12 @@ Prompt 只能提高遵守格式的概率，不能提供强保证。不同模型�
 
 ### 10.1 为什么支持多 Provider
 
-| Provider | 优点 | 缺点 | 场景 |
-|---|---|---|---|
-| Transformers | 完全本地、控制力强 | 内存/显存占用高、加载慢 | 离线或模型实验 |
-| Ollama | 本地部署简单、模型切换方便 | 依赖外部服务、性能受本机限制 | 本地开发和演示 |
-| OpenAI Compatible | 接入厂商多、能力通常更强 | 成本、网络和隐私问题 | 快速使用云端模型 |
-| DashScope | 国内网络和模型生态适配 | 厂商依赖 | 国内云模型场景 |
+| Provider          | 优点                       | 缺点                         | 场景             |
+| ----------------- | -------------------------- | ---------------------------- | ---------------- |
+| Transformers      | 完全本地、控制力强         | 内存/显存占用高、加载慢      | 离线或模型实验   |
+| Ollama            | 本地部署简单、模型切换方便 | 依赖外部服务、性能受本机限制 | 本地开发和演示   |
+| OpenAI Compatible | 接入厂商多、能力通常更强   | 成本、网络和隐私问题         | 快速使用云端模型 |
+| DashScope         | 国内网络和模型生态适配     | 厂商依赖                     | 国内云模型场景   |
 
 ### 10.2 为什么 LLM 与 Embedding 分离
 
@@ -1173,18 +1173,18 @@ JD：覆盖 Web 前端、Node/BFF、服务端接口与 Agent Skill。
 
 ### 13.6 JD 匹配矩阵
 
-| JD 能力 | 匹配度 | 面试证据 | 风险 |
-|---|---:|---|---|
-| Vue/Web 前端 | 高 | 组件、路由、状态、API、Markdown | 缺少 TypeScript 和测试 |
-| 服务端工程 | 高 | Django Ninja、ORM、认证、会话 | 生产安全和并发不足 |
-| 全栈闭环 | 高 | 登录到 RAG 输出完整链路 | 配置存在不一致 |
-| Prompt Engineering | 高 | Prompt、模板、清洗、重试 | 无系统评测 |
-| RAG | 高 | Embedding、Chroma、Top-K | 数据和召回较原始 |
-| 数据产品 | 中 | 日志诊断场景 | 无正式业务指标 |
-| 数据可视化 | 低到中 | Markdown 展示 | 无图表 |
-| Workflow | 低 | 可描述升级方案 | 未实现 |
-| Tool Calling | 低 | 可描述升级方案 | 未实现 |
-| Multi-Agent | 低 | 可描述适用边界 | 未实现 |
+| JD 能力            | 匹配度 | 面试证据                        | 风险                   |
+| ------------------ | -----: | ------------------------------- | ---------------------- |
+| Vue/Web 前端       |     高 | 组件、路由、状态、API、Markdown | 缺少 TypeScript 和测试 |
+| 服务端工程         |     高 | Django Ninja、ORM、认证、会话   | 生产安全和并发不足     |
+| 全栈闭环           |     高 | 登录到 RAG 输出完整链路         | 配置存在不一致         |
+| Prompt Engineering |     高 | Prompt、模板、清洗、重试        | 无系统评测             |
+| RAG                |     高 | Embedding、Chroma、Top-K        | 数据和召回较原始       |
+| 数据产品           |     中 | 日志诊断场景                    | 无正式业务指标         |
+| 数据可视化         | 低到中 | Markdown 展示                   | 无图表                 |
+| Workflow           |     低 | 可描述升级方案                  | 未实现                 |
+| Tool Calling       |     低 | 可描述升级方案                  | 未实现                 |
+| Multi-Agent        |     低 | 可描述适用边界                  | 未实现                 |
 
 ---
 
@@ -1192,37 +1192,37 @@ JD：覆盖 Web 前端、Node/BFF、服务端接口与 Agent Skill。
 
 ### 14.1 P0：影响正确性或安全
 
-| 问题 | 影响 | 建议 |
-|---|---|---|
-| 全局 `Settings.llm` 动态覆盖 | 并发用户可能模型串台 | 显式依赖注入，请求级实例 |
-| 用户模型名称未真正应用 | UI 偏好与实际调用不一致 | 工厂接收用户级完整配置 |
-| 外部模型未接入生成链路 | 功能看似存在但无法使用 | 建立 External Provider Resolver |
-| 外部 API Key 明文存储 | 密钥泄漏 | KMS/加密字段/审计 |
-| 用户可控 Base URL | SSRF | 协议、域名、IP 和重定向限制 |
-| Session 删除不级联 History | 数据一致性错误 | ForeignKey + 事务 |
+| 问题                         | 影响                    | 建议                            |
+| ---------------------------- | ----------------------- | ------------------------------- |
+| 全局 `Settings.llm` 动态覆盖 | 并发用户可能模型串台    | 显式依赖注入，请求级实例        |
+| 用户模型名称未真正应用       | UI 偏好与实际调用不一致 | 工厂接收用户级完整配置          |
+| 外部模型未接入生成链路       | 功能看似存在但无法使用  | 建立 External Provider Resolver |
+| 外部 API Key 明文存储        | 密钥泄漏                | KMS/加密字段/审计               |
+| 用户可控 Base URL            | SSRF                    | 协议、域名、IP 和重定向限制     |
+| Session 删除不级联 History   | 数据一致性错误          | ForeignKey + 事务               |
 
 ### 14.2 P1：影响可靠性和性能
 
-| 问题 | 影响 | 建议 |
-|---|---|---|
-| 每请求构建 LLM | 高延迟和内存压力 | 按 Provider/Model 缓存客户端 |
-| 同步非流式生成 | 用户等待长、Worker 被占用 | SSE/流式输出/异步任务 |
-| 索引无数据版本检测 | 数据更新后仍用旧索引 | 数据与配置指纹 |
-| 缓存键不含模型和索引版本 | 切换模型后可能返回旧答案 | 加入模型、Prompt、索引版本 |
-| Rate Limit 未接入 | 无实际限流 | 认证依赖或中间件统一执行 |
-| Refresh 流程前端未使用 | Token 过期直接退出 | 401 刷新队列和请求重放 |
+| 问题                     | 影响                      | 建议                         |
+| ------------------------ | ------------------------- | ---------------------------- |
+| 每请求构建 LLM           | 高延迟和内存压力          | 按 Provider/Model 缓存客户端 |
+| 同步非流式生成           | 用户等待长、Worker 被占用 | SSE/流式输出/异步任务        |
+| 索引无数据版本检测       | 数据更新后仍用旧索引      | 数据与配置指纹               |
+| 缓存键不含模型和索引版本 | 切换模型后可能返回旧答案  | 加入模型、Prompt、索引版本   |
+| Rate Limit 未接入        | 无实际限流                | 认证依赖或中间件统一执行     |
+| Refresh 流程前端未使用   | Token 过期直接退出        | 401 刷新队列和请求重放       |
 
 ### 14.3 P2：影响质量和维护性
 
-| 问题 | 影响 | 建议 |
-|---|---|---|
-| 缺少检索/生成评测 | 无法证明改进有效 | 建立离线评测集 |
-| 日志无 Metadata | 无法过滤、引用和解释 | 结构化 Document |
-| 无阈值和 Reranker | Top-K 噪声较大 | 混合召回 + 重排 |
-| 历史预算按字符估算 | Token 控制不准 | 使用 tokenizer |
-| Prompt 占位符不一致 | 残留无效模板文本 | 统一模板协议并启动校验 |
-| `RESPONSE_TOP_K`/`TOP_K` 不一致 | 配置不生效 | 单一配置名与 Schema 校验 |
-| 无自动化测试 | 修改容易回归 | 单元、接口、前端和 RAG 评测 |
+| 问题                            | 影响                 | 建议                        |
+| ------------------------------- | -------------------- | --------------------------- |
+| 缺少检索/生成评测               | 无法证明改进有效     | 建立离线评测集              |
+| 日志无 Metadata                 | 无法过滤、引用和解释 | 结构化 Document             |
+| 无阈值和 Reranker               | Top-K 噪声较大       | 混合召回 + 重排             |
+| 历史预算按字符估算              | Token 控制不准       | 使用 tokenizer              |
+| Prompt 占位符不一致             | 残留无效模板文本     | 统一模板协议并启动校验      |
+| `RESPONSE_TOP_K`/`TOP_K` 不一致 | 配置不生效           | 单一配置名与 Schema 校验    |
+| 无自动化测试                    | 修改容易回归         | 单元、接口、前端和 RAG 评测 |
 
 ### 14.4 配置不一致
 
@@ -1255,14 +1255,14 @@ JD：覆盖 Web 前端、Node/BFF、服务端接口与 Agent Skill。
 
 ### 15.2 可设计的工具
 
-| 工具 | 输入 | 输出 | 权限风险 |
-|---|---|---|---|
-| `search_logs` | 服务、时间范围、关键词 | 日志片段与来源 | 数据越权 |
-| `query_metrics` | 指标名、服务、时间范围 | 时序指标和异常点 | 查询成本 |
-| `get_deployments` | 服务、时间范围 | 发布记录 | 内部信息泄漏 |
-| `get_service_dependencies` | 服务名 | 上下游依赖 | 拓扑敏感信息 |
-| `search_incidents` | 问题描述 | 历史事故与解决方案 | 用户隔离 |
-| `create_ticket` | 标题、描述、优先级 | 工单 ID | 外部写操作 |
+| 工具                       | 输入                   | 输出               | 权限风险     |
+| -------------------------- | ---------------------- | ------------------ | ------------ |
+| `search_logs`              | 服务、时间范围、关键词 | 日志片段与来源     | 数据越权     |
+| `query_metrics`            | 指标名、服务、时间范围 | 时序指标和异常点   | 查询成本     |
+| `get_deployments`          | 服务、时间范围         | 发布记录           | 内部信息泄漏 |
+| `get_service_dependencies` | 服务名                 | 上下游依赖         | 拓扑敏感信息 |
+| `search_incidents`         | 问题描述               | 历史事故与解决方案 | 用户隔离     |
+| `create_ticket`            | 标题、描述、优先级     | 工单 ID            | 外部写操作   |
 
 ### 15.3 推荐工作流
 
@@ -1612,26 +1612,26 @@ flowchart TD
 
 ## 24. 代码证据索引
 
-| 主题 | 文件 |
-|---|---|
-| JD | `doc/job_description.md` |
-| 项目原始要求 | `doc/智能数据分析任务书-2025 V4.pdf` |
-| 前端会话状态 | `frontend/vue_frontend/src/stores/chat.js` |
-| 前端模型状态 | `frontend/vue_frontend/src/stores/model.js` |
-| Axios 认证 | `frontend/vue_frontend/src/api/client.js` |
-| 前端模型与会话 UI | `frontend/vue_frontend/src/components/SideBar.vue` |
-| Markdown 渲染 | `frontend/vue_frontend/src/components/ChatMessage.vue` |
-| 后端路由 | `backend/django_backend/deepseek_api/api.py` |
-| 后端服务 | `backend/django_backend/deepseek_api/services.py` |
-| 数据模型 | `backend/django_backend/deepseek_api/models.py` |
-| API Schema | `backend/django_backend/deepseek_api/schemas.py` |
-| RAG 核心 | `backend/django_backend/topklogsystem.py` |
-| Provider 工厂 | `backend/django_backend/llm_provider_factory.py` |
-| Prompt | `backend/django_backend/config/system_prompt.yaml` |
-| 输出模板 | `backend/django_backend/config/response_template.md` |
-| 配置模板 | `backend/django_backend/config/generate_llm_config.py` |
-| Django 配置 | `backend/django_backend/deepseek_project/settings.py` |
-| Vite 代理 | `frontend/vue_frontend/vite.config.js` |
+| 主题              | 文件                                                   |
+| ----------------- | ------------------------------------------------------ |
+| JD                | `doc/job_description.md`                               |
+| 项目原始要求      | `doc/智能数据分析任务书-2025 V4.pdf`                   |
+| 前端会话状态      | `frontend/vue_frontend/src/stores/chat.js`             |
+| 前端模型状态      | `frontend/vue_frontend/src/stores/model.js`            |
+| Axios 认证        | `frontend/vue_frontend/src/api/client.js`              |
+| 前端模型与会话 UI | `frontend/vue_frontend/src/components/SideBar.vue`     |
+| Markdown 渲染     | `frontend/vue_frontend/src/components/ChatMessage.vue` |
+| 后端路由          | `backend/django_backend/deepseek_api/api.py`           |
+| 后端服务          | `backend/django_backend/deepseek_api/services.py`      |
+| 数据模型          | `backend/django_backend/deepseek_api/models.py`        |
+| API Schema        | `backend/django_backend/deepseek_api/schemas.py`       |
+| RAG 核心          | `backend/django_backend/topklogsystem.py`              |
+| Provider 工厂     | `backend/django_backend/llm_provider_factory.py`       |
+| Prompt            | `backend/django_backend/config/system_prompt.yaml`     |
+| 输出模板          | `backend/django_backend/config/response_template.md`   |
+| 配置模板          | `backend/django_backend/config/generate_llm_config.py` |
+| Django 配置       | `backend/django_backend/deepseek_project/settings.py`  |
+| Vite 代理         | `frontend/vue_frontend/vite.config.js`                 |
 
 ---
 

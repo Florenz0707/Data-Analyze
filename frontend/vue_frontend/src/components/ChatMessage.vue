@@ -7,10 +7,11 @@
       </n-icon>
     </n-avatar>
     <div class="message-content">
-        <!-- Add markdown rendering classes -->
-        <div v-if="isMarkdown" v-html="renderedMarkdown" class="markdown-body"></div>
-        <div v-else class="text-body">{{ message.content }}</div>
-        <div class="timestamp">{{ message.timestamp }}</div>
+      <!-- Add markdown rendering classes -->
+      <!-- eslint-disable-next-line vue/no-v-html -- MarkdownIt has raw HTML disabled. -->
+      <div v-if="isMarkdown" v-html="renderedMarkdown" class="markdown-body"></div>
+      <div v-else class="text-body">{{ message.content }}</div>
+      <div class="timestamp">{{ message.timestamp }}</div>
     </div>
   </div>
 </template>
@@ -18,7 +19,10 @@
 <script setup>
 import { computed } from 'vue';
 import { NAvatar, NIcon } from 'naive-ui';
-import { PersonCircleOutline as UserIcon, SparklesOutline as SparklesIcon } from '@vicons/ionicons5';
+import {
+  PersonCircleOutline as UserIcon,
+  SparklesOutline as SparklesIcon,
+} from '@vicons/ionicons5';
 import MarkdownIt from 'markdown-it';
 import 'highlight.js/styles/atom-one-dark.css'; // Import a code highlighting style
 import hljs from 'highlight.js';
@@ -32,24 +36,28 @@ const props = defineProps({
 
 // Initialize MarkdownIt with highlighting
 const md = new MarkdownIt({
+  html: false,
   highlight: (str, lang) => {
     if (lang && hljs.getLanguage(lang)) {
       try {
-        return '<pre class="hljs"><code>' +
-               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-               '</code></pre>';
-      } catch (__) {}
+        return (
+          '<pre class="hljs"><code>' +
+          hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+          '</code></pre>'
+        );
+      } catch {
+        // Fall back to escaped plain code below when language highlighting fails.
+      }
     }
     return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-  }
+  },
 });
 
 const isMarkdown = computed(() => !props.message.isUser);
 
 const renderedMarkdown = computed(() => {
-    return md.render(props.message.content || '');
+  return md.render(props.message.content || '');
 });
-
 </script>
 
 <style scoped>
@@ -64,9 +72,9 @@ const renderedMarkdown = computed(() => {
 }
 
 .gemini-icon {
-    background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .message-content {
@@ -91,39 +99,39 @@ const renderedMarkdown = computed(() => {
 }
 
 .timestamp {
-    font-size: 0.75rem;
-    color: #888;
-    margin-top: 8px;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 8px;
 }
 
 /* Global styles for rendered markdown */
 :global(.markdown-body > *:first-child) {
-    margin-top: 0;
+  margin-top: 0;
 }
 :global(.markdown-body p) {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 :global(.markdown-body pre) {
-    background-color: #282c34; /* Dark background for code */
-    color: #abb2bf;
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
+  background-color: #282c34; /* Dark background for code */
+  color: #abb2bf;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 :global(.markdown-body code) {
-    font-family: 'Courier New', Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
 }
 :global(.markdown-body pre code) {
-    background: none;
-    padding: 0;
+  background: none;
+  padding: 0;
 }
 :global(.markdown-body :not(pre) > code) {
-    background-color: #e8f0fe; /* Brighter code snippet bg */
-    color: #c7254e;
-    padding: 2px 4px;
-    border-radius: 4px;
+  background-color: #e8f0fe; /* Brighter code snippet bg */
+  color: #c7254e;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 :global(.markdown-body ul, .markdown-body ol) {
-    padding-left: 24px;
+  padding-left: 24px;
 }
 </style>

@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from ninja import Schema
 
 
@@ -11,7 +9,7 @@ class LoginIn(Schema):
 class ChatIn(Schema):
     session_id: str = "default_session"
     user_input: str
-    use_history: Optional[str] = None
+    use_history: str | None = None
 
 
 class ChatOut(Schema):
@@ -24,7 +22,7 @@ class HistoryItem(Schema):
 
 
 class HistoryListOut(Schema):
-    turns: List[HistoryItem]
+    turns: list[HistoryItem]
 
 
 class ErrorResponse(Schema):
@@ -32,22 +30,22 @@ class ErrorResponse(Schema):
 
 
 class ProvidersOut(Schema):
-    providers: List[str]
+    providers: list[str]
 
 
 class LocalModelsOut(Schema):
-    transformers: List[str]
-    ollama: List[str]
+    transformers: list[str]
+    ollama: list[str]
 
 
 class SelectLLMIn(Schema):
     provider: str
-    model: Optional[str] = None
+    model: str | None = None
 
 
 class SelectLLMOut(Schema):
     provider: str
-    model: Optional[str] = None
+    model: str | None = None
 
 
 class SessionIn(Schema):
@@ -59,18 +57,18 @@ class SessionOut(Schema):
 
 
 class SessionListOut(Schema):
-    sessions: List[str]
+    sessions: list[str]
 
 
 class APIIn(Schema):
     base_url: str
     model_name: str
     api_key: str
-    alias: Optional[str] = None
+    alias: str | None = None
 
 
 class ModelsListOut(Schema):
-    models_list: List[str]
+    models_list: list[str]
 
 
 class ModelIn(Schema):

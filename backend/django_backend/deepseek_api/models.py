@@ -21,12 +21,12 @@ class APIKey(models.Model):
     def generate_key(cls, length=32):
         """生成随机 API Key"""
         characters = string.ascii_letters + string.digits
-        return ''.join(random.choice(characters) for _ in range(length))
+        return "".join(random.choice(characters) for _ in range(length))
 
     @classmethod
     def generate_refresh_token(cls, length=64):
         characters = string.ascii_letters + string.digits
-        return ''.join(random.choice(characters) for _ in range(length))
+        return "".join(random.choice(characters) for _ in range(length))
 
     def is_valid(self):
         """检查 API Key 是否未过期"""
@@ -41,15 +41,14 @@ class APIKey(models.Model):
 
 
 class RateLimit(models.Model):
-    api_key = models.ForeignKey(APIKey, on_delete=models.CASCADE,
-                                db_index=True, to_field='key', related_name='rate_limits')
+    api_key = models.ForeignKey(
+        APIKey, on_delete=models.CASCADE, db_index=True, to_field="key", related_name="rate_limits"
+    )
     count = models.IntegerField(default=0)
     reset_time = models.IntegerField()  # 重置时间戳
 
     class Meta:
-        indexes = [
-            models.Index(fields=['api_key', 'reset_time'])
-        ]
+        indexes = [models.Index(fields=["api_key", "reset_time"])]
 
     def should_limit(self, max_requests, interval):
         """检查是否应该限制请求"""
@@ -71,7 +70,7 @@ class ConversationSession(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('session_id', 'user')  # 确保用户+会话ID唯一
+        unique_together = ("session_id", "user")  # 确保用户+会话ID唯一
 
     def update_context(self, user_input, bot_reply):
         """原子更新上下文，避免并发覆盖"""
@@ -79,8 +78,8 @@ class ConversationSession(models.Model):
         # 数据库层面拼接，而非内存中
         ConversationSession.objects.filter(
             pk=self.pk,  # 精确匹配当前会话
-            user=self.user  # 确保用户一致
-        ).update(context=F('context') + new_entry)
+            user=self.user,  # 确保用户一致
+        ).update(context=F("context") + new_entry)
         # 刷新实例，获取更新后的值
         self.refresh_from_db()
 
@@ -95,16 +94,17 @@ class ConversationSession(models.Model):
 
 class Session(models.Model):
     """开发版：新会话表，记录 session_id 与 user 的对应关系。"""
+
     session_id = models.CharField(max_length=100, db_index=True)
     user = models.CharField(max_length=100, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'deepseek_api_session'
-        unique_together = ('session_id', 'user')
+        db_table = "deepseek_api_session"
+        unique_together = ("session_id", "user")
         indexes = [
-            models.Index(fields=['user', 'updated_at']),
+            models.Index(fields=["user", "updated_at"]),
         ]
 
     def __str__(self):
@@ -113,6 +113,7 @@ class Session(models.Model):
 
 class History(models.Model):
     """开发版：新历史表，按轮存储对话。"""
+
     session_id = models.CharField(max_length=100, db_index=True)
     user = models.CharField(max_length=100, db_index=True)
     user_input = models.TextField(blank=True, null=True)
@@ -120,9 +121,9 @@ class History(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'deepseek_api_history'
+        db_table = "deepseek_api_history"
         indexes = [
-            models.Index(fields=['session_id', 'user', 'created_at']),
+            models.Index(fields=["session_id", "user", "created_at"]),
         ]
 
     def __str__(self):
@@ -131,7 +132,8 @@ class History(models.Model):
 
 class UserLLMPreference(models.Model):
     """存储用户选择的 LLM 提供方/模型。未设置时按配置默认插入。"""
-    user = models.OneToOneField(APIKey, on_delete=models.CASCADE, related_name='llm_pref')
+
+    user = models.OneToOneField(APIKey, on_delete=models.CASCADE, related_name="llm_pref")
     provider = models.CharField(max_length=64)  # transformers|ollama|openai_compat|dashscope
     model = models.CharField(max_length=256, blank=True, default="")  # 可选：具体模型名
     updated_at = models.DateTimeField(auto_now=True)
@@ -142,6 +144,7 @@ class UserLLMPreference(models.Model):
 
 class ExternalLLMAPI(models.Model):
     """用户自定义的 OpenAI 兼容接口配置。与用户名关联。"""
+
     user = models.CharField(max_length=100, db_index=True)
     base_url = models.CharField(max_length=512)
     model_name = models.CharField(max_length=128)

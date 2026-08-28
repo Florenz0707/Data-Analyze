@@ -4,7 +4,7 @@ export const chat = (sessionId, userInput, useHistory = 'auto') => {
   return apiClient.post('/llm/chat', {
     session_id: sessionId,
     user_input: userInput,
-    use_history: useHistory
+    use_history: useHistory,
   });
 };
 
@@ -22,7 +22,7 @@ export const selectModel = (provider, model) => {
 
 export const getCurrentModel = () => {
   return apiClient.get('/llm/my');
-}
+};
 
 // --- 新增接口 ---
 
@@ -47,6 +47,6 @@ export const addCustomModel = (modelData) => {
  */
 export const deleteCustomModel = (modelName) => {
   return apiClient.delete('/llm/extern', {
-    data: { model_name: modelName } // DELETE 请求体通常在 data 属性中
+    data: { model_name: modelName }, // DELETE 请求体通常在 data 属性中
   });
 };

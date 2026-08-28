@@ -18,11 +18,7 @@
           <n-p>How can I help you today?</n-p>
         </div>
         <div v-else>
-          <ChatMessage
-            v-for="(message, index) in messages"
-            :key="index"
-            :message="message"
-          />
+          <ChatMessage v-for="(message, index) in messages" :key="index" :message="message" />
         </div>
         <div v-if="appStore.loading" class="typing-indicator">
           <n-spin size="small" />
@@ -44,7 +40,7 @@
 
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue';
-import { NScrollbar, NH2, NEmpty, NSpin, NP, NH1, NIcon } from 'naive-ui';
+import { NScrollbar, NH2, NSpin, NP, NH1, NIcon } from 'naive-ui';
 import { SparklesOutline as SparklesIcon } from '@vicons/ionicons5';
 import { useChatStore } from '../stores/chat';
 import { useAppStore } from '../stores/app';
@@ -64,28 +60,38 @@ const messages = computed(() => chatStore.messages[chatStore.currentSession] || 
 const scrollbarRef = ref(null);
 
 const scrollToBottom = () => {
-    nextTick(() => {
-        const scrollbar = scrollbarRef.value;
-        if (scrollbar) {
-            scrollbar.scrollTo({ top: scrollbar.scrollbarInstRef.contentRef.scrollHeight, behavior: 'smooth' });
-        }
-    });
+  nextTick(() => {
+    const scrollbar = scrollbarRef.value;
+    if (scrollbar) {
+      scrollbar.scrollTo({
+        top: scrollbar.scrollbarInstRef.contentRef.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  });
 };
 
-watch(() => chatStore.currentSession, (newSession) => {
-  if (newSession) {
-    // loadHistory 现在会处理临时会话ID
-    chatStore.loadHistory(newSession).then(scrollToBottom);
-  } else {
-    // 如果没有会话 (例如初始化时)，也确保滚动 (清空时)
+watch(
+  () => chatStore.currentSession,
+  (newSession) => {
+    if (newSession) {
+      // loadHistory 现在会处理临时会话ID
+      chatStore.loadHistory(newSession).then(scrollToBottom);
+    } else {
+      // 如果没有会话 (例如初始化时)，也确保滚动 (清空时)
+      scrollToBottom();
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  messages,
+  () => {
     scrollToBottom();
-  }
-}, { immediate: true });
-
-watch(messages, () => {
-  scrollToBottom();
-}, { deep: true });
-
+  },
+  { deep: true },
+);
 
 // 修改：handleSendMessage 现在只调用 store action
 const handleSendMessage = (text) => {
@@ -111,9 +117,9 @@ const handleSendMessage = (text) => {
 }
 
 .header .n-h2 {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
 }
 
 .messages-container {
@@ -128,23 +134,23 @@ const handleSendMessage = (text) => {
 }
 
 .empty-state {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 60vh;
-    color: #5f6368;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  color: #5f6368;
 }
 .empty-icon {
-    background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 16px;
+  background: -webkit-linear-gradient(135deg, #4285f4, #9b59b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
 }
 .empty-state .n-h1 {
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin-bottom: 8px;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .input-area {
@@ -165,10 +171,10 @@ const handleSendMessage = (text) => {
 /* Removed model selector styles */
 
 .typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 0;
-    color: #5f6368;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  color: #5f6368;
 }
 </style>

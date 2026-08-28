@@ -11,7 +11,13 @@
 
 <script setup>
 import { computed } from 'vue';
-import { NConfigProvider, NGlobalStyle, NMessageProvider, NDialogProvider, darkTheme } from 'naive-ui';
+import {
+  NConfigProvider,
+  NGlobalStyle,
+  NMessageProvider,
+  NDialogProvider,
+  darkTheme,
+} from 'naive-ui';
 import { useAppStore } from './stores/app';
 
 const appStore = useAppStore();

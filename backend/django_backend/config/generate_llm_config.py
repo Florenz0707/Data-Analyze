@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 生成带注释的 llm_config.yaml 模板。
 特点：
@@ -144,8 +143,13 @@ def write_content(path: Path, content: str, force: bool = False) -> None:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="生成 llm_config.yaml 模板（带注释与默认值）")
-    parser.add_argument("--output", "-o", type=str, default="config/llm_config.yaml",
-                        help="输出文件路径（默认：config/llm_config.yaml）")
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="config/llm_config.yaml",
+        help="输出文件路径（默认：config/llm_config.yaml）",
+    )
     parser.add_argument("--force", "-f", action="store_true", help="若目标存在则覆盖写入")
     parser.add_argument("--print", "-p", action="store_true", help="仅打印模板到标准输出，不写文件")
     args = parser.parse_args(argv)

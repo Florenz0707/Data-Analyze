@@ -25,7 +25,7 @@ export const useModelStore = defineStore('model', {
           this.fetchCurrentModel(),
           this.fetchCustomModels(), // 新增：同时获取自定义模型
         ]);
-      } catch (error) {
+      } catch {
         appStore.setError('Failed to fetch model data.');
       } finally {
         appStore.setLoading(false);
@@ -45,7 +45,8 @@ export const useModelStore = defineStore('model', {
       this.selectedProvider = this.currentModel?.provider;
       this.selectedModel = this.currentModel?.model;
     },
-    async fetchCustomModels() { // 新增：获取自定义模型的 action
+    async fetchCustomModels() {
+      // 新增：获取自定义模型的 action
       try {
         const response = await api.getCustomModels();
         this.customModels = response.data.models_list || [];
@@ -57,18 +58,18 @@ export const useModelStore = defineStore('model', {
       }
     },
     async selectModel(provider, model) {
-        const appStore = useAppStore();
-        appStore.setLoading(true);
-        try {
-            const response = await api.selectModel(provider, model);
-            this.currentModel = response.data;
-        } catch (error) {
-            appStore.setError('Failed to select model.');
-        } finally {
-            appStore.setLoading(false);
-        }
+      const appStore = useAppStore();
+      appStore.setLoading(true);
+      try {
+        const response = await api.selectModel(provider, model);
+        this.currentModel = response.data;
+      } catch {
+        appStore.setError('Failed to select model.');
+      } finally {
+        appStore.setLoading(false);
+      }
     },
-    
+
     // --- 新增 Actions ---
 
     /**
@@ -111,4 +112,3 @@ export const useModelStore = defineStore('model', {
     },
   },
 });
-

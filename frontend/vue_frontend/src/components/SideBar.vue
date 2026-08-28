@@ -28,7 +28,7 @@
           New Chat
         </n-button>
       </div>
-      
+
       <!-- 修改：使用 processedSessions getter 渲染列表 -->
       <n-scrollbar class="session-list">
         <div
@@ -46,7 +46,7 @@
           </n-button-group>
         </div>
       </n-scrollbar>
-      
+
       <!-- Model Settings directy in sidebar -->
       <div class="model-settings">
         <!-- ... model settings ... -->
@@ -56,24 +56,26 @@
             <template #icon><n-icon :component="SettingsIcon" /></template>
           </n-button>
         </div>
-        
+
         <n-select
-            v-model:value="modelStore.selectedProvider"
-            :options="providerOptions"
-            placeholder="Select Provider"
-            :round="true"
-            :filterable="true" 
+          v-model:value="modelStore.selectedProvider"
+          :options="providerOptions"
+          placeholder="Select Provider"
+          :round="true"
+          :filterable="true"
         />
         <n-select
-            v-if="isLocalProvider"
-            v-model:value="modelStore.selectedModel"
-            :options="modelOptions"
-            placeholder="Select Model"
-            class="model-select"
-            :round="true"
-            :filterable="true"
+          v-if="isLocalProvider"
+          v-model:value="modelStore.selectedModel"
+          :options="modelOptions"
+          placeholder="Select Model"
+          class="model-select"
+          :round="true"
+          :filterable="true"
         />
-        <n-button @click="handleSelectModel" type="primary" block class="model-select" :round="true">Apply</n-button>
+        <n-button @click="handleSelectModel" type="primary" block class="model-select" :round="true"
+          >Apply</n-button
+        >
       </div>
 
       <div class="footer">
@@ -85,11 +87,11 @@
     </div>
 
     <!-- ... model management modal ... -->
-    <n-modal 
-      v-model:show="showManageModelsModal" 
-      title="Manage Custom Models" 
-      preset="card" 
-      style="width: 600px;"
+    <n-modal
+      v-model:show="showManageModelsModal"
+      title="Manage Custom Models"
+      preset="card"
+      style="width: 600px"
       :mask-closable="false"
     >
       <n-tabs type="line" animated>
@@ -98,7 +100,12 @@
             <n-list-item v-for="model in modelStore.customModels" :key="model">
               <span class="custom-model-name">{{ model }}</span>
               <template #suffix>
-                <n-button text type="error" @click="handleDeleteCustomModel(model)" title="Delete Model">
+                <n-button
+                  text
+                  type="error"
+                  @click="handleDeleteCustomModel(model)"
+                  title="Delete Model"
+                >
                   <template #icon><n-icon :component="TrashIcon" /></template>
                 </n-button>
               </template>
@@ -109,45 +116,73 @@
           </n-list>
         </n-tab-pane>
         <n-tab-pane name="add" tab="Add New Model">
-          <n-form ref="addModelFormRef" :model="addModelData" :rules="addModelFormRules" label-placement="top">
+          <n-form
+            ref="addModelFormRef"
+            :model="addModelData"
+            :rules="addModelFormRules"
+            label-placement="top"
+          >
             <n-form-item label="Model Name (Alias)" path="alias">
-              <n-input v-model:value="addModelData.alias" placeholder="e.g., My Llama 3 (This is the name you'll see)" />
+              <n-input
+                v-model:value="addModelData.alias"
+                placeholder="e.g., My Llama 3 (This is the name you'll see)"
+              />
             </n-form-item>
             <n-form-item label="Model Name (on Provider)" path="model_name">
-              <n-input v-model:value="addModelData.model_name" placeholder="e.g., llama3:latest or gpt-4o" />
+              <n-input
+                v-model:value="addModelData.model_name"
+                placeholder="e.g., llama3:latest or gpt-4o"
+              />
             </n-form-item>
             <n-form-item label="Base URL" path="base_url">
-              <n-input v-model:value="addModelData.base_url" placeholder="e.g., http://localhost:11434/v1" />
+              <n-input
+                v-model:value="addModelData.base_url"
+                placeholder="e.g., http://localhost:11434/v1"
+              />
             </n-form-item>
             <n-form-item label="API Key" path="api_key">
-              <n-input 
-                v-model:value="addModelData.api_key" 
-                type="password" 
-                show-password-on="click" 
-                placeholder="Required by most providers (e.g., OpenAI)" 
+              <n-input
+                v-model:value="addModelData.api_key"
+                type="password"
+                show-password-on="click"
+                placeholder="Required by most providers (e.g., OpenAI)"
               />
             </n-form-item>
           </n-form>
-          <n-button type="primary" block @click="handleSaveCustomModel" :loading="isSavingModel">Save Model</n-button>
+          <n-button type="primary" block @click="handleSaveCustomModel" :loading="isSavingModel"
+            >Save Model</n-button
+          >
         </n-tab-pane>
       </n-tabs>
     </n-modal>
-
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { 
-  NButton, NScrollbar, NButtonGroup, NIcon, useDialog, NSelect,
-  NModal, NTabs, NTabPane, NList, NListItem, NForm, NFormItem, NInput, useMessage
+import {
+  NButton,
+  NScrollbar,
+  NButtonGroup,
+  NIcon,
+  useDialog,
+  NSelect,
+  NModal,
+  NTabs,
+  NTabPane,
+  NList,
+  NListItem,
+  NForm,
+  NFormItem,
+  NInput,
+  useMessage,
 } from 'naive-ui';
-import { 
-    TrashOutline as TrashIcon, 
-    LogOutOutline as LogoutIcon,
-    AddOutline as AddIcon,
-    MenuOutline as MenuIcon,
-    SettingsOutline as SettingsIcon
+import {
+  TrashOutline as TrashIcon,
+  LogOutOutline as LogoutIcon,
+  AddOutline as AddIcon,
+  MenuOutline as MenuIcon,
+  SettingsOutline as SettingsIcon,
 } from '@vicons/ionicons5';
 import { useChatStore } from '../stores/chat';
 import { useAuthStore } from '../stores/auth';
@@ -156,7 +191,7 @@ import { useRouter } from 'vue-router';
 // import { useAppStore } from '../stores/app'; // 移除了 appStore，因为 "click again" 逻辑被简化
 
 const props = defineProps({
-  isCollapsed: Boolean
+  isCollapsed: Boolean,
 });
 const emit = defineEmits(['toggle-collapse']);
 
@@ -170,20 +205,20 @@ const message = useMessage();
 
 // --- Model Selection Logic ---
 onMounted(() => {
-    modelStore.fetchAll();
+  modelStore.fetchAll();
 });
 
 const providerOptions = computed(() => {
   const providerGroup = {
     type: 'group',
     label: 'Providers',
-    children: modelStore.providers.map(p => ({ label: p, value: p }))
+    children: modelStore.providers.map((p) => ({ label: p, value: p })),
   };
 
   const customGroup = {
     type: 'group',
     label: 'Custom Models',
-    children: modelStore.customModels.map(m => ({ label: m, value: m }))
+    children: modelStore.customModels.map((m) => ({ label: m, value: m })),
   };
 
   const options = [];
@@ -196,20 +231,21 @@ const providerOptions = computed(() => {
   return options;
 });
 
-
-const isLocalProvider = computed(() => ['transformers', 'ollama'].includes(modelStore.selectedProvider));
+const isLocalProvider = computed(() =>
+  ['transformers', 'ollama'].includes(modelStore.selectedProvider),
+);
 const modelOptions = computed(() => {
-    if (modelStore.selectedProvider === 'transformers') {
-        return modelStore.localModels.transformers.map(m => ({ label: m, value: m }));
-    }
-    if (modelStore.selectedProvider === 'ollama') {
-        return modelStore.localModels.ollama.map(m => ({ label: m, value: m }));
-    }
-    return [];
+  if (modelStore.selectedProvider === 'transformers') {
+    return modelStore.localModels.transformers.map((m) => ({ label: m, value: m }));
+  }
+  if (modelStore.selectedProvider === 'ollama') {
+    return modelStore.localModels.ollama.map((m) => ({ label: m, value: m }));
+  }
+  return [];
 });
 
 const handleSelectModel = () => {
-    modelStore.selectModel(modelStore.selectedProvider, modelStore.selectedModel);
+  modelStore.selectModel(modelStore.selectedProvider, modelStore.selectedModel);
 };
 // --- End Model Selection Logic ---
 
@@ -222,13 +258,13 @@ const addModelData = ref({
   base_url: '',
   model_name: '',
   api_key: '',
-  alias: ''
+  alias: '',
 });
 
 const addModelFormRules = {
-  alias: { required: true, message: "A unique Model Name (Alias) is required", trigger: 'blur' },
+  alias: { required: true, message: 'A unique Model Name (Alias) is required', trigger: 'blur' },
   model_name: { required: true, message: 'Model Name (on provider) is required', trigger: 'blur' },
-  base_url: { required: true, message: 'Base URL is required', trigger: 'blur' }
+  base_url: { required: true, message: 'Base URL is required', trigger: 'blur' },
 };
 
 const resetAddModelForm = () => {
@@ -243,7 +279,7 @@ const handleSaveCustomModel = () => {
         await modelStore.addCustomModel(addModelData.value);
         message.success('Model added successfully!');
         resetAddModelForm();
-      } catch (error) {
+      } catch {
         message.error('Failed to add model. See console for details.');
       } finally {
         isSavingModel.value = false;
@@ -270,7 +306,6 @@ const handleDeleteCustomModel = (modelName) => {
 
 // --- End Custom Model Management ---
 
-
 // 修改：handleNewChat 现在只调用 store action
 const handleNewChat = () => {
   chatStore.startNewChat();
@@ -290,18 +325,18 @@ const handleDelete = (sessionId) => {
 };
 
 const handleLogout = () => {
-    dialog.create({
-        title: 'Confirm Logout',
-        content: 'Are you sure you want to log out?',
-        positiveText: 'Logout',
-        negativeText: 'Cancel',
-        positiveButtonProps: { type: 'error' },
-        onPositiveClick: () => {
-            authStore.clearApiKey();
-            chatStore.clearUserChatData();
-            router.push('/login');
-        },
-    });
+  dialog.create({
+    title: 'Confirm Logout',
+    content: 'Are you sure you want to log out?',
+    positiveText: 'Logout',
+    negativeText: 'Cancel',
+    positiveButtonProps: { type: 'error' },
+    onPositiveClick: () => {
+      authStore.clearApiKey();
+      chatStore.clearUserChatData();
+      router.push('/login');
+    },
+  });
 };
 </script>
 
@@ -404,11 +439,11 @@ const handleLogout = () => {
   margin-right: 8px;
 }
 .session-actions {
-    opacity: 0; /* Hide by default */
+  opacity: 0; /* Hide by default */
 }
 .session-item:hover .session-actions,
 .session-item.active .session-actions {
-    opacity: 1; /* Show on hover/active */
+  opacity: 1; /* Show on hover/active */
 }
 
 /* Model Settings */
@@ -433,13 +468,13 @@ const handleLogout = () => {
   border-bottom: 1px solid #eef0f2;
 }
 .model-settings p {
-    margin: 0 0 8px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    color: #5f6368;
+  margin: 0 0 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #5f6368;
 }
 .model-select {
-    margin-top: 8px;
+  margin-top: 8px;
 }
 
 .footer {
@@ -447,7 +482,7 @@ const handleLogout = () => {
   /* Removed border-top, now handled by model-settings */
 }
 .footer-btn {
-    justify-content: flex-start; /* Align icon/text left */
+  justify-content: flex-start; /* Align icon/text left */
 }
 
 /* 新增：自定义模型列表项样式 */

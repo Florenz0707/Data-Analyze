@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier --write --ignore-unknown --config ../../.prettierrc.json --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-unknown --config ../../.prettierrc.json --ignore-path ../../.prettierignore ."
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
@@ -20,7 +24,15 @@
     "vue-tabler-icons": "^2.21.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.68.0",
     "vite": "^7.1.2"
   }
 }

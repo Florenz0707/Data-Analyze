@@ -1,9 +1,56 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+minimum_pre_commit_version: '4.5.0'
+default_stages: [pre-commit]
+fail_fast: false
+
+exclude: |
+  (?x)^(
+    backend/django_backend/(\.venv|data)/|
+    backend/django_backend/(requirements\.txt|uv\.lock)$|
+    frontend/vue_frontend/(node_modules|dist)/|
+    frontend/vue_frontend/(package-lock\.json|pnpm-lock\.yaml|openapi\.(json|yaml))$|
+    .*\.(csv|pdf)$
+  )
+
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.4
+    hooks:
+      - id: ruff-check
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^backend/django_backend/.*\.py$
+      - id: ruff-format
+        files: ^backend/django_backend/.*\.py$
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint (JavaScript, TypeScript, Vue)
+        entry: frontend/vue_frontend/node_modules/.bin/eslint
+        args:
+          - --fix
+          - --max-warnings=0
+          - --config
+          - frontend/vue_frontend/eslint.config.js
+        language: system
+        files: ^frontend/vue_frontend/.*\.(js|jsx|mjs|cjs|ts|tsx|vue)$
+        require_serial: true
+      - id: prettier
+        name: prettier (web and structured text)
+        entry: frontend/vue_frontend/node_modules/.bin/prettier
+        args: [--write, --ignore-unknown]
+        language: system
+        files: \.(js|jsx|mjs|cjs|ts|tsx|vue|json|json5|yaml|yml|html|css|scss|less|md|mdx)$
+        require_serial: true

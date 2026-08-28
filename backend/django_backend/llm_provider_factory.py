@@ -1,9 +1,10 @@
 import os
-from dotenv import load_dotenv
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
+from dotenv import load_dotenv
 
 # 延迟导入，按需依赖，避免环境缺少某些后端时报错
+
 
 def _maybe_load_dotenv():
     # 优先加载项目根目录下的 api_key.env（不报错）
@@ -15,17 +16,19 @@ def _maybe_load_dotenv():
 
 
 def _slugify(text: str) -> str:
-    return ''.join(c if c.isalnum() else '_' for c in str(text))[:64]
+    return "".join(c if c.isalnum() else "_" for c in str(text))[:64]
 
 
 # ============== LLM 构建（独立） ==============
 
-def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
+
+def build_llm_by(provider: str, env_cfg: dict[str, Any]):
     p = (provider or "").lower()
 
     if p == "transformers":
         from langchain_huggingface import HuggingFacePipeline
-        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline as hf_pipeline
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import pipeline as hf_pipeline
 
         tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
         llm_model = tcfg.get("llm_model")
@@ -62,6 +65,7 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
 
     if p == "ollama":
         from langchain_ollama import OllamaLLM
+
         ocfg = env_cfg.get("OLLAMA_CONFIG", {})
         llm_name = ocfg.get("model")
         if not llm_name:
@@ -71,6 +75,7 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
     if p == "openai_compat":
         _maybe_load_dotenv()
         from langchain_openai import ChatOpenAI
+
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("OPENAI_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "OPENAI_API_KEY")
@@ -81,12 +86,19 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         model = cfg.get("model", "gpt-4o-mini")
-        return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, organization=organization, timeout=timeout,
-                          max_retries=max_retries)
+        return ChatOpenAI(
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            organization=organization,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     if p == "dashscope":
         _maybe_load_dotenv()
         from langchain_openai import ChatOpenAI
+
         cfg = env_cfg.get("DASHSCOPE_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("DASHSCOPE_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "DASHSCOPE_API_KEY")
@@ -96,19 +108,26 @@ def build_llm_by(provider: str, env_cfg: Dict[str, Any]):
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         chat_model = cfg.get("chat_model", "qwen-turbo")
-        return ChatOpenAI(model=chat_model, api_key=api_key, base_url=base_url, timeout=timeout,
-                          max_retries=max_retries)
+        return ChatOpenAI(
+            model=chat_model,
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     raise ValueError(f"不支持的 LLM provider: {provider}")
 
 
 # ============== Embedding 构建（独立） ==============
 
-def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, str]:
+
+def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, str]:
     p = (provider or "").lower()
 
     if p == "hf" or p == "transformers":
         from langchain_huggingface import HuggingFaceEmbeddings
+
         tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
         embedding_name = tcfg.get("embedding_model", "sentence-transformers/all-MiniLM-L6-v2")
         embed = HuggingFaceEmbeddings(model_name=embedding_name)
@@ -116,6 +135,7 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
 
     if p == "ollama":
         from langchain_ollama import OllamaEmbeddings
+
         ocfg = env_cfg.get("OLLAMA_CONFIG", {})
         embed_name = ocfg.get("embedding_model")
         if not embed_name:
@@ -126,6 +146,7 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
     if p == "openai_compat":
         _maybe_load_dotenv()
         from langchain_openai import OpenAIEmbeddings
+
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("OPENAI_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "OPENAI_API_KEY")
@@ -137,7 +158,7 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
         max_retries = int(cfg.get("max_retries", 2))
         emb_model = cfg.get("embedding_model", "text-embedding-3-large")
         emb_dims = cfg.get("embedding_dimensions")
-        kwargs: Dict[str, Any] = {
+        kwargs: dict[str, Any] = {
             "model": emb_model,
             "api_key": api_key,
             "base_url": base_url,
@@ -154,6 +175,7 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
         _maybe_load_dotenv()
         from langchain_core.embeddings import Embeddings as LCEmbeddings
         from openai import OpenAI as OpenAIClient
+
         cfg = env_cfg.get("DASHSCOPE_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("DASHSCOPE_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "DASHSCOPE_API_KEY")
@@ -165,17 +187,21 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
         emb_model = cfg.get("embedding_model", "text-embedding-v4")
 
         class DashScopeEmbeddings(LCEmbeddings):
-            def __init__(self, model: str, api_key: str, base_url: str, timeout: int, max_retries: int):
+            def __init__(
+                self, model: str, api_key: str, base_url: str, timeout: int, max_retries: int
+            ):
                 self.model = model
-                self.client = OpenAIClient(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries)
+                self.client = OpenAIClient(
+                    api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+                )
 
-            def embed_documents(self, texts: List[str], **kwargs) -> List[List[float]]:
+            def embed_documents(self, texts: list[str], **kwargs) -> list[list[float]]:
                 if not texts:
                     return []
                 resp = self.client.embeddings.create(model=self.model, input=texts)
                 return [item.embedding for item in resp.data]
 
-            def embed_query(self, text: str, **kwargs) -> List[float]:
+            def embed_query(self, text: str, **kwargs) -> list[float]:
                 resp = self.client.embeddings.create(model=self.model, input=text)
                 return resp.data[0].embedding
 
@@ -187,7 +213,8 @@ def build_embedding_by(provider: str, env_cfg: Dict[str, Any]) -> Tuple[object, 
 
 # ============== 统一对外工厂（LLM + Embedding） ==============
 
-def build_providers(env_cfg: Dict[str, Any]) -> Dict[str, Any]:
+
+def build_providers(env_cfg: dict[str, Any]) -> dict[str, Any]:
     """根据配置构造 LLM 与 Embedding 提供方。
     - LLM_PROVIDER 控制对话模型
     - EMBEDDING_PROVIDER 控制向量模型；当为 auto 时，退化为跟随 LLM_PROVIDER

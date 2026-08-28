@@ -1,0 +1,21 @@
+.git/
+.history/
+.ruff_cache/
+.venv/
+**/.venv/
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Generated or tool-owned files
+**/package-lock.json
+**/pnpm-lock.yaml
+**/uv.lock
+backend/django_backend/requirements.txt
+frontend/vue_frontend/openapi.json
+frontend/vue_frontend/openapi.yaml
+
+# Data and binary documentation
+backend/django_backend/data/
+**/*.csv
+**/*.pdf

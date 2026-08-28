@@ -2,8 +2,8 @@
 
 本项目提供“系统日志检索 + 向量检索 + 大语言模型分析”的一体化后端服务，支持多种推理与嵌入后端（本地 Transformers、Ollama、OpenAI 兼容、DashScope 等），并可独立选择对话模型与向量嵌入模型，灵活混搭。
 
-
 ## 1. 功能概览
+
 - 日志数据索引与检索：使用向量数据库（Chroma）对日志内容建索引并进行 Top‑K 召回。
 - LLM 分析与答复：将检索到的日志上下文与用户问题交由 LLM 生成结构化答复，且支持输出清洗与模板化。
 - 多 Provider 支持：
@@ -12,8 +12,8 @@
 - 配置即插即用：通过 config/llm_config.yaml 一处集中切换 LLM 与 Embeddings 提供方、模型及参数。
 - Django API：以 Django + django-ninja 提供简洁的后端接口与管理命令（如 initdb）。
 
-
 ## 2. 关键目录与文件
+
 - manage.py：Django 入口
 - deepseek_project/：Django 配置（settings/urls/asgi/wsgi）
 - deepseek_api/：后端应用（API、Models、Services、管理命令等）
@@ -31,10 +31,10 @@
 - pyproject.toml：Python 依赖与项目信息（PEP 621）
 - uv.lock：依赖锁定文件（建议使用 uv 同步）
 
-
 ## 3. 配置说明（config/llm_config.yaml）
 
 首次生成配置与本地模型清单：
+
 - 生成 llm_config.yaml（首次克隆仓库或不存在时）
   - 命令：uv run python config/generate_llm_config.py
   - 作用：在 config/ 目录下创建/覆盖 llm_config.yaml，并给出可用 Provider/模型的示例条目，便于后续按需修改。
@@ -54,8 +54,8 @@
 
 提示：如更换 EMBEDDING_PROVIDER 或 embedding_model/embedding_dimensions，须删除 data/vector_stores 后重建索引，避免维度不匹配。
 
-
 ## 4. 环境准备
+
 - Python：建议 3.13（与 pyproject.toml 对齐）
 - 可选 GPU：如使用本地 Transformers 推理，建议安装匹配 CUDA 的 PyTorch
 - 建议包管理器：uv（已提供 uv.lock）
@@ -64,10 +64,10 @@
   - DASHSCOPE_API_KEY / DASHSCOPE_BASE_URL（如使用 DashScope）
   - HUGGING_FACE_HUB_TOKEN（如使用受限 HF 模型）
 
-
 ## 5. 使用包管理器安装依赖（基于 pyproject.toml）
 
 首选：uv（快速、跨平台、原生支持 PEP 621）
+
 - 安装 uv：
   - pip install --upgrade uv
 - 创建并使用虚拟环境：
@@ -79,6 +79,7 @@
   - 首次或需更新锁：uv sync
 
 备选 1：pip（若不使用 uv）
+
 - 创建虚拟环境并激活：
   - python -m venv .venv
   - Windows：.venv\Scripts\activate
@@ -89,14 +90,15 @@
   - 直接依据 pyproject（部分环境需构建后端，可能不如 uv 稳定）：pip install .
 
 备选 2：Poetry（如你偏好，但本仓库未附带 poetry.lock，需自行管理）
-- poetry install
 
+- poetry install
 
 ## 6. 运行与常用命令
 
 方式 A：启动 Django API 服务
+
 - 数据迁移：
-  - uv run python manage.py migrate    （或激活虚拟环境后直接 python manage.py migrate）
+  - uv run python manage.py migrate （或激活虚拟环境后直接 python manage.py migrate）
 - 可选：初始化命令（如有需要）
   - uv run python manage.py initdb
     - 仅迁移不写入种子：uv run python manage.py initdb --no-seed
@@ -105,16 +107,17 @@
   - uv run python manage.py runserver 0.0.0.0:8000
 
 方式 B：脚本方式快速验证链路（检索 + 生成）
+
 - uv run python topklogsystem.py
 - 或在代码中：from topklogsystem import TopKLogSystem; TopKLogSystem.query("你的问题")
 
-
 ## 7. 常见问题
+
 - 更换嵌入模型后报错或召回异常：删除 data/vector_stores 并重建索引。
 - DashScope embeddings 兼容性问题：请将 EMBEDDING_PROVIDER 设为 dashscope，并在 DASHSCOPE_CONFIG 中指定正确的 embedding_model 与维度。
 - HF 模型权限错误（401 或 gated repo）：更换为公开模型，或配置 HUGGING_FACE_HUB_TOKEN 并确保账号有访问权限。
 - 代理：在 llm_config.yaml 配置 HTTP_PROXY/HTTPS_PROXY，程序会在启动时注入环境变量。
 
-
 ## 8. 许可
+
 仅用于教学与研究示例。请在相应平台遵循模型与数据集的使用条款。

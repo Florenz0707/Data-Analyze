@@ -1,11 +1,10 @@
-from pathlib import Path
 import time
+from pathlib import Path
 
+from deepseek_api.models import APIKey, RateLimit
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
-
-from deepseek_api.models import APIKey, RateLimit
 
 
 class Command(BaseCommand):
@@ -39,7 +38,9 @@ class Command(BaseCommand):
 
         # 2) Seed demo data via ORM (safe & schema-aware)
         if options.get("no_seed"):
-            self.stdout.write(self.style.SUCCESS("Migrations applied. Skipping seeding (--no-seed)."))
+            self.stdout.write(
+                self.style.SUCCESS("Migrations applied. Skipping seeding (--no-seed).")
+            )
         else:
             self._seed_via_orm()
 
@@ -64,7 +65,9 @@ class Command(BaseCommand):
             },
         )
         if created:
-            self.stdout.write(self.style.SUCCESS(f"Created demo API key: {demo_key_value} for user '{demo_user}'"))
+            self.stdout.write(
+                self.style.SUCCESS(f"Created demo API key: {demo_key_value} for user '{demo_user}'")
+            )
         else:
             # ensure expiry is in the future
             if api_key_obj.expiry_time < now + 60:
@@ -100,7 +103,11 @@ class Command(BaseCommand):
                 sql_path = candidate
 
         if not sql_path.exists():
-            self.stdout.write(self.style.WARNING(f"--use-sql provided but file not found: {sql_path_str}. Skipping."))
+            self.stdout.write(
+                self.style.WARNING(
+                    f"--use-sql provided but file not found: {sql_path_str}. Skipping."
+                )
+            )
             return
 
         sql = sql_path.read_text(encoding="utf-8")
@@ -109,7 +116,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(self.style.WARNING(f"Executing SQL (best-effort): {sql_path}"))
-        statements = [s.strip() for s in sql.split(';') if s.strip()]
+        statements = [s.strip() for s in sql.split(";") if s.strip()]
         with connection.cursor() as cursor:
             # Execute each statement independently; ignore missing-table errors
             for stmt in statements:

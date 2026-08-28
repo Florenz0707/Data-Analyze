@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 生成本地可用模型清单：config/available_local_models.json
 - transformers: 从本机 Hugging Face 缓存扫描已下载模型（repo_type=model）
@@ -27,30 +26,35 @@
   "ollama": ["model:tag", ...]
 }
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import os
 import sys
-from typing import List, Optional, Tuple
 
 
 def _import_hf_scan():
     try:
         from huggingface_hub import scan_cache_dir  # type: ignore
+
         return scan_cache_dir, "scan_cache_dir"
     except Exception:
         try:
             from huggingface_hub import scan_cache  # type: ignore
+
             return scan_cache, "scan_cache"
         except Exception as e:
-            raise RuntimeError("未找到 huggingface_hub 扫描函数，请安装/升级 huggingface-hub") from e
+            raise RuntimeError(
+                "未找到 huggingface_hub 扫描函数，请安装/升级 huggingface-hub"
+            ) from e
 
 
-def _gather_transformers(scan_func, mode: str, preferred_root: Optional[str] = None, verbose: bool = False) -> Tuple[
-    List[str], Optional[str]]:
-    candidates: List[Optional[str]] = []
+def _gather_transformers(
+    scan_func, mode: str, preferred_root: str | None = None, verbose: bool = False
+) -> tuple[list[str], str | None]:
+    candidates: list[str | None] = []
     if preferred_root:
         candidates.append(preferred_root)
     candidates.append(None)  # 让库自动探测
@@ -63,18 +67,22 @@ def _gather_transformers(scan_func, mode: str, preferred_root: Optional[str] = N
         candidates.append(os.path.join(hf_home, "hub"))
 
     seen = set()
-    result: List[str] = []
-    used_root: Optional[str] = None
+    result: list[str] = []
+    used_root: str | None = None
 
     for root in candidates:
         try:
-            info = scan_func(root) if mode == "scan_cache_dir" else (scan_func(cache_dir=root) if root else scan_func())
+            info = (
+                scan_func(root)
+                if mode == "scan_cache_dir"
+                else (scan_func(cache_dir=root) if root else scan_func())
+            )
             repo_infos = getattr(info, "repo_infos", None)
             if repo_infos is None:
                 repo_infos = getattr(info, "repos", None)
             if repo_infos is None and isinstance(info, (list, tuple)):
                 repo_infos = info
-            for ri in (repo_infos or []):
+            for ri in repo_infos or []:
                 if getattr(ri, "repo_type", None) != "model":
                     continue
                 rid = getattr(ri, "repo_id", None)
@@ -97,10 +105,10 @@ def _gather_transformers(scan_func, mode: str, preferred_root: Optional[str] = N
     return sorted(result), used_root
 
 
-def _gather_ollama(host: str, timeout: float = 3.0, verbose: bool = False) -> List[str]:
+def _gather_ollama(host: str, timeout: float = 3.0, verbose: bool = False) -> list[str]:
     try:
         import requests
-    except Exception as e:
+    except Exception:
         if verbose:
             print("[warn] requests 未安装，跳过 Ollama 扫描", file=sys.stderr)
         return []
@@ -109,7 +117,7 @@ def _gather_ollama(host: str, timeout: float = 3.0, verbose: bool = False) -> Li
         r = requests.get(url, timeout=timeout)
         r.raise_for_status()
         data = r.json() or {}
-        out: List[str] = []
+        out: list[str] = []
         for m in data.get("models", []):
             name = m.get("name")
             if name:
@@ -123,10 +131,16 @@ def _gather_ollama(host: str, timeout: float = 3.0, verbose: bool = False) -> Li
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="生成 available_local_models.json")
-    parser.add_argument("--output", "-o", type=str, default=os.path.join("config", "available_local_models.json"))
+    parser.add_argument(
+        "--output", "-o", type=str, default=os.path.join("config", "available_local_models.json")
+    )
     parser.add_argument("--overwrite", action="store_true", help="若目标存在则覆盖写入")
-    parser.add_argument("--hf-path", type=str, default=None, help="显式指定 HF 缓存根（如 D:/HuggingFace/hub）")
-    parser.add_argument("--ollama-host", type=str, default=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+    parser.add_argument(
+        "--hf-path", type=str, default=None, help="显式指定 HF 缓存根（如 D:/HuggingFace/hub）"
+    )
+    parser.add_argument(
+        "--ollama-host", type=str, default=os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    )
     parser.add_argument("--transformers-only", action="store_true")
     parser.add_argument("--ollama-only", action="store_true")
     parser.add_argument("--verbose", "-v", action="store_true")
@@ -137,26 +151,37 @@ def main(argv=None) -> int:
         return 2
 
     # 收集 transformers
-    transformers: List[str] = []
+    transformers: list[str] = []
     if not args.ollama_only:
         scan_func, mode = _import_hf_scan()
-        transformers, used_root = _gather_transformers(scan_func, mode, args.hf_path, verbose=args.verbose)
+        transformers, used_root = _gather_transformers(
+            scan_func, mode, args.hf_path, verbose=args.verbose
+        )
         if args.verbose:
-            print(json.dumps({
-                "hf_scan_mode": mode,
-                "hf_used_root": used_root,
-                "transformers_found": len(transformers)
-            }, ensure_ascii=False, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "hf_scan_mode": mode,
+                        "hf_used_root": used_root,
+                        "transformers_found": len(transformers),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
 
     # 收集 ollama
-    ollama: List[str] = []
+    ollama: list[str] = []
     if not args.transformers_only:
         ollama = _gather_ollama(args.ollama_host, verbose=args.verbose)
         if args.verbose:
-            print(json.dumps({
-                "ollama_host": args.ollama_host,
-                "ollama_found": len(ollama)
-            }, ensure_ascii=False, indent=2))
+            print(
+                json.dumps(
+                    {"ollama_host": args.ollama_host, "ollama_found": len(ollama)},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
 
     data = {
         "transformers": transformers,
@@ -172,11 +197,13 @@ def main(argv=None) -> int:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    print(json.dumps({
-        "output": out_path,
-        "transformers": len(transformers),
-        "ollama": len(ollama)
-    }, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {"output": out_path, "transformers": len(transformers), "ollama": len(ollama)},
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
 
     return 0
 

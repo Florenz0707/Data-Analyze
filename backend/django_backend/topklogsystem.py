@@ -1,4 +1,3 @@
-from math import log
 import os
 
 # chroma 不上传数据
@@ -8,12 +7,13 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
 import json
 import logging
-import warnings
-import yaml
-import pandas as pd
-import time
 import re
-from typing import Any, Dict, List, Tuple
+import time
+import warnings
+from typing import Any
+
+import pandas as pd
+import yaml
 
 # silence specific pydantic warnings about 'validate_default'
 try:
@@ -31,19 +31,22 @@ except Exception:
 
 # llama-index & chroma
 import chromadb
-from llama_index.core import Settings  # 全局
-from llama_index.core import Document
-from llama_index.core import VectorStoreIndex, StorageContext
-from llama_index.vector_stores.chroma import ChromaVectorStore  # 注意导入路径
-from llama_index.llms.langchain import LangChainLLM
+from llama_index.core import (
+    Document,
+    Settings,  # 全局
+    StorageContext,
+    VectorStoreIndex,
+)
 from llama_index.embeddings.langchain import LangchainEmbedding
+from llama_index.llms.langchain import LangChainLLM
+from llama_index.vector_stores.chroma import ChromaVectorStore  # 注意导入路径
 
 # 日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _apply_proxies_from_cfg(cfg: Dict[str, Any]):
+def _apply_proxies_from_cfg(cfg: dict[str, Any]):
     """根据配置设置进程代理环境变量，优先在模型下载/初始化前调用。"""
     http_proxy = cfg.get("HTTP_PROXY") or cfg.get("http_proxy")
     https_proxy = cfg.get("HTTPS_PROXY") or cfg.get("https_proxy")
@@ -56,22 +59,22 @@ def _apply_proxies_from_cfg(cfg: Dict[str, Any]):
 
     # 同时设置大小写，兼容 requests/huggingface_hub 等
     for key, val in (
-            ("HTTP_PROXY", http_proxy),
-            ("http_proxy", http_proxy),
-            ("HTTPS_PROXY", https_proxy),
-            ("https_proxy", https_proxy),
-            ("ALL_PROXY", all_proxy or http_proxy),
-            ("all_proxy", all_proxy or http_proxy),
-            ("NO_PROXY", no_proxy),
-            ("no_proxy", no_proxy),
+        ("HTTP_PROXY", http_proxy),
+        ("http_proxy", http_proxy),
+        ("HTTPS_PROXY", https_proxy),
+        ("https_proxy", https_proxy),
+        ("ALL_PROXY", all_proxy or http_proxy),
+        ("all_proxy", all_proxy or http_proxy),
+        ("NO_PROXY", no_proxy),
+        ("no_proxy", no_proxy),
     ):
         _set_env(key, val)
 
 
 class TopKLogSystem:
     def __init__(
-            self,
-            config_path: str = "./config/llm_config.yaml",
+        self,
+        config_path: str = "./config/llm_config.yaml",
     ) -> None:
         """
         通过配置文件初始化系统。
@@ -80,7 +83,7 @@ class TopKLogSystem:
         self.config_path = config_path
 
         # load provider config
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             env_cfg = yaml.safe_load(f) or {}
 
         # 先应用代理，确保后续模型/权重下载、远程请求走代理
@@ -106,7 +109,9 @@ class TopKLogSystem:
         # 从配置读取路径
         self.log_path = env_cfg.get("LOG_PATH", "./data/log")
         self.system_prompt_path = env_cfg.get("SYSTEM_PROMPT_PATH", "./config/system_prompt.yaml")
-        self.response_template_path = env_cfg.get("RESPONSE_TEMPLATE_PATH", "./config/response_template.md")
+        self.response_template_path = env_cfg.get(
+            "RESPONSE_TEMPLATE_PATH", "./config/response_template.md"
+        )
 
         # 默认格式控制（可被 @llm_config.yaml 覆盖；兼容旧 system_prompt.yaml 中的同名键）
         self.max_parts_num: int = 3
@@ -121,6 +126,7 @@ class TopKLogSystem:
 
         # init models by provider via factory
         from llm_provider_factory import build_providers
+
         self.provider = provider
         prov = build_providers(env_cfg)
         Settings.llm = LangChainLLM(llm=prov["llm"])  # 注册到 llama-index
@@ -131,10 +137,10 @@ class TopKLogSystem:
         self.vector_store = None
         self._build_vectorstore()  # 直接构建
 
-    def _extract_format_limits(self, data: Dict[str, Any]) -> Tuple[int, int]:
+    def _extract_format_limits(self, data: dict[str, Any]) -> tuple[int, int]:
         """从 system_prompt.yaml 的字典中提取旧键 MAX_PARTS_NUM 与 MAX_PART_LENGTH（兼容旧版）。"""
-        parts = data.get('MAX_PARTS_NUM')
-        length = data.get('MAX_PART_LENGTH')
+        parts = data.get("MAX_PARTS_NUM")
+        length = data.get("MAX_PART_LENGTH")
         try:
             if parts is not None:
                 self.max_parts_num = max(1, min(10, int(parts)))
@@ -147,10 +153,10 @@ class TopKLogSystem:
             pass
         return self.max_parts_num, self.max_part_length
 
-    def _load_llm_format_limits(self, env_cfg: Dict[str, Any]) -> Tuple[int, int]:
+    def _load_llm_format_limits(self, env_cfg: dict[str, Any]) -> tuple[int, int]:
         """优先从 @llm_config.yaml 中读取新键 LLM_MAX_PARTS_NUM 与 LLM_MAX_PART_LENGTH。"""
-        parts = env_cfg.get('LLM_MAX_PARTS_NUM')
-        length = env_cfg.get('LLM_MAX_PART_LENGTH')
+        parts = env_cfg.get("LLM_MAX_PARTS_NUM")
+        length = env_cfg.get("LLM_MAX_PART_LENGTH")
         try:
             if parts is not None:
                 self.max_parts_num = max(1, min(10, int(parts)))
@@ -174,7 +180,7 @@ class TopKLogSystem:
         try:
             if not path or not os.path.exists(path):
                 raise FileNotFoundError("system_prompt 文件不存在")
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, encoding="utf-8") as f:
                 raw = f.read()
             try:
                 data = yaml.safe_load(raw)
@@ -191,16 +197,23 @@ class TopKLogSystem:
                 self._extract_format_limits(data)
 
                 # 优先使用 text 字段
-                if isinstance(data.get('text'), str) and data.get('text').strip():
+                if isinstance(data.get("text"), str) and data.get("text").strip():
                     logger.info(f"已加载系统前置提示(text字段): {path}")
-                    return data['text'].strip()
+                    return data["text"].strip()
 
                 order = [
-                    'Role', 'Mission', 'Guidelines', 'Constraints',
-                    'Style', 'Tone', 'OutputLanguage', 'OutputRules',
-                    'Log', 'Query',  # 允许在 YAML 中内联占位符
+                    "Role",
+                    "Mission",
+                    "Guidelines",
+                    "Constraints",
+                    "Style",
+                    "Tone",
+                    "OutputLanguage",
+                    "OutputRules",
+                    "Log",
+                    "Query",  # 允许在 YAML 中内联占位符
                 ]
-                lines: List[str] = []
+                lines: list[str] = []
 
                 def emit_kv(k: str, v: Any):
                     if v is None:
@@ -231,7 +244,7 @@ class TopKLogSystem:
                         emit_kv(k, data[k])
 
                 # 再输出剩余未知键（排除我们消费过的控制键）
-                consumed = set(order + ['text', 'MAX_PARTS_NUM', 'MAX_PART_LENGTH'])
+                consumed = set(order + ["text", "MAX_PARTS_NUM", "MAX_PART_LENGTH"])
                 for k, v in data.items():
                     if k not in consumed:
                         emit_kv(k, v)
@@ -256,7 +269,7 @@ class TopKLogSystem:
         """加载回答模板（Markdown）。"""
         try:
             if path and os.path.exists(path):
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(path, encoding="utf-8") as f:
                     content = f.read()
                     if content.strip():
                         logger.info(f"已加载回答模板: {path}")
@@ -312,7 +325,9 @@ class TopKLogSystem:
                     storage_context=log_storage_context,
                     show_progress=True,
                 )
-                logger.info(f"新建向量集合 '{collection_name}' 并完成索引构建，共 {len(log_documents)} 条日志")
+                logger.info(
+                    f"新建向量集合 '{collection_name}' 并完成索引构建，共 {len(log_documents)} 条日志"
+                )
             else:
                 # 即便没有文档，也创建空索引包装，便于后续增量写入
                 self.log_index = VectorStoreIndex.from_vector_store(
@@ -323,7 +338,7 @@ class TopKLogSystem:
 
     @staticmethod
     # 加载文档数据
-    def _load_documents(data_path: str) -> List[Document]:
+    def _load_documents(data_path: str) -> list[Document]:
         if not os.path.exists(data_path):
             logger.warning(f"数据路径不存在: {data_path}")
             return []
@@ -345,30 +360,29 @@ class TopKLogSystem:
                             content = str(row).replace("Pandas", " ")
                             documents.append(Document(text=content))
                 else:  # .txt or .md, .json
-                    with open(file_path, 'r', encoding='utf-8') as f:
+                    with open(file_path, encoding="utf-8") as f:
                         content = f.read()
-                        doc = Document(text=content, )
+                        doc = Document(
+                            text=content,
+                        )
                         documents.append(doc)
             except Exception as e:
                 logger.error(f"加载文档失败 {file_path}: {e}")
         return documents
 
     # 检索相关日志
-    def retrieve_logs(self, query: str, top_k: int | None = None) -> List[Dict]:
+    def retrieve_logs(self, query: str, top_k: int | None = None) -> list[dict]:
         if not self.log_index:
             logger.info("retrieve_logs: log_index is None, returning empty context")
             return []
 
-        top_k = int(top_k) if top_k is not None else int(getattr(self, 'default_top_k', 10))
+        top_k = int(top_k) if top_k is not None else int(getattr(self, "default_top_k", 10))
         try:
             retriever = self.log_index.as_retriever(similarity_top_k=top_k)  # topK
             results = retriever.retrieve(query)
             formatted_results = []
             for result in results:
-                formatted_results.append({
-                    "content": result.text,
-                    "score": result.score
-                })
+                formatted_results.append({"content": result.text, "score": result.score})
             logger.info(f"retrieve_logs: top_k={top_k}, hits={len(formatted_results)}")
             return formatted_results
         except Exception as e:
@@ -376,11 +390,11 @@ class TopKLogSystem:
             return []
 
     # LLM 生成响应
-    def generate_response(self, query: str, context: Dict) -> str:
+    def generate_response(self, query: str, context: dict) -> str:
         prompt = self._build_prompt_text(query, context)  # 构建提示词
 
-        retries = max(0, int(getattr(self, 'generation_retries', 2)))
-        min_chars = max(1, int(getattr(self, 'min_output_chars', 50)))
+        retries = max(0, int(getattr(self, "generation_retries", 2)))
+        min_chars = max(1, int(getattr(self, "min_output_chars", 50)))
 
         last_err = None
         for attempt in range(retries + 1):
@@ -390,7 +404,7 @@ class TopKLogSystem:
                 text = getattr(resp, "text", str(resp))
                 raw = (text or "").strip()
                 logger.info(f"LLM raw output length: {len(raw)}")
-                logger.info(f"LLM raw output full:\n{"=" * 20}\n{raw}\n{"=" * 20}")
+                logger.info(f"LLM raw output full:\n{'=' * 20}\n{raw}\n{'=' * 20}")
                 if raw:
                     # 先做清洗；若清洗后仍为空，再重试
                     cleaned = self._sanitize_output(raw, query)
@@ -410,7 +424,7 @@ class TopKLogSystem:
                     continue
         return f"生成响应时出错: {str(last_err)}"
 
-    def _build_prompt_text(self, query: str, context: Dict) -> str:
+    def _build_prompt_text(self, query: str, context: dict) -> str:
         # 构建日志上下文为纯文本
         log_context = "\n".join(
             f"日志 {i}: {(log.get('content') if isinstance(log, dict) else str(log))}"
@@ -439,10 +453,12 @@ class TopKLogSystem:
         if not has_q:
             parts.extend(["## 当前需要分析的问题:", query, ""])
 
-        parts.extend([
-            "请严格按照以下回答模板输出，不要回显上述提示或问题，仅填充内容：",
-            self.response_template,
-        ])
+        parts.extend(
+            [
+                "请严格按照以下回答模板输出，不要回显上述提示或问题，仅填充内容：",
+                self.response_template,
+            ]
+        )
         return "\n".join(parts)
 
     def _sanitize_output(self, text: str, query: str) -> str:
@@ -482,12 +498,12 @@ class TopKLogSystem:
         ]
 
         # 收集每个段落的原始行
-        collected: Dict[str, List[str]] = {s: [] for s in sections}
+        collected: dict[str, list[str]] = {s: [] for s in sections}
         current = None
         for ln in lines:
             st = ln.strip()
-            if st.startswith('#'):
-                name = st.lstrip('#').strip()
+            if st.startswith("#"):
+                name = st.lstrip("#").strip()
                 # 标题别名映射，容忍模型输出的变体
                 alias_map = {
                     "排查步骤": "建议的排查步骤",
@@ -513,10 +529,10 @@ class TopKLogSystem:
                 collected[current].append(st)
 
         # 规范化每个段落：提取前 N 条，转换为 1./2./...，并 <=max_len
-        def normalize_items(items: List[str]) -> List[str]:
+        def normalize_items(items: list[str]) -> list[str]:
             N = max(1, int(self.max_parts_num))
             max_len = max(10, int(self.max_part_length))
-            norm: List[str] = []
+            norm: list[str] = []
             seen: set[str] = set()
             for raw in items:
                 s = (raw or "").strip()
@@ -536,7 +552,7 @@ class TopKLogSystem:
                 s = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", s)
                 s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)
                 # 去除水平线与多余空白
-                s = s.replace('---', ' ').strip()
+                s = s.replace("---", " ").strip()
                 s = re.sub(r"\s+", " ", s)
                 # 限制单条长度
                 if len(s) > max_len:
@@ -552,7 +568,7 @@ class TopKLogSystem:
                 if len(norm) >= N * 3:  # 收集更多候选后再截取
                     break
             # 截取前N
-            out: List[str] = []
+            out: list[str] = []
             for idx, s in enumerate(norm[:N], start=1):
                 out.append(f"{idx}. {s}")
             # 如不足N，补齐空占位
@@ -560,7 +576,7 @@ class TopKLogSystem:
                 out.append(f"{len(out) + 1}. ")
             return out
 
-        result_lines: List[str] = []
+        result_lines: list[str] = []
         for sec in sections:
             result_lines.append(f"# {sec}")
             items = normalize_items(collected.get(sec, []))
@@ -570,14 +586,11 @@ class TopKLogSystem:
         return "\n".join(result_lines).strip()
 
     # 执行查询
-    def query(self, query: str) -> Dict:
+    def query(self, query: str) -> dict:
         log_results = self.retrieve_logs(query)
         response = self.generate_response(query, log_results)  # 生成响应
 
-        return {
-            "response": response,
-            "retrieval_stats": len(log_results)
-        }
+        return {"response": response, "retrieval_stats": len(log_results)}
 
 
 # 示例使用

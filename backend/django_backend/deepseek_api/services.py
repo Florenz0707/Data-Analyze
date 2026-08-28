@@ -2,13 +2,12 @@ import hashlib
 import os
 import threading
 import time
-from typing import List, Dict, Tuple, Optional
 
 import yaml
 from django.conf import settings
 from django.core.cache import cache
 
-from .models import APIKey, RateLimit, ConversationSession, UserLLMPreference
+from .models import APIKey, ConversationSession, RateLimit, UserLLMPreference
 
 # 线程锁用于速率限制
 rate_lock = threading.Lock()
@@ -30,9 +29,10 @@ def _get_system():
         with _init_lock:
             if SYSTEM is None:
                 # 基于 settings 控制是否允许初始化 LLM（适用于 runserver/gunicorn 等所有部署方式）
-                if not getattr(settings, 'ENABLE_LLM', True):
+                if not getattr(settings, "ENABLE_LLM", True):
                     raise RuntimeError("LLM is disabled by settings.ENABLE_LLM=False.")
                 from topklogsystem import TopKLogSystem
+
                 SYSTEM = TopKLogSystem(
                     config_path="./config/llm_config.yaml",
                 )
@@ -59,7 +59,8 @@ def deepseek_r1_api_call(prompt: str) -> str:
 
 # ===== 对话历史与相似度选择 =====
 
-def get_history_cfg() -> Dict:
+
+def get_history_cfg() -> dict:
     cfg = _load_env_cfg()
     return {
         "mode": (cfg.get("HISTORY_MODE") or "auto").lower(),
@@ -70,22 +71,22 @@ def get_history_cfg() -> Dict:
     }
 
 
-def parse_session_context(context: str) -> List[Tuple[str, str]]:
+def parse_session_context(context: str) -> list[tuple[str, str]]:
     """将 ConversationSession.context 解析为 [(user, reply)] 列表。"""
     if not context:
         return []
     lines = context.splitlines()
-    turns: List[Tuple[str, str]] = []
-    cur_u: Optional[str] = None
-    cur_a: Optional[str] = None
+    turns: list[tuple[str, str]] = []
+    cur_u: str | None = None
+    cur_a: str | None = None
     for line in lines:
         if line.startswith("用户："):
             if cur_u is not None and cur_a is not None:
                 turns.append((cur_u, cur_a))
-            cur_u = line[len("用户："):].strip()
+            cur_u = line[len("用户：") :].strip()
             cur_a = None
         elif line.startswith("回复："):
-            cur_a = line[len("回复："):].strip()
+            cur_a = line[len("回复：") :].strip()
         else:
             # 续行处理：追加到最近的非空段
             if cur_a is not None:
@@ -101,12 +102,13 @@ def _get_embed_model():
     """从 llama_index Settings 取 embed_model（TopKLogSystem 初始化时应已配置）。"""
     try:
         from llama_index.core import Settings as LISettings
+
         return getattr(LISettings, "embed_model", None)
     except Exception:
         return None
 
 
-def _embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
+def _embed_texts(texts: list[str]) -> list[list[float]] | None:
     model = _get_embed_model()
     if not model or not texts:
         return None
@@ -122,11 +124,12 @@ def _embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
     return None
 
 
-def _cosine(a: List[float], b: List[float]) -> float:
+def _cosine(a: list[float], b: list[float]) -> float:
     import math
+
     if not a or not b:
         return 0.0
-    s = sum(x * y for x, y in zip(a, b))
+    s = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
     if na == 0 or nb == 0:
@@ -137,23 +140,28 @@ def _cosine(a: List[float], b: List[float]) -> float:
 def _overlap_score(a: str, b: str) -> float:
     """简单启发式：按去停用词后的词集合重叠率计算分数。"""
     import re
-    tok = lambda s: set(re.findall(r"[\w\u4e00-\u9fa5]+", (s or "").lower()))
-    A, B = tok(a), tok(b)
-    if not A or not B:
+
+    def tokenize(value: str) -> set[str]:
+        return set(re.findall(r"[\w\u4e00-\u9fa5]+", (value or "").lower()))
+
+    a_tokens, b_tokens = tokenize(a), tokenize(b)
+    if not a_tokens or not b_tokens:
         return 0.0
-    inter = len(A & B)
-    return inter / max(len(A), len(B))
+    inter = len(a_tokens & b_tokens)
+    return inter / max(len(a_tokens), len(b_tokens))
 
 
-def select_history_by_similarity(query: str, turns: List[Tuple[str, str]], cfg: Dict) -> List[Tuple[str, str]]:
+def select_history_by_similarity(
+    query: str, turns: list[tuple[str, str]], cfg: dict
+) -> list[tuple[str, str]]:
     if not turns:
         return []
     # 只取最近 N 轮作为候选
-    candidates = turns[-int(cfg.get("max_turns", 8)):]
+    candidates = turns[-int(cfg.get("max_turns", 8)) :]
     # 优先使用 embedding 相似度
     embed_inputs = [query] + [u + "\n" + a for (u, a) in candidates]
     embs = _embed_texts(embed_inputs)
-    scores: List[Tuple[float, Tuple[str, str]]] = []
+    scores: list[tuple[float, tuple[str, str]]] = []
     if embs and len(embs) == 1 + len(candidates):
         qv = embs[0]
         for i, turn in enumerate(candidates, start=1):
@@ -180,14 +188,14 @@ def _truncate_by_chars(text: str, max_tokens: int) -> str:
     return text[:max_chars] + "..."
 
 
-def compose_prompt_with_history(selected: List[Tuple[str, str]], user_input: str, cfg: Dict) -> str:
+def compose_prompt_with_history(selected: list[tuple[str, str]], user_input: str, cfg: dict) -> str:
     if not selected:
         return user_input
     budget = int(cfg.get("max_tokens", 1000))
     # 历史拼装（从旧到新）
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("以下为相关的对话历史片段（如无关请忽略）：")
-    for (u, a) in selected:
+    for u, a in selected:
         frag = f"用户：{u}\n助手：{a}"
         frag = _truncate_by_chars(frag, max_tokens=max(200, budget // max(1, len(selected))))
         lines.append(frag)
@@ -200,10 +208,11 @@ def compose_prompt_with_history(selected: List[Tuple[str, str]], user_input: str
 
 # ===== LLM 动态配置（仅 LLM，Embedding 固定）=====
 
-def _load_env_cfg() -> Dict:
+
+def _load_env_cfg() -> dict:
     cfg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "llm_config.yaml")
     try:
-        with open(cfg_path, "r", encoding="utf-8") as f:
+        with open(cfg_path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
     except Exception:
         return {}
@@ -213,7 +222,7 @@ def _load_env_cfg() -> Dict:
     return cfg
 
 
-def get_allowed_providers() -> List[str]:
+def get_allowed_providers() -> list[str]:
     """对外暴露的可选 LLM provider。
     规则：始终包含本地可用的基础后端（transformers、ollama），
     若配置文件中设置了其他后端（openai_compat/dashscope），也一并返回。
@@ -224,7 +233,7 @@ def get_allowed_providers() -> List[str]:
     extra = [p] if p and p not in base else []
     # 去重并保持顺序：基础优先
     seen = set()
-    providers: List[str] = []
+    providers: list[str] = []
     for x in base + extra:
         if x and x not in seen:
             seen.add(x)
@@ -232,7 +241,7 @@ def get_allowed_providers() -> List[str]:
     return providers
 
 
-def get_local_models() -> Dict[str, List[str]]:
+def get_local_models() -> dict[str, list[str]]:
     """返回本地可用模型的静态配置。
     - 读取 config/available_local_models.json
     - 统一以 transformers/ollama 为键名
@@ -245,12 +254,13 @@ def get_local_models() -> Dict[str, List[str]]:
     """
     import json
     import os
+
     base_dir = os.path.dirname(os.path.dirname(__file__))  # django_backend
     cfg_path = os.path.join(base_dir, "config", "available_local_models.json")
-    transformers: List[str] = []
-    ollama: List[str] = []
+    transformers: list[str] = []
+    ollama: list[str] = []
     try:
-        with open(cfg_path, "r", encoding="utf-8") as f:
+        with open(cfg_path, encoding="utf-8") as f:
             data = json.load(f) or {}
             t = data.get("transformers") or []
             o = data.get("ollama") or []
@@ -263,7 +273,7 @@ def get_local_models() -> Dict[str, List[str]]:
     return {"transformers": sorted(set(transformers)), "ollama": sorted(set(ollama))}
 
 
-def _get_default_provider_model() -> Tuple[str, str | None]:
+def _get_default_provider_model() -> tuple[str, str | None]:
     cfg = _load_env_cfg()
     provider = (cfg.get("LLM_PROVIDER") or "").lower()
     model = None
@@ -297,6 +307,7 @@ def set_user_pref(user: APIKey, provider: str, model: str | None = None) -> "Use
 
 def build_llm_for_provider(provider: str):
     from llm_provider_factory import build_llm_by
+
     cfg = _load_env_cfg()
     return build_llm_by(provider, cfg)
 
@@ -311,8 +322,9 @@ def generate_with_user_llm(user: APIKey, prompt: str) -> str:
         # 回退到默认
         provider, _ = _get_default_provider_model()
         llm = build_llm_for_provider(provider)
-    from llama_index.llms.langchain import LangChainLLM
     from llama_index.core import Settings as LISettings
+    from llama_index.llms.langchain import LangChainLLM
+
     # 某些版本的 llama_index 不提供 Settings.as_context，这里采用手动覆盖并回滚
     old_llm = getattr(LISettings, "llm", None)
     try:
@@ -330,13 +342,15 @@ def create_api_key(user: str) -> APIKey:
     """
     now = int(time.time())
     expiry_seconds = int(settings.TOKEN_EXPIRY_SECONDS)
-    refresh_expiry_seconds = int(getattr(settings, 'REFRESH_TOKEN_EXPIRY_SECONDS', 30*24*3600))
+    refresh_expiry_seconds = int(getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", 30 * 24 * 3600))
 
     # 清理已过期的 key
     APIKey.objects.filter(user=user, expiry_time__lt=now).delete()
 
     # 复用未过期 key
-    existing = APIKey.objects.filter(user=user, expiry_time__gte=now).order_by('-created_at').first()
+    existing = (
+        APIKey.objects.filter(user=user, expiry_time__gte=now).order_by("-created_at").first()
+    )
     if existing:
         # 刷新 access token 的有效期，并轮换 refresh_token（旧值失效）
         existing.refresh_validity(expiry_seconds)
@@ -357,10 +371,7 @@ def create_api_key(user: str) -> APIKey:
     )
 
     # 创建对应的速率限制记录
-    RateLimit.objects.create(
-        api_key=api_key,
-        reset_time=now + int(settings.RATE_LIMIT_INTERVAL)
-    )
+    RateLimit.objects.create(api_key=api_key, reset_time=now + int(settings.RATE_LIMIT_INTERVAL))
 
     return api_key
 
@@ -377,7 +388,7 @@ def validate_api_key(key_str: str) -> bool:
         return False
 
 
-def refresh_access_token(refresh_token: str) -> Optional[APIKey]:
+def refresh_access_token(refresh_token: str) -> APIKey | None:
     """使用 refresh_token 刷新访问令牌有效期。
     - 找到对应 APIKey
     - 若 refresh_token 已过期，则删除该记录并返回 None
@@ -404,7 +415,7 @@ def check_rate_limit(key_str: str) -> bool:
     """检查 API Key 的请求频率是否超过限制"""
     with rate_lock:
         try:
-            rate_limit = RateLimit.objects.select_related('api_key').get(api_key__key=key_str)
+            rate_limit = RateLimit.objects.select_related("api_key").get(api_key__key=key_str)
 
             current_time = time.time()
             if current_time > rate_limit.reset_time:
@@ -424,9 +435,7 @@ def check_rate_limit(key_str: str) -> bool:
                 current_time = time.time()
                 api_key = APIKey.objects.get(key=key_str)
                 RateLimit.objects.create(
-                    api_key=api_key,
-                    count=1,
-                    reset_time=current_time + settings.RATE_LIMIT_INTERVAL
+                    api_key=api_key, count=1, reset_time=current_time + settings.RATE_LIMIT_INTERVAL
                 )
                 return True
             except APIKey.DoesNotExist:
@@ -444,10 +453,11 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     session, created = ConversationSession.objects.get_or_create(
         session_id=session_id,  # 匹配会话ID
         user=username,  # 与用户名关联
-        defaults={'context': ''}
+        defaults={"context": ""},
     )
     # 调试日志：确认是否创建新会话（created=True 表示新会话）
     import logging
+
     logger = logging.getLogger(__name__)
     logger.info(f"会话 {session_id}（用户：{username}）{'创建新会话' if created else '加载旧会话'}")
     return session
@@ -470,5 +480,5 @@ def generate_cache_key(original_key: str) -> str:
     对原始字符串进行哈希处理，确保键长度固定且仅包含安全字符。
     """
     # 使用SHA256哈希函数生成固定长度的键（64位十六进制字符串）
-    hash_obj = hashlib.sha256(original_key.encode('utf-8'))
+    hash_obj = hashlib.sha256(original_key.encode("utf-8"))
     return hash_obj.hexdigest()

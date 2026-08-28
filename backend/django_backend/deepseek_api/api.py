@@ -3,24 +3,40 @@ import logging
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from ninja import NinjaAPI, Router
-from django.utils import timezone
 from django.db.models import Q
+from django.utils import timezone
+from ninja import NinjaAPI, Router
 
 from . import services
-from .models import APIKey, ConversationSession, ExternalLLMAPI, Session, History
+from .models import APIKey, ExternalLLMAPI, History, Session
 from .schemas import (
-    LoginIn, ChatIn, ChatOut, HistoryListOut, ErrorResponse,
-    ProvidersOut, LocalModelsOut, SelectLLMIn, SelectLLMOut,
-    SessionIn, SessionOut, SessionListOut,
-    APIIn, ModelsListOut, ModelIn,
+    APIIn,
+    ChatIn,
+    ChatOut,
+    ErrorResponse,
+    HistoryListOut,
+    LocalModelsOut,
+    LoginIn,
+    ModelIn,
+    ModelsListOut,
+    ProvidersOut,
+    SelectLLMIn,
+    SelectLLMOut,
+    SessionIn,
+    SessionListOut,
+    SessionOut,
 )
 from .services import (
-    get_or_create_session, get_cached_reply, set_cached_reply,
-    get_allowed_providers, get_local_models, set_user_pref, generate_with_user_llm,
-    get_history_cfg, parse_session_context, select_history_by_similarity, compose_prompt_with_history,
+    compose_prompt_with_history,
+    generate_with_user_llm,
+    get_allowed_providers,
+    get_cached_reply,
+    get_history_cfg,
+    get_local_models,
+    select_history_by_similarity,
+    set_cached_reply,
+    set_user_pref,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +47,7 @@ def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> boo
     """Quickly validate an OpenAI-compatible chat endpoint with a 1-token request."""
     try:
         from openai import OpenAI
+
         client = OpenAI(base_url=base_url, api_key=api_key, timeout=15)
         # minimal probe
         resp = client.chat.completions.create(
@@ -61,6 +78,7 @@ def api_key_auth(request):
         api_key = APIKey.objects.get(key=key)
         # 过期校验
         import time
+
         if int(time.time()) >= int(api_key.expiry_time or 0):
             # 删除过期 key
             api_key.delete()
@@ -160,7 +178,7 @@ def chat(request, data: ChatIn):
     qs = History.objects.filter(session_id=sid, user=username).order_by("created_at", "id")
     turns_all = [(h.user_input or "", h.response or "") for h in qs]
     if use_history_mode == "on":
-        selected = turns_all[-int(hist_cfg.get("max_turns", 8)):]
+        selected = turns_all[-int(hist_cfg.get("max_turns", 8)) :]
     elif use_history_mode == "auto":
         selected = select_history_by_similarity(user_input, turns_all, hist_cfg)
     else:
@@ -178,7 +196,9 @@ def chat(request, data: ChatIn):
             reply = generate_with_user_llm(user_obj, query)
             set_cached_reply(query, reply, sid, user_obj)
         except RuntimeError as e:
-            return 503, {"error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"}
+            return 503, {
+                "error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"
+            }
     logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
     # 6. 写入结构化历史并更新会话时间
@@ -189,8 +209,16 @@ def chat(request, data: ChatIn):
     return {"reply": reply}
 
 
-@router.get("/sessions/history", response={200: HistoryListOut, 401: ErrorResponse, 404: ErrorResponse})
-def history(request, session_id: str, limit: int = 200, before_id: int | None = None, after_id: int | None = None):
+@router.get(
+    "/sessions/history", response={200: HistoryListOut, 401: ErrorResponse, 404: ErrorResponse}
+)
+def history(
+    request,
+    session_id: str,
+    limit: int = 200,
+    before_id: int | None = None,
+    after_id: int | None = None,
+):
     """结构化获取对话历史：
     - 基于新表 deepseek_api_session / deepseek_api_history
     - 支持分页：before_id/after_id 二选一，limit 默认 200
@@ -221,10 +249,7 @@ def history(request, session_id: str, limit: int = 200, before_id: int | None = 
     if before_id is not None:
         items = list(reversed(items))
 
-    turns = [
-        {"user_input": it.user_input or "", "response": it.response or ""}
-        for it in items
-    ]
+    turns = [{"user_input": it.user_input or "", "response": it.response or ""} for it in items]
 
     return {"turns": turns}
 
@@ -259,12 +284,14 @@ def get_llm_local_models(request):
         return 401, {"error": "未授权"}
     models = get_local_models()
     # 统一使用 transformers/ollama 键名
-    return {"transformers": models.get("transformers", []),
-            "ollama": models.get("ollama", [])}
+    return {"transformers": models.get("transformers", []), "ollama": models.get("ollama", [])}
 
 
 # ----- 会话管理 -----
-@router.post("/sessions", response={201: SessionOut, 400: ErrorResponse, 401: ErrorResponse, 409: ErrorResponse})
+@router.post(
+    "/sessions",
+    response={201: SessionOut, 400: ErrorResponse, 401: ErrorResponse, 409: ErrorResponse},
+)
 def create_session(request, data: SessionIn):
     """显式创建新会话，若已存在则返回 409。"""
     if not request.auth:
@@ -280,7 +307,9 @@ def create_session(request, data: SessionIn):
     return 201, {"session_id": session_id}
 
 
-@router.delete("/sessions", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse})
+@router.delete(
+    "/sessions", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse}
+)
 def delete_session(request, data: SessionIn):
     """显式删除会话。如果不存在返回 404。"""
     if not request.auth:
@@ -318,6 +347,7 @@ def get_my_llm(request):
     pref = services.get_or_create_user_pref(request.auth)
     return {"provider": pref.provider, "model": pref.model or None}
 
+
 @router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})
 def select_llm(request, data: SelectLLMIn):
     if not request.auth:
@@ -339,7 +369,7 @@ def add_external_api(request, data: APIIn):
     base_url = (data.base_url or "").strip()
     model_name = (data.model_name or "").strip()
     api_key = (data.api_key or "").strip()
-    alias = (data.alias or None)
+    alias = data.alias or None
     if not base_url or not model_name or not api_key:
         return 400, {"error": "base_url、model_name、api_key 不能为空"}
 
@@ -350,7 +380,8 @@ def add_external_api(request, data: APIIn):
 
     username = request.auth.user
     obj, created = ExternalLLMAPI.objects.update_or_create(
-        user=username, model_name=model_name,
+        user=username,
+        model_name=model_name,
         defaults={"base_url": base_url, "api_key": api_key, "alias": alias},
     )
     return {"message": "保存成功"}
@@ -366,7 +397,9 @@ def list_external_models(request):
     return {"models_list": names}
 
 
-@router.delete("/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse})
+@router.delete(
+    "/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse}
+)
 def delete_external_model(request, data: ModelIn):
     if not request.auth:
         return 401, {"error": "未授权"}
@@ -391,9 +424,7 @@ def refresh(request):
     if not api_key:
         return 403, {"error": "refresh_token 无效或已过期"}
 
-    payload = {
-        "message": "刷新成功"
-    }
+    payload = {"message": "刷新成功"}
     response = api.create_response(request, payload, status=200)
     # 在响应头设置新的 Authorization，便于前端拿到新的 access token
     response["Authorization"] = f"Bearer {api_key.key}"
@@ -408,6 +439,7 @@ def refresh(request):
         path="/",
     )
     return response
+
 
 # 将路由添加到API
 api.add_router("", router)

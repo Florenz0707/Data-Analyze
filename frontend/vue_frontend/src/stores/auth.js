@@ -10,7 +10,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('apiKey', key);
     },
     clearApiKey() {
-      const oldKey = this.apiKey;
       this.apiKey = null;
       localStorage.removeItem('apiKey');
       // The removal of user-specific data will be handled by the chat store
