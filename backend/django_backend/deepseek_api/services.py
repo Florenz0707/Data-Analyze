@@ -1,9 +1,8 @@
 import hashlib
-import os
 import threading
 import time
 
-import yaml
+from deepseek_project.configuration import load_llm_config
 from django.conf import settings
 from django.core.cache import cache
 
@@ -114,11 +113,13 @@ def _embed_texts(texts: list[str]) -> list[list[float]] | None:
         return None
     try:
         # 大多数组件支持 .get_text_embedding_batch
-        if hasattr(model, "get_text_embedding_batch"):
-            return model.get_text_embedding_batch(texts)
+        batch_embed = getattr(model, "get_text_embedding_batch", None)
+        if callable(batch_embed):
+            return batch_embed(texts)
         # 兜底：逐条
-        if hasattr(model, "get_text_embedding"):
-            return [model.get_text_embedding(t) for t in texts]
+        single_embed = getattr(model, "get_text_embedding", None)
+        if callable(single_embed):
+            return [single_embed(t) for t in texts]
     except Exception:
         return None
     return None
@@ -210,16 +211,10 @@ def compose_prompt_with_history(selected: list[tuple[str, str]], user_input: str
 
 
 def _load_env_cfg() -> dict:
-    cfg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "llm_config.yaml")
     try:
-        with open(cfg_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
+        return load_llm_config(validate_paths=False)
     except Exception:
         return {}
-    # 兼容旧字段：TOP_K -> RESPONSE_TOP_K
-    if "RESPONSE_TOP_K" not in cfg and "TOP_K" in cfg:
-        cfg["RESPONSE_TOP_K"] = cfg.get("TOP_K")
-    return cfg
 
 
 def get_allowed_providers() -> list[str]:
@@ -465,13 +460,19 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
 
 def get_cached_reply(prompt: str, session_id: str, user: APIKey) -> str | None:
     """缓存键包含 session_id 和 user，避免跨会话冲突"""
-    cache_key = f"reply:{user.user}:{session_id}:{hash(prompt)}"
+    cache_key = _build_reply_cache_key(prompt, session_id, user)
     return cache.get(cache_key)
 
 
 def set_cached_reply(prompt: str, reply: str, session_id: str, user: APIKey, timeout=3600):
-    cache_key = f"reply:{user.user}:{session_id}:{hash(prompt)}"
+    cache_key = _build_reply_cache_key(prompt, session_id, user)
     cache.set(cache_key, reply, timeout)
+
+
+def _build_reply_cache_key(prompt: str, session_id: str, user: APIKey) -> str:
+    """Build a stable, bounded cache key without exposing prompt contents."""
+    identity = f"{user.user}\x00{session_id}\x00{prompt}"
+    return f"reply:{generate_cache_key(identity)}"
 
 
 def generate_cache_key(original_key: str) -> str:

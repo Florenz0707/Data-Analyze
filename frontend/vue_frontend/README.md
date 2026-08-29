@@ -1,5 +1,18 @@
-# Vue 3 + Vite
+# Vue 前端
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+使用 Node.js 20.20.2、npm 10.9.8 和已锁定的 `package-lock.json`。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+```bash
+npm ci
+npm run dev
+npm run build
+npm run lint
+npm run format:check
+npm run test
+npm run test:coverage
+npm run test:e2e
+```
+
+单元测试使用 Vitest、Vue Test Utils 和 jsdom；E2E 使用 Playwright，并通过路由 Mock 后端接口，不访问真实模型。
+
+开发环境 API 默认使用 `/api`，可通过 `.env` 中的 `VITE_API_BASE_URL` 覆盖。

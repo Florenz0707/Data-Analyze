@@ -63,6 +63,7 @@ HISTORY_MAX_TOKENS: 1000          # 历史片段在提示词中允许的最大to
 LOG_PATH: "data/log"                                  # 日志文件目录
 SYSTEM_PROMPT_PATH: "config/system_prompt.yaml"       # 系统提示词（模板）路径
 RESPONSE_TEMPLATE_PATH: "config/response_template.md" # 回答模板（Markdown）路径
+VECTOR_STORE_PATH: "data/vector_stores"               # Chroma 持久化目录
 
 # OLLAMA 本地推理服务配置（当 LLM_PROVIDER=ollama 时生效）
 OLLAMA_CONFIG:

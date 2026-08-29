@@ -3,3 +3,15 @@
 .eslintcache
 __pycache__/
 *.py[cod]
+
+# Local secrets and runtime state
+**/.env
+**/.env.*
+!**/.env.example
+**/api_key.env
+**/*.sqlite3
+backend/django_backend/data/vector_stores/
+.coverage*
+**/coverage/
+**/test-results/
+htmlcov/

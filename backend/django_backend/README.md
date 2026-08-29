@@ -111,6 +111,19 @@
 - uv run python topklogsystem.py
 - 或在代码中：from topklogsystem import TopKLogSystem; TopKLogSystem.query("你的问题")
 
+### 6.1 自动化测试
+
+测试不会加载真实模型或访问外部网络；Django 测试运行器使用独立测试数据库，模型调用通过 Mock 替代。
+
+```bash
+cd backend/django_backend
+DJANGO_TESTING=true uv run --project . python manage.py test --noinput
+DJANGO_TESTING=true uv run --project . coverage run --data-file=/tmp/data-analyze.coverage --source=deepseek_api,deepseek_project --omit='*/migrations/*,*/tests/*,*/asgi.py,*/wsgi.py' manage.py test --noinput
+uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit='*/migrations/*,*/tests/*,*/asgi.py,*/wsgi.py' --show-missing
+```
+
+当前测试覆盖配置校验、Token、历史选择、缓存、注册登录、会话隔离、Chat 缓存和模型失败路径。
+
 ## 7. 常见问题
 
 - 更换嵌入模型后报错或召回异常：删除 data/vector_stores 并重建索引。

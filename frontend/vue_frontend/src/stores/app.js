@@ -18,6 +18,10 @@ export const useAppStore = defineStore('app', {
         this.error = null;
       }, 5000); // Increased timeout for better UX
     },
+    clearError() {
+      this.error = null;
+      if (this.errorTimer) clearTimeout(this.errorTimer);
+    },
     setInitialized(state) {
       this.isInitialized = state;
     },

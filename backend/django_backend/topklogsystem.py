@@ -14,6 +14,11 @@ from typing import Any
 
 import pandas as pd
 import yaml
+from deepseek_project.configuration import (
+    load_llm_config,
+    redacted_config_summary,
+    resolve_project_path,
+)
 
 # silence specific pydantic warnings about 'validate_default'
 try:
@@ -74,17 +79,19 @@ def _apply_proxies_from_cfg(cfg: dict[str, Any]):
 class TopKLogSystem:
     def __init__(
         self,
-        config_path: str = "./config/llm_config.yaml",
+        config_path: str | os.PathLike[str] | None = None,
     ) -> None:
         """
         通过配置文件初始化系统。
         - config_path: YAML 配置文件路径，包含 provider、模型、代理、日志路径、系统提示与回答模板路径。
         """
-        self.config_path = config_path
+        config_file = resolve_project_path(config_path or "config/llm_config.yaml")
+        self.config_path = str(config_file)
 
         # load provider config
-        with open(config_path, encoding="utf-8") as f:
-            env_cfg = yaml.safe_load(f) or {}
+        config_root = config_file.parent.parent
+        env_cfg = load_llm_config(config_file, project_root=config_root)
+        logger.info("LLM 配置摘要（已脱敏）：%s", redacted_config_summary(env_cfg))
 
         # 先应用代理，确保后续模型/权重下载、远程请求走代理
         _apply_proxies_from_cfg(env_cfg)
@@ -102,16 +109,15 @@ class TopKLogSystem:
             self.min_output_chars = 50
         # 从配置读取检索TopK
         try:
-            self.default_top_k: int = int(env_cfg.get("TOP_K", 10))
+            self.default_top_k: int = int(env_cfg.get("RESPONSE_TOP_K", 10))
         except Exception:
             self.default_top_k = 10
 
         # 从配置读取路径
-        self.log_path = env_cfg.get("LOG_PATH", "./data/log")
-        self.system_prompt_path = env_cfg.get("SYSTEM_PROMPT_PATH", "./config/system_prompt.yaml")
-        self.response_template_path = env_cfg.get(
-            "RESPONSE_TEMPLATE_PATH", "./config/response_template.md"
-        )
+        self.log_path = env_cfg["LOG_PATH"]
+        self.system_prompt_path = env_cfg["SYSTEM_PROMPT_PATH"]
+        self.response_template_path = env_cfg["RESPONSE_TEMPLATE_PATH"]
+        self.vector_store_path = env_cfg["VECTOR_STORE_PATH"]
 
         # 默认格式控制（可被 @llm_config.yaml 覆盖；兼容旧 system_prompt.yaml 中的同名键）
         self.max_parts_num: int = 3
@@ -286,7 +292,7 @@ class TopKLogSystem:
 
     # 加载数据并构建索引
     def _build_vectorstore(self):
-        vector_store_path = "./data/vector_stores"
+        vector_store_path = self.vector_store_path
         os.makedirs(vector_store_path, exist_ok=True)  # exist_ok=True 目录存在时不报错
 
         chroma_client = chromadb.PersistentClient(path=vector_store_path)  # chromadb 持久化

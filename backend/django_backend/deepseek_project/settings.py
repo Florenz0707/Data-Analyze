@@ -1,16 +1,18 @@
+import os
 from pathlib import Path
+
+from .configuration import env_path, parse_bool, parse_csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-example-key-for-development-only"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-placeholder-change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = parse_bool(os.getenv("DJANGO_DEBUG"), True)
 
-ALLOWED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
-# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = parse_csv(os.getenv("DJANGO_ALLOWED_HOSTS"), ["0.0.0.0", "localhost", "127.0.0.1"])
 
 # Application definition
 INSTALLED_APPS = [
@@ -60,7 +62,7 @@ WSGI_APPLICATION = "deepseek_project.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": env_path("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3", base_dir=BASE_DIR),
     }
 }
 
@@ -81,10 +83,10 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # 允许前端域名（根据实际前端地址修改）
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8090",  # 前端开发服务器地址
-    "http://127.0.0.1:8090",
-]
+CORS_ALLOWED_ORIGINS = parse_csv(
+    os.getenv("CORS_ALLOWED_ORIGINS"),
+    ["http://localhost:8082", "http://127.0.0.1:8082"],
+)
 
 # 允许请求头携带 Authorization
 CORS_ALLOW_HEADERS = [
@@ -120,7 +122,8 @@ CACHE_MAX_SIZE = 200
 CACHE_EXPIRY = 300
 
 # LLM/model loading controls
+TESTING = parse_bool(os.getenv("DJANGO_TESTING"), False)
 # Whether LLM features are enabled at all (controls if the model can be initialized)
-ENABLE_LLM = True
+ENABLE_LLM = parse_bool(os.getenv("ENABLE_LLM"), not TESTING)
 # Whether to preload model and vector index on app startup
-PRELOAD_LLM_ON_STARTUP = True
+PRELOAD_LLM_ON_STARTUP = parse_bool(os.getenv("PRELOAD_LLM_ON_STARTUP"), not TESTING)

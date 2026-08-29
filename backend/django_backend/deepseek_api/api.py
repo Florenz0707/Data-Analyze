@@ -156,7 +156,9 @@ def login(request, data: LoginIn):
     return response
 
 
-@router.post("/llm/chat", response={200: ChatOut, 401: ErrorResponse, 503: ErrorResponse})
+@router.post(
+    "/llm/chat", response={200: ChatOut, 400: ErrorResponse, 401: ErrorResponse, 503: ErrorResponse}
+)
 def chat(request, data: ChatIn):
     # 1. 认证验证（确保用户已登录）
     if not request.auth:

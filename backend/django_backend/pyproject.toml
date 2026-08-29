@@ -33,3 +33,8 @@ dependencies = [
     "torch>=2.9.0",
     "transformers>=4.57.1",
 ]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6",
+]
