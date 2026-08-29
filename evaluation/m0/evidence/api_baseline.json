@@ -42,9 +42,16 @@
     "errors": 0
   },
   "human_evaluation": {
-    "cause_correctness": "pending",
-    "evidence_consistency": "pending",
-    "step_executability": "pending"
+    "sample_count": 10,
+    "evaluator": "codex-adjudicator",
+    "evaluator_type": "ai_assisted",
+    "cause_correctness_mean": 1.3,
+    "evidence_consistency_mean": 1.1,
+    "step_executability_mean": 1.2,
+    "forbidden_advice_hit_rate": 1.0,
+    "negative_refusal_rate": 0.0,
+    "evidence": "evaluation/m0/evidence/adjudication_results.json",
+    "note": "完成项目内部评分和冲突裁决；不等同于第二名真人评审。"
   },
   "results": [
     {

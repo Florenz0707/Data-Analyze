@@ -13,7 +13,10 @@
 - `run_api_baseline.py`：通过 8081/8082 采集回答结构、失败率、缓存与热请求延迟；
 - `benchmark_index_build.py`：在临时目录重建索引并记录耗时与进程峰值 RSS；
 - `benchmark_service_startup.py`：在 18081 启动独立、无自动重载的 Django 进程并测量就绪时间；
-- `annotation_guidelines.md`、`export_human_review.py`：生成双人独立复核所需的回答包和评分口径；
+- `annotation_guidelines.md`、`export_human_review.py`：生成复核回答包和评分口径；
+- `evidence/double_review_annotations.csv`：保留用户定性意见、Codex 独立评分和最终裁决字段；
+- `evidence/adjudication_results.json`：10 条负样本的 Codex 结构化评分、冲突裁决和汇总指标；
+- `evidence/dataset_validation.json`：严格验收模式的可复核校验结果；
 - `cleanup_evaluation_data.py`：导出回答后删除明确命名的本地合成评测账号及数据；
 - `evidence/`：本机实测输出，内容不应包含密码、Token 或完整用户对话。
 
@@ -30,10 +33,11 @@ M0_EVAL_PASSWORD='<仅用于本地评测的密码>' backend/django_backend/.venv
 backend/django_backend/.venv/bin/python evaluation/m0/benchmark_index_build.py
 backend/django_backend/.venv/bin/python evaluation/m0/benchmark_service_startup.py
 backend/django_backend/.venv/bin/python evaluation/m0/export_human_review.py
+backend/django_backend/.venv/bin/python -m json.tool evaluation/m0/evidence/adjudication_results.json
 backend/django_backend/.venv/bin/python evaluation/m0/cleanup_evaluation_data.py m0_evaluation m0_evaluation_full
 ```
 
-人工标注达到 20% 双人覆盖后，执行严格验收：
+项目内部复核达到 20% 双评审角色覆盖、并完成冲突裁决后，执行严格验收：
 
 ```bash
 backend/django_backend/.venv/bin/python evaluation/m0/validate_dataset.py --strict-acceptance
@@ -44,4 +48,5 @@ backend/django_backend/.venv/bin/python evaluation/m0/validate_dataset.py --stri
 - Recall@K、MRR@10、NDCG@10 只统计 40 条有相关日志标注的正样本；
 - 负样本不进入排序指标。当前检索器没有拒答阈值，会固定返回 Top-K，因此负样本用于后续回答拒答率和阈值评测；
 - 重复运行使用同一数据、模型、Collection 和查询集，`metric_spread` 应不超过 0.01；
+- 当前 10 条抽样的最终评分由用户授权的 Codex 完成，实际为 AI 辅助评审；这可闭环项目内部验收，但不能替代生产级第二名真人评审；
 - 当前 Chroma 索引没有保存源文件和行号，评测器通过与建库逻辑一致的文本序列化反向映射稳定日志 ID；索引 Schema 改造后应直接使用 metadata。

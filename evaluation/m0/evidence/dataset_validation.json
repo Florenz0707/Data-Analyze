@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-29",
+  "command": "backend/django_backend/.venv/bin/python evaluation/m0/validate_dataset.py --dataset evaluation/m0/gold_queries.jsonl --strict-acceptance",
+  "case_count": 50,
+  "category_counts": {
+    "generic_service": 10,
+    "java": 10,
+    "linux_command": 10,
+    "python": 10,
+    "windows_event": 10
+  },
+  "negative_count": 10,
+  "negative_ratio": 0.2,
+  "field_complete_count": 50,
+  "dual_reviewed_count": 10,
+  "dual_review_ratio": 0.2,
+  "human_reviewed_count": 10,
+  "ai_assisted_reviewed_count": 10,
+  "conflicts": [],
+  "known_log_count": 1708,
+  "errors": [],
+  "warnings": []
+}
