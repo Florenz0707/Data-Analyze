@@ -1,8 +1,10 @@
 import hashlib
+import json
 import threading
 import time
 
 from deepseek_project.configuration import load_llm_config
+from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
 from django.conf import settings
 from django.core.cache import cache
 
@@ -98,11 +100,9 @@ def parse_session_context(context: str) -> list[tuple[str, str]]:
 
 
 def _get_embed_model():
-    """从 llama_index Settings 取 embed_model（TopKLogSystem 初始化时应已配置）。"""
+    """Return the embedding instance owned by the shared retrieval system."""
     try:
-        from llama_index.core import Settings as LISettings
-
-        return getattr(LISettings, "embed_model", None)
+        return getattr(_get_system(), "embedding", None)
     except Exception:
         return None
 
@@ -300,34 +300,27 @@ def set_user_pref(user: APIKey, provider: str, model: str | None = None) -> "Use
     return pref
 
 
-def build_llm_for_provider(provider: str):
-    from llm_provider_factory import build_llm_by
-
+def build_llm_for_provider(provider: str, model: str | None = None):
+    """Return the cached LLM instance for an explicit provider/model selection."""
     cfg = _load_env_cfg()
-    return build_llm_by(provider, cfg)
+    llm, _ = get_cached_llm(provider, model, cfg)
+    return llm
 
 
 def generate_with_user_llm(user: APIKey, prompt: str) -> str:
-    """在请求级上下文中覆盖 Settings.llm，避免并发用户串台。"""
+    """Generate with an explicit user-selected LLM without mutating global state."""
     system = _get_system()
     pref = get_or_create_user_pref(user)
     try:
-        llm = build_llm_for_provider(pref.provider)
+        llm = build_llm_for_provider(pref.provider, pref.model or None)
     except Exception:
         # 回退到默认
-        provider, _ = _get_default_provider_model()
-        llm = build_llm_for_provider(provider)
-    from llama_index.core import Settings as LISettings
+        provider, model = _get_default_provider_model()
+        llm = build_llm_for_provider(provider, model)
     from llama_index.llms.langchain import LangChainLLM
 
-    # 某些版本的 llama_index 不提供 Settings.as_context，这里采用手动覆盖并回滚
-    old_llm = getattr(LISettings, "llm", None)
-    try:
-        LISettings.llm = LangChainLLM(llm=llm)
-        result = system.query(prompt)
-        return result.get("response", "")
-    finally:
-        LISettings.llm = old_llm
+    result = system.query(prompt, llm=LangChainLLM(llm=llm))
+    return result.get("response", "")
 
 
 def create_api_key(user: str) -> APIKey:
@@ -458,21 +451,64 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
     return session
 
 
-def get_cached_reply(prompt: str, session_id: str, user: APIKey) -> str | None:
-    """缓存键包含 session_id 和 user，避免跨会话冲突"""
-    cache_key = _build_reply_cache_key(prompt, session_id, user)
+def get_cached_reply(
+    prompt: str,
+    session_id: str,
+    user: APIKey,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+) -> str | None:
+    """Read a reply using a key scoped to user, session, model, and runtime versions."""
+    cache_key = _build_reply_cache_key(prompt, session_id, user, provider=provider, model=model)
     return cache.get(cache_key)
 
 
-def set_cached_reply(prompt: str, reply: str, session_id: str, user: APIKey, timeout=3600):
-    cache_key = _build_reply_cache_key(prompt, session_id, user)
+def set_cached_reply(
+    prompt: str,
+    reply: str,
+    session_id: str,
+    user: APIKey,
+    timeout: int | None = None,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+):
+    """Write a non-empty successful reply with a bounded, model-scoped TTL."""
+    if not reply or not reply.strip():
+        return
+    cfg = _load_env_cfg()
+    if timeout is None:
+        timeout = int(cfg.get("REPLY_CACHE_TTL", 3600))
+    cache_key = _build_reply_cache_key(prompt, session_id, user, provider=provider, model=model)
     cache.set(cache_key, reply, timeout)
 
 
-def _build_reply_cache_key(prompt: str, session_id: str, user: APIKey) -> str:
-    """Build a stable, bounded cache key without exposing prompt contents."""
-    identity = f"{user.user}\x00{session_id}\x00{prompt}"
-    return f"reply:{generate_cache_key(identity)}"
+def _build_reply_cache_key(
+    prompt: str,
+    session_id: str,
+    user: APIKey,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+) -> str:
+    """Build a stable key scoped to user, model endpoint, prompt, and cache versions."""
+    cfg = _load_env_cfg()
+    normalized_provider = (provider or cfg.get("LLM_PROVIDER") or "").lower()
+    resolved_model = model or configured_model(cfg, normalized_provider)
+    identity = {
+        "user": user.user,
+        "session": session_id,
+        "prompt": prompt,
+        "provider": normalized_provider,
+        "model": resolved_model,
+        "endpoint": configured_endpoint(cfg, normalized_provider) if normalized_provider else "",
+        "prompt_version": cfg.get("PROMPT_VERSION", "default"),
+        "index_version": cfg.get("INDEX_VERSION", "default"),
+        "response_top_k": cfg.get("RESPONSE_TOP_K", 10),
+    }
+    identity_text = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return f"reply:{generate_cache_key(identity_text)}"
 
 
 def generate_cache_key(original_key: str) -> str:

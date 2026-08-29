@@ -13,10 +13,9 @@ class TopKLogSystemIsolationTests(SimpleTestCase):
     @patch("topklogsystem.VectorStoreIndex")
     @patch("topklogsystem.StorageContext")
     @patch("topklogsystem.ChromaVectorStore")
-    @patch("topklogsystem.Settings", new_callable=lambda: SimpleNamespace())
     @patch("llm_provider_factory.build_providers")
     def test_fake_providers_use_a_temporary_chroma_directory(
-        self, build_providers, settings, chroma_store, storage_context, vector_index
+        self, build_providers, chroma_store, storage_context, vector_index
     ):
         from topklogsystem import TopKLogSystem
 
@@ -56,6 +55,12 @@ class TopKLogSystemIsolationTests(SimpleTestCase):
                 "llm": FakeLLM(),
                 "embedding": FakeEmbedding(),
                 "collection_name": "test_collection",
+                "llm_key": SimpleNamespace(
+                    provider="ollama", model="fake-chat", endpoint="http://localhost"
+                ),
+                "embedding_key": SimpleNamespace(
+                    provider="ollama", model="fake-embedding", endpoint="http://localhost"
+                ),
             }
             storage_context.from_defaults.return_value = object()
             chroma_store.return_value = object()

@@ -84,8 +84,12 @@ class ServicePureFunctionTests(SimpleTestCase):
         user = APIKey(user="alice")
 
         key = _build_reply_cache_key("secret prompt", "session-1", user)
+        selected_key = _build_reply_cache_key(
+            "secret prompt", "session-1", user, provider="ollama", model="other-model"
+        )
 
         self.assertEqual(key, _build_reply_cache_key("secret prompt", "session-1", user))
+        self.assertNotEqual(key, selected_key)
         self.assertNotIn("secret prompt", key)
         self.assertEqual(len(generate_cache_key("value")), 64)
 
@@ -192,25 +196,27 @@ class ServiceDatabaseTests(TestCase):
         model.get_text_embedding.return_value = [2.0]
         self.assertEqual(services._embed_texts(["text"]), [[2.0]])
 
-    @patch("llama_index.core.Settings")
     @patch("llama_index.llms.langchain.LangChainLLM")
     @patch("deepseek_api.services.build_llm_for_provider")
     @patch("deepseek_api.services._get_system")
-    def test_fake_llm_is_bound_for_one_request_and_global_state_is_restored(
-        self, get_system, build_llm, llm_wrapper, settings_mock
+    def test_fake_llm_is_passed_to_one_request_without_global_mutation(
+        self, get_system, build_llm, llm_wrapper
     ):
         class FakeSystem:
-            def query(self, prompt):
+            def query(self, prompt, **kwargs):
                 return {"response": f"fake:{prompt}"}
 
         fake_llm = object()
-        old_llm = object()
-        settings_mock.llm = old_llm
         get_system.return_value = FakeSystem()
         build_llm.return_value = fake_llm
         llm_wrapper.side_effect = lambda llm: llm
-        result = services.generate_with_user_llm(create_api_key("fake-llm-user"), "question")
+        user = create_api_key("fake-llm-user")
+        preference = get_or_create_user_pref(user)
+        preference.model = "selected-model"
+        preference.save(update_fields=["model"])
+
+        result = services.generate_with_user_llm(user, "question")
 
         self.assertEqual(result, "fake:question")
-        build_llm.assert_called_once_with("ollama")
-        self.assertIs(settings_mock.llm, old_llm)
+        build_llm.assert_called_once_with("ollama", "selected-model")
+        llm_wrapper.assert_called_once_with(llm=fake_llm)

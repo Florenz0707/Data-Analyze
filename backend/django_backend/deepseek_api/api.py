@@ -190,13 +190,23 @@ def chat(request, data: ChatIn):
 
     # 5. 调用大模型（带缓存）。此处使用用户绑定的 LLM（若未设置，则自动创建默认偏好）。
     user_obj = request.auth
-    cached_reply = get_cached_reply(query, sid, user_obj)
+    user_pref = services.get_or_create_user_pref(user_obj)
+    cached_reply = get_cached_reply(
+        query, sid, user_obj, provider=user_pref.provider, model=user_pref.model or None
+    )
     if cached_reply:
         reply = cached_reply
     else:
         try:
             reply = generate_with_user_llm(user_obj, query)
-            set_cached_reply(query, reply, sid, user_obj)
+            set_cached_reply(
+                query,
+                reply,
+                sid,
+                user_obj,
+                provider=user_pref.provider,
+                model=user_pref.model or None,
+            )
         except RuntimeError as e:
             return 503, {
                 "error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"

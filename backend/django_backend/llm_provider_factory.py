@@ -22,7 +22,7 @@ def _slugify(text: str) -> str:
 # ============== LLM 构建（独立） ==============
 
 
-def build_llm_by(provider: str, env_cfg: dict[str, Any]):
+def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = None):
     p = (provider or "").lower()
 
     if p == "transformers":
@@ -31,7 +31,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any]):
         from transformers import pipeline as hf_pipeline
 
         tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
-        llm_model = tcfg.get("llm_model")
+        llm_model = model or tcfg.get("llm_model")
         if not llm_model:
             raise ValueError("TRANSFORMERS_CONFIG.llm_model 不能为空")
 
@@ -67,7 +67,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any]):
         from langchain_ollama import OllamaLLM
 
         ocfg = env_cfg.get("OLLAMA_CONFIG", {})
-        llm_name = ocfg.get("model")
+        llm_name = model or ocfg.get("model")
         if not llm_name:
             raise ValueError("OLLAMA_CONFIG.model 不能为空")
         return OllamaLLM(model=llm_name, temperature=0.1)
@@ -85,7 +85,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any]):
         organization = cfg.get("organization") or os.getenv("OPENAI_ORG")
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
-        model = cfg.get("model", "gpt-4o-mini")
+        model = model or cfg.get("model", "gpt-4o-mini")
         return ChatOpenAI(
             model=model,
             api_key=api_key,
@@ -107,7 +107,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any]):
             raise RuntimeError(f"未找到 API Key: 请设置 {api_key_env_name}")
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
-        chat_model = cfg.get("chat_model", "qwen-turbo")
+        chat_model = model or cfg.get("chat_model", "qwen-turbo")
         return ChatOpenAI(
             model=chat_model,
             api_key=api_key,
@@ -122,14 +122,18 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any]):
 # ============== Embedding 构建（独立） ==============
 
 
-def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, str]:
+def build_embedding_by(
+    provider: str, env_cfg: dict[str, Any], *, model: str | None = None
+) -> tuple[object, str]:
     p = (provider or "").lower()
 
     if p == "hf" or p == "transformers":
         from langchain_huggingface import HuggingFaceEmbeddings
 
         tcfg = env_cfg.get("TRANSFORMERS_CONFIG", {})
-        embedding_name = tcfg.get("embedding_model", "sentence-transformers/all-MiniLM-L6-v2")
+        embedding_name = model or tcfg.get(
+            "embedding_model", "sentence-transformers/all-MiniLM-L6-v2"
+        )
         embed = HuggingFaceEmbeddings(model_name=embedding_name)
         return embed, embedding_name
 
@@ -137,7 +141,7 @@ def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, 
         from langchain_ollama import OllamaEmbeddings
 
         ocfg = env_cfg.get("OLLAMA_CONFIG", {})
-        embed_name = ocfg.get("embedding_model")
+        embed_name = model or ocfg.get("embedding_model")
         if not embed_name:
             raise ValueError("OLLAMA_CONFIG.embedding_model 不能为空")
         embed = OllamaEmbeddings(model=embed_name)
@@ -156,7 +160,7 @@ def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, 
         organization = cfg.get("organization") or os.getenv("OPENAI_ORG")
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
-        emb_model = cfg.get("embedding_model", "text-embedding-3-large")
+        emb_model = model or cfg.get("embedding_model", "text-embedding-3-large")
         emb_dims = cfg.get("embedding_dimensions")
         kwargs: dict[str, Any] = {
             "model": emb_model,
@@ -184,7 +188,7 @@ def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, 
             raise RuntimeError(f"未找到 API Key: 请设置 {api_key_env_name}")
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
-        emb_model = cfg.get("embedding_model", "text-embedding-v4")
+        emb_model = model or cfg.get("embedding_model", "text-embedding-v4")
 
         class DashScopeEmbeddings(LCEmbeddings):
             def __init__(
@@ -214,7 +218,9 @@ def build_embedding_by(provider: str, env_cfg: dict[str, Any]) -> tuple[object, 
 # ============== 统一对外工厂（LLM + Embedding） ==============
 
 
-def build_providers(env_cfg: dict[str, Any]) -> dict[str, Any]:
+def build_providers(
+    env_cfg: dict[str, Any], *, llm_model: str | None = None, embedding_model: str | None = None
+) -> dict[str, Any]:
     """根据配置构造 LLM 与 Embedding 提供方。
     - LLM_PROVIDER 控制对话模型
     - EMBEDDING_PROVIDER 控制向量模型；当为 auto 时，退化为跟随 LLM_PROVIDER
@@ -224,8 +230,11 @@ def build_providers(env_cfg: dict[str, Any]) -> dict[str, Any]:
     emb_provider_cfg = (env_cfg.get("EMBEDDING_PROVIDER") or "auto").lower()
     emb_provider = llm_provider if emb_provider_cfg in ("", "auto") else emb_provider_cfg
 
-    llm = build_llm_by(llm_provider, env_cfg)
-    embedding, emb_model_name = build_embedding_by(emb_provider, env_cfg)
+    from deepseek_project.model_runtime import get_cached_embedding, get_cached_llm
+
+    llm, llm_key = get_cached_llm(llm_provider, llm_model, env_cfg)
+    embedding, embedding_key = get_cached_embedding(emb_provider, embedding_model, env_cfg)
+    emb_model_name = embedding_key.model
 
     # 允许通过配置显式指定集合名；否则按提供方与模型名生成隔离后的默认集合名
     # 使用嵌入模型名派生集合名，弃用外部覆盖参数，确保同模型自动复用
@@ -235,4 +244,6 @@ def build_providers(env_cfg: dict[str, Any]) -> dict[str, Any]:
         "llm": llm,
         "embedding": embedding,
         "collection_name": collection_name,
+        "llm_key": llm_key,
+        "embedding_key": embedding_key,
     }

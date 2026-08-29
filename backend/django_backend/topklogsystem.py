@@ -38,7 +38,6 @@ except Exception:
 import chromadb
 from llama_index.core import (
     Document,
-    Settings,  # 全局
     StorageContext,
     VectorStoreIndex,
 )
@@ -135,8 +134,10 @@ class TopKLogSystem:
 
         self.provider = provider
         prov = build_providers(env_cfg)
-        Settings.llm = LangChainLLM(llm=prov["llm"])  # 注册到 llama-index
-        Settings.embed_model = LangchainEmbedding(prov["embedding"])  # 全局 embedding
+        self.llm = LangChainLLM(llm=prov["llm"])
+        self.embedding = LangchainEmbedding(prov["embedding"])
+        self.llm_key = prov["llm_key"]
+        self.embedding_key = prov["embedding_key"]
         self.collection_name = prov.get("collection_name", "log_collection_default")
 
         self.log_index = None
@@ -322,6 +323,7 @@ class TopKLogSystem:
             self.log_index = VectorStoreIndex.from_vector_store(
                 vector_store=log_vector_store,
                 storage_context=log_storage_context,
+                embed_model=self.embedding,
             )
             logger.info(f"复用已存在的向量集合 '{collection_name}', 向量数: {existing_count}")
         else:
@@ -330,6 +332,7 @@ class TopKLogSystem:
                     log_documents,
                     storage_context=log_storage_context,
                     show_progress=True,
+                    embed_model=self.embedding,
                 )
                 logger.info(
                     f"新建向量集合 '{collection_name}' 并完成索引构建，共 {len(log_documents)} 条日志"
@@ -339,6 +342,7 @@ class TopKLogSystem:
                 self.log_index = VectorStoreIndex.from_vector_store(
                     vector_store=log_vector_store,
                     storage_context=log_storage_context,
+                    embed_model=self.embedding,
                 )
                 logger.info(f"已创建空集合 '{collection_name}'，当前无可写入的日志文档")
 
@@ -377,14 +381,18 @@ class TopKLogSystem:
         return documents
 
     # 检索相关日志
-    def retrieve_logs(self, query: str, top_k: int | None = None) -> list[dict]:
+    def retrieve_logs(
+        self, query: str, top_k: int | None = None, *, embedding: Any | None = None
+    ) -> list[dict]:
         if not self.log_index:
             logger.info("retrieve_logs: log_index is None, returning empty context")
             return []
 
         top_k = int(top_k) if top_k is not None else int(getattr(self, "default_top_k", 10))
         try:
-            retriever = self.log_index.as_retriever(similarity_top_k=top_k)  # topK
+            retriever = self.log_index.as_retriever(
+                similarity_top_k=top_k, embed_model=embedding or self.embedding
+            )
             results = retriever.retrieve(query)
             formatted_results = []
             for result in results:
@@ -396,7 +404,7 @@ class TopKLogSystem:
             return []
 
     # LLM 生成响应
-    def generate_response(self, query: str, context: dict) -> str:
+    def generate_response(self, query: str, context: dict, *, llm: Any | None = None) -> str:
         prompt = self._build_prompt_text(query, context)  # 构建提示词
 
         retries = max(0, int(getattr(self, "generation_retries", 2)))
@@ -405,8 +413,7 @@ class TopKLogSystem:
         last_err = None
         for attempt in range(retries + 1):
             try:
-                # 通过全局 Settings.llm 调用，避免依赖实例属性
-                resp = Settings.llm.complete(prompt)
+                resp = (llm or self.llm).complete(prompt)
                 text = getattr(resp, "text", str(resp))
                 raw = (text or "").strip()
                 logger.info(f"LLM raw output length: {len(raw)}")
@@ -592,9 +599,15 @@ class TopKLogSystem:
         return "\n".join(result_lines).strip()
 
     # 执行查询
-    def query(self, query: str) -> dict:
-        log_results = self.retrieve_logs(query)
-        response = self.generate_response(query, log_results)  # 生成响应
+    def query(
+        self,
+        query: str,
+        *,
+        llm: Any | None = None,
+        embedding: Any | None = None,
+    ) -> dict:
+        log_results = self.retrieve_logs(query, embedding=embedding)
+        response = self.generate_response(query, log_results, llm=llm)
 
         return {"response": response, "retrieval_stats": len(log_results)}
 
