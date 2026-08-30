@@ -88,7 +88,7 @@ DJANGO_TESTING=true uv run --project . python manage.py test \
 
 当前结果：27/27 通过。覆盖了 SHA-256 稳定键、参数和历史隔离、用户/Session 隔离、TTL 传递、空值/错误值拒绝、命名空间失效和配置边界。
 
-随后执行后端全量测试：54/54 通过；覆盖率报告为全部源文件 83%，核心模块（`api/models/services/configuration/model_runtime`）88%，`deepseek_api/api.py` 95%。
+随后在后续错误语义改动后再次执行后端全量测试：57/57 通过；当前覆盖率报告为全部源文件 84%，核心模块（`api/errors/models/services/configuration/model_runtime`）88%，`deepseek_api/api.py` 95%。
 
 完整后端测试、覆盖率、前端构建和 pre-commit 的最终结果登记在 `doc/development_plan.md` 的 E-016。
 
@@ -102,4 +102,4 @@ DJANGO_TESTING=true uv run --project . python manage.py test \
 
 ## 6. 变更边界
 
-本次完成 M2 缓存正确性子任务，不包含 M6 的缓存击穿治理、流式事件缓存、Redis 选型和生产压测；错误响应统一错误码、限流和真实多连接并发仍按开发计划继续验收。
+本次完成 M2 缓存正确性子任务，不包含 M6 的缓存击穿治理、流式事件缓存、Redis 选型和生产压测；实际限流接入和真实多连接并发仍按开发计划继续验收。

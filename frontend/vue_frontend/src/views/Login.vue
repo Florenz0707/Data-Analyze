@@ -60,6 +60,7 @@ import { NCard, NForm, NFormItemRow, NInput, NButton, NH1, NP, useMessage } from
 import { useAuthStore } from '../stores/auth';
 import { useAppStore } from '../stores/app';
 import * as api from '../api';
+import { getApiErrorMessage } from '../api/errors';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -98,8 +99,7 @@ const handleSubmit = async () => {
       }
     }
   } catch (err) {
-    const errorMessage = err.response?.data?.error || err.message || 'An error occurred.';
-    message.error(errorMessage);
+    message.error(getApiErrorMessage(err, 'An error occurred.'));
   } finally {
     appStore.setLoading(false);
   }

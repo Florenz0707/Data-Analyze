@@ -40,7 +40,9 @@ class HistoryListOut(Schema):
 
 
 class ErrorResponse(Schema):
+    code: str
     error: str
+    details: list[dict] | None = None
 
 
 class ProvidersOut(Schema):

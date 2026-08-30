@@ -144,8 +144,8 @@ DJANGO_TESTING=true uv run --project . python manage.py makemigrations --check -
 
 结果：
 
-- 后端全量测试：54/54 通过；
-- 后端核心模块覆盖率：88%（`api/models/services/configuration/model_runtime`，982 statements）；
+- 后端全量测试：57/57 通过；
+- 后端核心模块覆盖率：88%（`api/errors/models/services/configuration/model_runtime`，1033 statements）；
 - `deepseek_api/api.py` 行覆盖率：95%（321 statements、15 missed）；
 - Django system check：通过；
 - `makemigrations --check --dry-run`：无模型漂移；

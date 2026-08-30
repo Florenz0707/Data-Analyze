@@ -10,10 +10,19 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import F, Q
+from django.http import Http404
 from django.utils import timezone
 from ninja import NinjaAPI, Router
+from ninja.errors import (
+    AuthenticationError,
+    AuthorizationError,
+    HttpError,
+    Throttled,
+    ValidationError,
+)
 
 from . import services
+from .errors import ErrorCode, error_payload
 from .models import APIKey, ExternalLLMAPI, History, Session
 from .schemas import (
     APIIn,
@@ -47,6 +56,88 @@ from .services import (
 logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.1.0")
+
+
+@api.exception_handler(AuthenticationError)
+def handle_authentication_error(request, exc):
+    if str(exc) == "Unauthorized":
+        return api.create_response(
+            request,
+            error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key"),
+            status=401,
+        )
+    return api.create_response(
+        request,
+        error_payload(ErrorCode.AUTH_INVALID, str(exc)),
+        status=exc.status_code,
+    )
+
+
+@api.exception_handler(AuthorizationError)
+def handle_authorization_error(request, exc):
+    return api.create_response(
+        request,
+        error_payload(ErrorCode.AUTH_FORBIDDEN, "无权执行该操作"),
+        status=exc.status_code,
+    )
+
+
+@api.exception_handler(ValidationError)
+def handle_validation_error(request, exc):
+    return api.create_response(
+        request,
+        error_payload(
+            ErrorCode.VALIDATION_ERROR,
+            "请求参数校验失败",
+            details=exc.errors,
+        ),
+        status=400,
+    )
+
+
+@api.exception_handler(Throttled)
+def handle_throttled_error(request, exc):
+    response = api.create_response(
+        request,
+        error_payload(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试"),
+        status=429,
+    )
+    if exc.wait is not None:
+        response["Retry-After"] = str(exc.wait)
+    return response
+
+
+@api.exception_handler(Http404)
+def handle_not_found_error(request, exc):
+    return api.create_response(
+        request,
+        error_payload(ErrorCode.RESOURCE_NOT_FOUND, "资源不存在"),
+        status=404,
+    )
+
+
+@api.exception_handler(HttpError)
+def handle_http_error(request, exc):
+    code = {
+        400: ErrorCode.VALIDATION_ERROR,
+        401: ErrorCode.AUTH_REQUIRED,
+        403: ErrorCode.AUTH_FORBIDDEN,
+        404: ErrorCode.RESOURCE_NOT_FOUND,
+        409: ErrorCode.RESOURCE_CONFLICT,
+        429: ErrorCode.RATE_LIMITED,
+        503: ErrorCode.MODEL_UNAVAILABLE,
+    }.get(exc.status_code, ErrorCode.INTERNAL_ERROR)
+    return api.create_response(request, error_payload(code, str(exc)), status=exc.status_code)
+
+
+@api.exception_handler(Exception)
+def handle_unexpected_error(request, exc):
+    logger.exception("Unhandled API error")
+    return api.create_response(
+        request,
+        error_payload(ErrorCode.INTERNAL_ERROR, "服务内部错误，请稍后再试"),
+        status=500,
+    )
 
 
 def _get_authenticated_user(request):
@@ -118,7 +209,7 @@ def api_key_auth(request):
     try:
         scheme, key = auth_header.split()
         if scheme.lower() != "bearer":
-            return None
+            raise AuthenticationError(message="API Key 无效")
         api_key = APIKey.objects.get(key=key)
         # 过期校验
         import time
@@ -126,16 +217,19 @@ def api_key_auth(request):
         if int(time.time()) >= int(api_key.expiry_time or 0):
             # 删除过期 key
             api_key.delete()
-            return None
+            raise AuthenticationError(message="API Key 已过期")
         return api_key
     except (ValueError, APIKey.DoesNotExist):
-        return None
+        raise AuthenticationError(message="API Key 无效") from None
 
 
 router = Router(auth=api_key_auth)
 
 
-@api.post("/users/register", response={200: dict, 400: ErrorResponse, 409: ErrorResponse})
+@api.post(
+    "/users/register",
+    response={200: dict, 400: ErrorResponse, 409: ErrorResponse, 500: ErrorResponse},
+)
 def register(request, data: LoginIn):
     """
     注册接口：
@@ -148,10 +242,10 @@ def register(request, data: LoginIn):
     password = (data.password or "").strip()
 
     if not username or not password:
-        return 400, {"error": "用户名和密码不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "用户名和密码不能为空")
 
     if User.objects.filter(username=username).exists():
-        return 409, {"error": "用户名已存在"}
+        return 409, error_payload(ErrorCode.RESOURCE_CONFLICT, "用户名已存在")
 
     # 创建用户（自动进行密码哈希）
     User.objects.create_user(username=username, password=password)
@@ -160,7 +254,10 @@ def register(request, data: LoginIn):
     return {"message": "注册成功"}
 
 
-@api.post("/users/login", response={200: dict, 400: ErrorResponse, 403: ErrorResponse})
+@api.post(
+    "/users/login",
+    response={200: dict, 400: ErrorResponse, 403: ErrorResponse, 500: ErrorResponse},
+)
 def login(request, data: LoginIn):
     """
     登录接口：
@@ -172,13 +269,15 @@ def login(request, data: LoginIn):
     password = (data.password or "").strip()
 
     if not username or not password:
-        return 400, {"error": "用户名和密码不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "用户名和密码不能为空")
 
     user = authenticate(request, username=username, password=password)
     if user is None:
-        return 403, {"error": "用户名或密码错误"}
+        if User.objects.filter(username=username, is_active=False).exists():
+            return 403, error_payload(ErrorCode.AUTH_FORBIDDEN, "账号已被禁用")
+        return 403, error_payload(ErrorCode.AUTH_INVALID, "用户名或密码错误")
     if not getattr(user, "is_active", True):
-        return 403, {"error": "账号已被禁用"}
+        return 403, error_payload(ErrorCode.AUTH_FORBIDDEN, "账号已被禁用")
 
     api_key_obj = services.create_api_key(username)
     payload = {
@@ -201,21 +300,29 @@ def login(request, data: LoginIn):
 
 
 @router.post(
-    "/llm/chat", response={200: ChatOut, 400: ErrorResponse, 401: ErrorResponse, 503: ErrorResponse}
+    "/llm/chat",
+    response={
+        200: ChatOut,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+        503: ErrorResponse,
+    },
 )
 def chat(request, data: ChatIn):
     # 1. 认证验证（确保用户已登录）
     if not request.auth:
-        return 401, {"error": "请先登录获取API Key"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
 
     # 2. 解析参数（确保 session_id 有效）
     sid = (data.session_id or "").strip() or "default_session"
     user_input = (data.user_input or "").strip()
     if not user_input:
-        return 400, {"error": "请输入消息内容"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "请输入消息内容")
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
 
     # 将会话创建、历史读取、模型调用和首条历史写入放在一个事务中。
     # 同一 Session 的请求通过行锁串行化，模型失败时空 Session 也会回滚。
@@ -276,9 +383,10 @@ def chat(request, data: ChatIn):
                 )
             except RuntimeError as e:
                 transaction.set_rollback(True)
-                return 503, {
-                    "error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"
-                }
+                return 503, error_payload(
+                    ErrorCode.MODEL_UNAVAILABLE,
+                    f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。",
+                )
         logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
         # 6. 写入结构化历史并更新会话时间
@@ -300,7 +408,14 @@ def chat(request, data: ChatIn):
 
 @router.get(
     "/sessions/history",
-    response={200: HistoryListOut, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse},
+    response={
+        200: HistoryListOut,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
 )
 def history(
     request,
@@ -316,31 +431,35 @@ def history(
     - 支持分页：before_id/after_id 二选一，limit 默认 200
     """
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
 
     if before_cursor and before_id is not None:
-        return 400, {"error": "before_cursor 和 before_id 不能同时使用"}
+        return 400, error_payload(
+            ErrorCode.VALIDATION_ERROR, "before_cursor 和 before_id 不能同时使用"
+        )
     if after_cursor and after_id is not None:
-        return 400, {"error": "after_cursor 和 after_id 不能同时使用"}
+        return 400, error_payload(
+            ErrorCode.VALIDATION_ERROR, "after_cursor 和 after_id 不能同时使用"
+        )
     if (before_cursor or before_id is not None) and (after_cursor or after_id is not None):
-        return 400, {"error": "before 和 after 游标不能同时使用"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "before 和 after 游标不能同时使用")
 
     sid = (session_id or "").strip() or "default_session"
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
 
     # 校验会话存在
     session = Session.objects.filter(session_id=sid, user=user).first()
     if session is None:
-        return 404, {"error": "会话不存在"}
+        return 404, error_payload(ErrorCode.RESOURCE_NOT_FOUND, "会话不存在")
 
     # 分页与排序
     qs = History.objects.filter(session=session)
     if before_cursor:
         cursor = _decode_history_cursor(before_cursor)
         if cursor is None:
-            return 400, {"error": "before_cursor 无效"}
+            return 400, error_payload(ErrorCode.VALIDATION_ERROR, "before_cursor 无效")
         created_at, history_id = cursor
         qs = qs.filter(
             Q(created_at__lt=created_at) | Q(created_at=created_at, id__lt=history_id)
@@ -348,7 +467,7 @@ def history(
     elif after_cursor:
         cursor = _decode_history_cursor(after_cursor)
         if cursor is None:
-            return 400, {"error": "after_cursor 无效"}
+            return 400, error_payload(ErrorCode.VALIDATION_ERROR, "after_cursor 无效")
         created_at, history_id = cursor
         qs = qs.filter(
             Q(created_at__gt=created_at) | Q(created_at=created_at, id__gt=history_id)
@@ -409,37 +528,52 @@ def history(
     }
 
 
-@router.delete("/sessions/history", response={200: dict, 401: ErrorResponse, 404: ErrorResponse})
+@router.delete(
+    "/sessions/history",
+    response={
+        200: dict,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
+)
 def clear_history(request, session_id: str = "default_session"):
     """清空结构化历史：仅删除 deepseek_api_history 中该会话的记录，Session 保留。
     当会话不存在时返回 404。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
 
     sid = (session_id or "").strip() or "default_session"
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
 
     session = Session.objects.filter(session_id=sid, user=user).first()
     if session is None:
-        return 404, {"error": "会话不存在"}
+        return 404, error_payload(ErrorCode.RESOURCE_NOT_FOUND, "会话不存在")
 
     History.objects.filter(session=session).delete()
     return {"message": "历史记录已清空"}
 
 
-@router.get("/llm/providers", response={200: ProvidersOut, 401: ErrorResponse})
+@router.get(
+    "/llm/providers",
+    response={200: ProvidersOut, 401: ErrorResponse, 429: ErrorResponse, 500: ErrorResponse},
+)
 def get_llm_providers(request):
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     return {"providers": get_allowed_providers()}
 
 
-@router.get("/llm/local_models", response={200: LocalModelsOut, 401: ErrorResponse})
+@router.get(
+    "/llm/local_models",
+    response={200: LocalModelsOut, 401: ErrorResponse, 429: ErrorResponse, 500: ErrorResponse},
+)
 def get_llm_local_models(request):
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     models = get_local_models()
     # 统一使用 transformers/ollama 键名
     return {"transformers": models.get("transformers", []), "ollama": models.get("ollama", [])}
@@ -448,54 +582,72 @@ def get_llm_local_models(request):
 # ----- 会话管理 -----
 @router.post(
     "/sessions",
-    response={201: SessionOut, 400: ErrorResponse, 401: ErrorResponse, 409: ErrorResponse},
+    response={
+        201: SessionOut,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        409: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
 )
 def create_session(request, data: SessionIn):
     """显式创建新会话，若已存在则返回 409。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     session_id = (data.session_id or "").strip()
     if not session_id:
-        return 400, {"error": "session_id 不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "session_id 不能为空")
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
     # 判断是否已存在
     if Session.objects.filter(session_id=session_id, user=user).exists():
-        return 409, {"error": "会话已存在"}
+        return 409, error_payload(ErrorCode.RESOURCE_CONFLICT, "会话已存在")
     title = (data.title or "").strip()[:200] or session_id
     Session.objects.create(session_id=session_id, user=user, title=title)
     return 201, {"session_id": session_id, "title": title}
 
 
 @router.delete(
-    "/sessions", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse}
+    "/sessions",
+    response={
+        200: dict,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
 )
 def delete_session(request, data: SessionIn):
     """显式删除会话。如果不存在返回 404。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     session_id = (data.session_id or "").strip()
     if not session_id:
-        return 400, {"error": "session_id 不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "session_id 不能为空")
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
     qs = Session.objects.filter(session_id=session_id, user=user)
     if not qs.exists():
-        return 404, {"error": "会话不存在"}
+        return 404, error_payload(ErrorCode.RESOURCE_NOT_FOUND, "会话不存在")
     qs.delete()
     return {"message": "会话已删除"}
 
 
-@router.get("/sessions", response={200: SessionListOut, 401: ErrorResponse})
+@router.get(
+    "/sessions",
+    response={200: SessionListOut, 401: ErrorResponse, 429: ErrorResponse, 500: ErrorResponse},
+)
 def list_sessions(request):
     """根据 username 列出该用户的全部会话 ID，按最近更新时间倒序（读取 deepseek_api_session）。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     user = _get_authenticated_user(request)
     if user is None:
-        return 401, {"error": "认证用户不存在"}
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
     session_ids = list(
         Session.objects.filter(user=user)
         .order_by("-updated_at")
@@ -504,44 +656,71 @@ def list_sessions(request):
     return {"sessions": session_ids}
 
 
-@router.get("/llm/my", response={200: SelectLLMOut, 401: ErrorResponse})
+@router.get(
+    "/llm/my",
+    response={200: SelectLLMOut, 401: ErrorResponse, 429: ErrorResponse, 500: ErrorResponse},
+)
 def get_my_llm(request):
     """返回当前用户选择的 LLM 配置（通过 Bearer token 识别用户）。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     pref = services.get_or_create_user_pref(request.auth)
     return {"provider": pref.provider, "model": pref.model or None}
 
 
-@router.post("/llm/select", response={200: SelectLLMOut, 400: ErrorResponse, 401: ErrorResponse})
+@router.post(
+    "/llm/select",
+    response={
+        200: SelectLLMOut,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
+)
 def select_llm(request, data: SelectLLMIn):
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     allowed = set(get_allowed_providers())
     provider = (data.provider or "").lower()
     if provider not in allowed:
-        return 400, {"error": f"不允许的 provider: {provider}. 仅允许: {sorted(allowed)}"}
+        return 400, error_payload(
+            ErrorCode.VALIDATION_ERROR,
+            f"不允许的 provider: {provider}. 仅允许: {sorted(allowed)}",
+        )
     pref = set_user_pref(request.auth, provider, data.model)
     return {"provider": pref.provider, "model": pref.model or None}
 
 
 # ===== External API management =====
-@router.post("/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse})
+@router.post(
+    "/llm/extern",
+    response={
+        200: dict,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+        503: ErrorResponse,
+    },
+)
 def add_external_api(request, data: APIIn):
     """添加/更新用户自定义的 OpenAI 兼容接口配置。先校验可用性，再保存。"""
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     base_url = (data.base_url or "").strip()
     model_name = (data.model_name or "").strip()
     api_key = (data.api_key or "").strip()
     alias = data.alias or None
     if not base_url or not model_name or not api_key:
-        return 400, {"error": "base_url、model_name、api_key 不能为空"}
+        return 400, error_payload(
+            ErrorCode.VALIDATION_ERROR, "base_url、model_name、api_key 不能为空"
+        )
 
     # quick validation
     ok = _validate_openai_compat(base_url, api_key, model_name)
     if not ok:
-        return 400, {"error": "无法连接到该接口或模型不可用"}
+        return 503, error_payload(ErrorCode.MODEL_UNAVAILABLE, "无法连接到该接口或模型不可用")
 
     username = request.auth.user
     obj, created = ExternalLLMAPI.objects.update_or_create(
@@ -552,10 +731,13 @@ def add_external_api(request, data: APIIn):
     return {"message": "保存成功"}
 
 
-@router.get("/llm/extern", response={200: ModelsListOut, 401: ErrorResponse})
+@router.get(
+    "/llm/extern",
+    response={200: ModelsListOut, 401: ErrorResponse, 429: ErrorResponse, 500: ErrorResponse},
+)
 def list_external_models(request):
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     username = request.auth.user
     items = ExternalLLMAPI.objects.filter(user=username).order_by("-updated_at")
     names = [(item.alias or item.model_name).strip() for item in items]
@@ -563,31 +745,42 @@ def list_external_models(request):
 
 
 @router.delete(
-    "/llm/extern", response={200: dict, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse}
+    "/llm/extern",
+    response={
+        200: dict,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+    },
 )
 def delete_external_model(request, data: ModelIn):
     if not request.auth:
-        return 401, {"error": "未授权"}
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     key = (data.model_name or "").strip()
     if not key:
-        return 400, {"error": "model_name 不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "model_name 不能为空")
     username = request.auth.user
     qs = ExternalLLMAPI.objects.filter(user=username).filter(Q(model_name=key) | Q(alias=key))
     if not qs.exists():
-        return 404, {"error": "未找到该模型配置"}
+        return 404, error_payload(ErrorCode.RESOURCE_NOT_FOUND, "未找到该模型配置")
     qs.delete()
     return {"message": "已删除"}
 
 
-@api.post("/refresh", response={200: dict, 400: ErrorResponse, 403: ErrorResponse})
+@api.post(
+    "/refresh",
+    response={200: dict, 400: ErrorResponse, 403: ErrorResponse, 500: ErrorResponse},
+)
 def refresh(request):
     token = (request.COOKIES.get("refresh_token") or "").strip()
     if not token:
-        return 400, {"error": "refresh_token 不能为空"}
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "refresh_token 不能为空")
 
     api_key = services.refresh_access_token(token)
     if not api_key:
-        return 403, {"error": "refresh_token 无效或已过期"}
+        return 403, error_payload(ErrorCode.AUTH_INVALID, "refresh_token 无效或已过期")
 
     payload = {"message": "刷新成功"}
     response = api.create_response(request, payload, status=200)

@@ -66,7 +66,7 @@ cd backend/django_backend
 DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 ```
 
-当前结果：54/54 通过。其中包括：
+当前结果：57/57 通过。其中包括：
 
 - 50 个并发访问同一模型 key 只构造一个实例；
 - 不同模型和 endpoint 不共享缓存实例；
@@ -87,4 +87,4 @@ DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 
 ## 6. 本次变更边界
 
-本次仅完成模型实例和缓存隔离。M2 仍需继续处理 History 外键与迁移、Session 删除一致性、错误码统一、限流接入和更完整的真实部署压测；这些事项不能因为本次模型隔离测试通过而提前标记完成。
+本次仅完成模型实例和缓存隔离。M2 仍需继续处理实际限流接入和更完整的真实部署压测；这些事项不能因为本次模型隔离测试通过而提前标记完成。

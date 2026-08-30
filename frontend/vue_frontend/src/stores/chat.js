@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import * as api from '../api';
+import { getApiErrorMessage } from '../api/errors';
 import { useAuthStore } from './auth';
 import { useAppStore } from './app';
 
@@ -65,8 +66,8 @@ export const useChatStore = defineStore('chat', {
         }
 
         appStore.setInitialized(true);
-      } catch {
-        appStore.setError('Failed to load session list.');
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to load session list.'));
         // 如果加载失败，也回退到 "New Chat" 状态
         this.sessions = JSON.parse(localStorage.getItem(getUserKey('sessions')) || '[]');
         this.startNewChat();
@@ -92,8 +93,8 @@ export const useChatStore = defineStore('chat', {
           // 如果删除了当前会话，则切换到 "New Chat"
           this.startNewChat();
         }
-      } catch {
-        useAppStore().setError('Failed to delete session.');
+      } catch (error) {
+        useAppStore().setError(getApiErrorMessage(error, 'Failed to delete session.'));
       }
     },
 
@@ -146,8 +147,8 @@ export const useChatStore = defineStore('chat', {
           // 切换到新的真实 session
           this.setCurrentSession(newId);
           sessionId = newId; // 更新 sessionId 供后续 API 调用
-        } catch {
-          appStore.setError('Failed to create session.');
+        } catch (error) {
+          appStore.setError(getApiErrorMessage(error, 'Failed to create session.'));
           appStore.setLoading(false);
           return; // 创建失败则停止
         }
@@ -167,8 +168,8 @@ export const useChatStore = defineStore('chat', {
           timestamp: new Date().toLocaleString(),
         };
         this.addMessage(sessionId, botMessage);
-      } catch {
-        appStore.setError('Failed to send message.');
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to send message.'));
       } finally {
         appStore.setLoading(false);
       }
@@ -209,8 +210,8 @@ export const useChatStore = defineStore('chat', {
           }
         }
         this.messages[sessionId] = newMessages;
-      } catch {
-        appStore.setError('Failed to load chat history.');
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to load chat history.'));
         this.messages[sessionId] = []; // 失败时设置为空数组
       } finally {
         appStore.setLoading(false);

@@ -132,6 +132,12 @@ uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit
 - 更新知识库或 Prompt 后执行 `DJANGO_TESTING=true uv run --project . python manage.py invalidate_reply_cache`，通过轮换命名空间使旧回复立即逻辑失效。
 - 空回复、非字符串值和显式标记为不可缓存的错误响应不会写入正常回复缓存。
 
+### 6.4 错误响应契约
+
+- 错误响应统一返回 `code` 和兼容字段 `error`；请求 Schema 校验错误额外返回 `details`。
+- 前端应根据 `code` 判断处理方式：`AUTH_REQUIRED/AUTH_INVALID` 重新登录，`VALIDATION_ERROR` 修正输入，`MODEL_UNAVAILABLE` 稍后重试或切换模型，`RATE_LIMITED` 遵守 `Retry-After`。
+- 未知异常统一返回 `500/INTERNAL_ERROR`，服务端堆栈只记录在日志中。
+
 ### 6.2 Session/History 数据契约
 
 - `History` 通过数据库 ForeignKey 属于 `Session`，删除 Session 会级联删除 History。

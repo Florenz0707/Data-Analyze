@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import * as api from '../api';
+import { getApiErrorMessage } from '../api/errors';
 import { useAppStore } from './app';
 
 export const useModelStore = defineStore('model', {
@@ -25,8 +26,8 @@ export const useModelStore = defineStore('model', {
           this.fetchCurrentModel(),
           this.fetchCustomModels(), // 新增：同时获取自定义模型
         ]);
-      } catch {
-        appStore.setError('Failed to fetch model data.');
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to fetch model data.'));
       } finally {
         appStore.setLoading(false);
       }
@@ -63,8 +64,8 @@ export const useModelStore = defineStore('model', {
       try {
         const response = await api.selectModel(provider, model);
         this.currentModel = response.data;
-      } catch {
-        appStore.setError('Failed to select model.');
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to select model.'));
       } finally {
         appStore.setLoading(false);
       }
@@ -85,7 +86,7 @@ export const useModelStore = defineStore('model', {
         appStore.clearError(); // 清除可能之前的错误
       } catch (error) {
         console.error('Failed to add custom model:', error);
-        appStore.setError('Failed to add custom model. Check console for details.');
+        appStore.setError(getApiErrorMessage(error, 'Failed to add custom model.'));
         throw error; // 抛出错误，以便 UI 层可以捕获它
       } finally {
         appStore.setLoading(false);
@@ -105,7 +106,7 @@ export const useModelStore = defineStore('model', {
         await this.fetchCurrentModel(); // 检查当前模型是否已被删除
       } catch (error) {
         console.error('Failed to delete custom model:', error);
-        appStore.setError('Failed to delete custom model.');
+        appStore.setError(getApiErrorMessage(error, 'Failed to delete custom model.'));
       } finally {
         appStore.setLoading(false);
       }

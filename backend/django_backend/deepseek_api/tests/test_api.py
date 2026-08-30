@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
+from ninja.errors import Throttled
 
 from deepseek_api.models import APIKey, ExternalLLMAPI, History, Session
 from deepseek_api.services import create_api_key
@@ -49,6 +50,8 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(duplicate.status_code, 409)
         self.assertEqual(empty.status_code, 400)
+        self.assertEqual(duplicate.json()["code"], "RESOURCE_CONFLICT")
+        self.assertEqual(empty.json()["code"], "VALIDATION_ERROR")
 
     def test_protected_endpoint_rejects_missing_or_invalid_token(self):
         missing = self.client.get("/api/sessions")
@@ -57,6 +60,8 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(missing.status_code, 401)
         self.assertEqual(invalid.status_code, 401)
+        self.assertEqual(missing.json()["code"], "AUTH_REQUIRED")
+        self.assertEqual(invalid.json()["code"], "AUTH_INVALID")
 
     def test_protected_endpoints_reject_missing_authentication(self):
         cases = [
@@ -87,6 +92,8 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(expired.status_code, 401)
         self.assertEqual(malformed.status_code, 401)
+        self.assertEqual(expired.json()["code"], "AUTH_INVALID")
+        self.assertEqual(malformed.json()["code"], "AUTH_INVALID")
         self.assertFalse(APIKey.objects.filter(pk=api_key.pk).exists())
 
     def test_login_rejects_invalid_and_inactive_users(self):
@@ -110,6 +117,9 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(empty.status_code, 400)
         self.assertEqual(invalid.status_code, 403)
         self.assertEqual(inactive.status_code, 403)
+        self.assertEqual(empty.json()["code"], "VALIDATION_ERROR")
+        self.assertEqual(invalid.json()["code"], "AUTH_INVALID")
+        self.assertEqual(inactive.json()["code"], "AUTH_FORBIDDEN")
 
     def test_route_guards_return_stable_errors_when_called_directly(self):
         import deepseek_api.api as api_module
@@ -138,6 +148,43 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(
             api_module.delete_external_model(missing_session, SimpleNamespace(model_name=""))[0],
             400,
+        )
+
+    def test_malformed_request_uses_unified_validation_error(self):
+        client = self.authenticated_client("validation-user")
+
+        response = client.post(
+            "/api/llm/chat",
+            data=json.dumps({"session_id": "missing-input"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "VALIDATION_ERROR")
+        self.assertTrue(response.json()["details"])
+
+    def test_throttled_exception_uses_retry_after_and_stable_code(self):
+        import deepseek_api.api as api_module
+
+        response = api_module.api.on_exception(SimpleNamespace(), Throttled(11))
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(json.loads(response.content)["code"], "RATE_LIMITED")
+        self.assertEqual(response["Retry-After"], "11")
+
+    @patch("deepseek_api.api.get_allowed_providers", side_effect=RuntimeError("unexpected"))
+    def test_unexpected_exception_uses_safe_internal_error_response(self, _get_providers):
+        client = self.authenticated_client("internal-error-user")
+
+        response = client.get("/api/llm/providers")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.json(),
+            {
+                "code": "INTERNAL_ERROR",
+                "error": "服务内部错误，请稍后再试",
+            },
         )
 
     @patch("deepseek_api.api.authenticate")
@@ -339,7 +386,8 @@ class ApiIntegrationTests(TestCase):
             content_type="application/json",
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["code"], "MODEL_UNAVAILABLE")
         self.assertEqual(ExternalLLMAPI.objects.count(), 0)
 
     @patch("openai.OpenAI")
@@ -362,6 +410,7 @@ class ApiIntegrationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "VALIDATION_ERROR")
 
     @patch("deepseek_api.api.generate_with_user_llm", return_value="history answer")
     def test_chat_on_mode_uses_recent_history(self, _generate):
