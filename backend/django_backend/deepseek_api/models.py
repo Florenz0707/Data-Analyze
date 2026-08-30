@@ -2,7 +2,9 @@ import logging
 import random
 import string
 import time
+import uuid
 
+from django.conf import settings
 from django.db import models
 from django.db.models import F
 
@@ -93,10 +95,16 @@ class ConversationSession(models.Model):
 
 
 class Session(models.Model):
-    """开发版：新会话表，记录 session_id 与 user 的对应关系。"""
+    """当前 API 使用的会话实体。"""
 
     session_id = models.CharField(max_length=100, db_index=True)
-    user = models.CharField(max_length=100, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="chat_sessions",
+    )
+    title = models.CharField(max_length=200, blank=True, default="")
+    next_history_sequence = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -104,18 +112,26 @@ class Session(models.Model):
         db_table = "deepseek_api_session"
         unique_together = ("session_id", "user")
         indexes = [
-            models.Index(fields=["user", "updated_at"]),
+            models.Index(
+                fields=["user", "updated_at"],
+                name="deepseek_api_user_time_idx",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.user}:{self.session_id}"
+        return f"{self.user.username}:{self.session_id}"
 
 
 class History(models.Model):
-    """开发版：新历史表，按轮存储对话。"""
+    """当前 API 使用的对话轮次，删除所属 Session 时级联删除。"""
 
-    session_id = models.CharField(max_length=100, db_index=True)
-    user = models.CharField(max_length=100, db_index=True)
+    session = models.ForeignKey(
+        Session,
+        on_delete=models.CASCADE,
+        related_name="histories",
+    )
+    sequence = models.PositiveIntegerField()
+    message_id = models.UUIDField(default=uuid.uuid4, editable=False)
     user_input = models.TextField(blank=True, null=True)
     response = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -123,11 +139,24 @@ class History(models.Model):
     class Meta:
         db_table = "deepseek_api_history"
         indexes = [
-            models.Index(fields=["session_id", "user", "created_at"]),
+            models.Index(
+                fields=["session", "created_at", "id"],
+                name="deepseek_api_hist_cursor_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["session", "sequence"],
+                name="deepseek_api_hist_seq_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["session", "message_id"],
+                name="deepseek_api_hist_msg_uniq",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.user}:{self.session_id}@{self.pk}"
+        return f"{self.session.user}:{self.session.session_id}@{self.pk}"
 
 
 class UserLLMPreference(models.Model):

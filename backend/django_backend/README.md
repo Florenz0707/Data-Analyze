@@ -99,6 +99,7 @@
 
 - 数据迁移：
   - uv run python manage.py migrate （或激活虚拟环境后直接 python manage.py migrate）
+  - 0007 迁移会把旧 History 绑定到 Session，并删除无法匹配所属 Session 的孤立记录；0008 会把 Session 用户名迁移为 Django User 外键，并清理无法匹配用户的 Session；生产迁移前请先备份数据库。
 - 可选：初始化命令（如有需要）
   - uv run python manage.py initdb
     - 仅迁移不写入种子：uv run python manage.py initdb --no-seed
@@ -123,6 +124,13 @@ uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit
 ```
 
 当前测试覆盖配置校验、Token、历史选择、缓存、注册登录、会话隔离、Chat 缓存和模型失败路径。
+
+### 6.2 Session/History 数据契约
+
+- `History` 通过数据库 ForeignKey 属于 `Session`，删除 Session 会级联删除 History。
+- `Session.user` 通过 Django User 外键归属用户；同一 Session 的 Chat 写入使用行锁、单调序号和可选 `message_id` 幂等。
+- `GET /api/sessions/history` 返回每条记录的 `id`、`created_at`、正文和 `before_cursor`/`after_cursor` 复合分页游标；旧 ID 参数仍兼容。
+- `POST /api/sessions` 支持可选 `title`；不传时默认使用 `session_id`。
 
 ## 7. 常见问题
 

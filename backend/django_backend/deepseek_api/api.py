@@ -1,9 +1,15 @@
+import base64
+import binascii
+import json
 import logging
+import uuid
+from datetime import UTC, datetime
 
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db import transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from ninja import NinjaAPI, Router
 
@@ -41,6 +47,44 @@ from .services import (
 logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.1.0")
+
+
+def _get_authenticated_user(request):
+    """Resolve the legacy token username to the canonical Django User."""
+    if not request.auth:
+        return None
+    return User.objects.filter(username=request.auth.user).first()
+
+
+def _encode_history_cursor(item: History) -> str:
+    payload = {"created_at": item.created_at.isoformat(), "id": item.id}
+    encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    return base64.urlsafe_b64encode(encoded).decode("ascii").rstrip("=")
+
+
+def _decode_history_cursor(value: str) -> tuple[datetime, int] | None:
+    try:
+        padded = value + "=" * (-len(value) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+        created_at = datetime.fromisoformat(payload["created_at"])
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=UTC)
+        history_id = int(payload["id"])
+        if history_id <= 0:
+            return None
+        return created_at, history_id
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError, binascii.Error):
+        return None
+
+
+def _get_locked_session(user: User, session_id: str) -> Session:
+    """Get or create a session, then lock it for serialized writes."""
+    session, _ = Session.objects.get_or_create(
+        session_id=session_id,
+        user=user,
+        defaults={"title": session_id[:200]},
+    )
+    return Session.objects.select_for_update().get(pk=session.pk)
 
 
 def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> bool:
@@ -169,65 +213,86 @@ def chat(request, data: ChatIn):
     user_input = (data.user_input or "").strip()
     if not user_input:
         return 400, {"error": "请输入消息内容"}
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
 
-    # 3. 获取或创建新会话（基于新表 Session）
-    username = request.auth.user
-    session, _ = Session.objects.get_or_create(session_id=sid, user=username)
+    # 将会话创建、历史读取、模型调用和首条历史写入放在一个事务中。
+    # 同一 Session 的请求通过行锁串行化，模型失败时空 Session 也会回滚。
+    with transaction.atomic():
+        session = _get_locked_session(user, sid)
+        message_id = data.message_id or uuid.uuid4()
+        previous = History.objects.filter(session=session, message_id=message_id).first()
+        if previous is not None:
+            return {"reply": previous.response or ""}
 
-    # 4. 构造历史上下文（基于新表 History）
-    hist_cfg = get_history_cfg()
-    use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
-    qs = History.objects.filter(session_id=sid, user=username).order_by("created_at", "id")
-    turns_all = [(h.user_input or "", h.response or "") for h in qs]
-    if use_history_mode == "on":
-        selected = turns_all[-int(hist_cfg.get("max_turns", 8)) :]
-    elif use_history_mode == "auto":
-        selected = select_history_by_similarity(user_input, turns_all, hist_cfg)
-    else:
-        selected = []
-    query = compose_prompt_with_history(selected, user_input, hist_cfg)
-    logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
+        # 4. 构造历史上下文（通过 ForeignKey 约束到当前 Session）
+        hist_cfg = get_history_cfg()
+        use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
+        qs = History.objects.filter(session=session).order_by("sequence")
+        turns_all = [(h.user_input or "", h.response or "") for h in qs]
+        if use_history_mode == "on":
+            selected = turns_all[-int(hist_cfg.get("max_turns", 8)) :]
+        elif use_history_mode == "auto":
+            selected = select_history_by_similarity(user_input, turns_all, hist_cfg)
+        else:
+            selected = []
+        query = compose_prompt_with_history(selected, user_input, hist_cfg)
+        logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
 
-    # 5. 调用大模型（带缓存）。此处使用用户绑定的 LLM（若未设置，则自动创建默认偏好）。
-    user_obj = request.auth
-    user_pref = services.get_or_create_user_pref(user_obj)
-    cached_reply = get_cached_reply(
-        query, sid, user_obj, provider=user_pref.provider, model=user_pref.model or None
-    )
-    if cached_reply:
-        reply = cached_reply
-    else:
-        try:
-            reply = generate_with_user_llm(user_obj, query)
-            set_cached_reply(
-                query,
-                reply,
-                sid,
-                user_obj,
-                provider=user_pref.provider,
-                model=user_pref.model or None,
-            )
-        except RuntimeError as e:
-            return 503, {
-                "error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"
-            }
-    logger.info(f"TopKLogSystem的回复：\n{reply}\n")
+        # 5. 调用大模型（带缓存）。
+        user_obj = request.auth
+        user_pref = services.get_or_create_user_pref(user_obj)
+        cached_reply = get_cached_reply(
+            query, sid, user_obj, provider=user_pref.provider, model=user_pref.model or None
+        )
+        if cached_reply:
+            reply = cached_reply
+        else:
+            try:
+                reply = generate_with_user_llm(user_obj, query)
+                set_cached_reply(
+                    query,
+                    reply,
+                    sid,
+                    user_obj,
+                    provider=user_pref.provider,
+                    model=user_pref.model or None,
+                )
+            except RuntimeError as e:
+                transaction.set_rollback(True)
+                return 503, {
+                    "error": f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。"
+                }
+        logger.info(f"TopKLogSystem的回复：\n{reply}\n")
 
-    # 6. 写入结构化历史并更新会话时间
-    History.objects.create(session_id=sid, user=username, user_input=user_input, response=reply)
-    session.updated_at = timezone.now()
-    session.save(update_fields=["updated_at"])
+        # 6. 写入结构化历史并更新会话时间
+        session.next_history_sequence = F("next_history_sequence") + 1
+        session.save(update_fields=["next_history_sequence"])
+        session.refresh_from_db(fields=["next_history_sequence"])
+        History.objects.create(
+            session=session,
+            sequence=session.next_history_sequence,
+            message_id=message_id,
+            user_input=user_input,
+            response=reply,
+        )
+        session.updated_at = timezone.now()
+        session.save(update_fields=["updated_at"])
 
     return {"reply": reply}
 
 
 @router.get(
-    "/sessions/history", response={200: HistoryListOut, 401: ErrorResponse, 404: ErrorResponse}
+    "/sessions/history",
+    response={200: HistoryListOut, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse},
 )
 def history(
     request,
     session_id: str,
     limit: int = 200,
+    before_cursor: str | None = None,
+    after_cursor: str | None = None,
     before_id: int | None = None,
     after_id: int | None = None,
 ):
@@ -238,32 +303,95 @@ def history(
     if not request.auth:
         return 401, {"error": "未授权"}
 
+    if before_cursor and before_id is not None:
+        return 400, {"error": "before_cursor 和 before_id 不能同时使用"}
+    if after_cursor and after_id is not None:
+        return 400, {"error": "after_cursor 和 after_id 不能同时使用"}
+    if (before_cursor or before_id is not None) and (after_cursor or after_id is not None):
+        return 400, {"error": "before 和 after 游标不能同时使用"}
+
     sid = (session_id or "").strip() or "default_session"
-    username = request.auth.user
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
 
     # 校验会话存在
-    if not Session.objects.filter(session_id=sid, user=username).exists():
+    session = Session.objects.filter(session_id=sid, user=user).first()
+    if session is None:
         return 404, {"error": "会话不存在"}
 
     # 分页与排序
-    qs = History.objects.filter(session_id=sid, user=username)
-    if before_id is not None:
-        qs = qs.filter(id__lt=before_id).order_by("-id")
+    qs = History.objects.filter(session=session)
+    if before_cursor:
+        cursor = _decode_history_cursor(before_cursor)
+        if cursor is None:
+            return 400, {"error": "before_cursor 无效"}
+        created_at, history_id = cursor
+        qs = qs.filter(
+            Q(created_at__lt=created_at) | Q(created_at=created_at, id__lt=history_id)
+        ).order_by("-created_at", "-id")
+    elif after_cursor:
+        cursor = _decode_history_cursor(after_cursor)
+        if cursor is None:
+            return 400, {"error": "after_cursor 无效"}
+        created_at, history_id = cursor
+        qs = qs.filter(
+            Q(created_at__gt=created_at) | Q(created_at=created_at, id__gt=history_id)
+        ).order_by("created_at", "id")
+    elif before_id is not None:
+        qs = qs.filter(id__lt=before_id).order_by("-created_at", "-id")
     elif after_id is not None:
-        qs = qs.filter(id__gt=after_id).order_by("id")
+        qs = qs.filter(id__gt=after_id).order_by("created_at", "id")
     else:
-        qs = qs.order_by("id")
+        qs = qs.order_by("created_at", "id")
 
     limit = max(1, min(int(limit or 200), 1000))
     items = list(qs[:limit])
 
     # 若使用 before_id 且倒序取，需要再翻转为升序返回
-    if before_id is not None:
+    if before_cursor or before_id is not None:
         items = list(reversed(items))
 
-    turns = [{"user_input": it.user_input or "", "response": it.response or ""} for it in items]
-
-    return {"turns": turns}
+    turns = [
+        {
+            "id": it.id,
+            "sequence": it.sequence,
+            "message_id": it.message_id,
+            "created_at": it.created_at,
+            "user_input": it.user_input or "",
+            "response": it.response or "",
+        }
+        for it in items
+    ]
+    first_id = items[0].id if items else None
+    last_id = items[-1].id if items else None
+    first_cursor = _encode_history_cursor(items[0]) if items else None
+    last_cursor = _encode_history_cursor(items[-1]) if items else None
+    older = (
+        Q(created_at__lt=items[0].created_at)
+        | Q(created_at=items[0].created_at, id__lt=items[0].id)
+        if items
+        else Q(pk__in=[])
+    )
+    newer = (
+        Q(created_at__gt=items[-1].created_at)
+        | Q(created_at=items[-1].created_at, id__gt=items[-1].id)
+        if items
+        else Q(pk__in=[])
+    )
+    return {
+        "turns": turns,
+        "next_before_id": first_id,
+        "next_after_id": last_id,
+        "next_before_cursor": first_cursor,
+        "next_after_cursor": last_cursor,
+        "has_more_before": bool(
+            first_id and History.objects.filter(session=session).filter(older).exists()
+        ),
+        "has_more_after": bool(
+            last_id and History.objects.filter(session=session).filter(newer).exists()
+        ),
+    }
 
 
 @router.delete("/sessions/history", response={200: dict, 401: ErrorResponse, 404: ErrorResponse})
@@ -274,12 +402,15 @@ def clear_history(request, session_id: str = "default_session"):
         return 401, {"error": "未授权"}
 
     sid = (session_id or "").strip() or "default_session"
-    username = request.auth.user
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
 
-    if not Session.objects.filter(session_id=sid, user=username).exists():
+    session = Session.objects.filter(session_id=sid, user=user).first()
+    if session is None:
         return 404, {"error": "会话不存在"}
 
-    History.objects.filter(session_id=sid, user=username).delete()
+    History.objects.filter(session=session).delete()
     return {"message": "历史记录已清空"}
 
 
@@ -311,12 +442,15 @@ def create_session(request, data: SessionIn):
     session_id = (data.session_id or "").strip()
     if not session_id:
         return 400, {"error": "session_id 不能为空"}
-    username = request.auth.user  # 使用用户名
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
     # 判断是否已存在
-    if Session.objects.filter(session_id=session_id, user=username).exists():
+    if Session.objects.filter(session_id=session_id, user=user).exists():
         return 409, {"error": "会话已存在"}
-    Session.objects.create(session_id=session_id, user=username)
-    return 201, {"session_id": session_id}
+    title = (data.title or "").strip()[:200] or session_id
+    Session.objects.create(session_id=session_id, user=user, title=title)
+    return 201, {"session_id": session_id, "title": title}
 
 
 @router.delete(
@@ -329,8 +463,10 @@ def delete_session(request, data: SessionIn):
     session_id = (data.session_id or "").strip()
     if not session_id:
         return 400, {"error": "session_id 不能为空"}
-    username = request.auth.user
-    qs = Session.objects.filter(session_id=session_id, user=username)
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
+    qs = Session.objects.filter(session_id=session_id, user=user)
     if not qs.exists():
         return 404, {"error": "会话不存在"}
     qs.delete()
@@ -342,9 +478,11 @@ def list_sessions(request):
     """根据 username 列出该用户的全部会话 ID，按最近更新时间倒序（读取 deepseek_api_session）。"""
     if not request.auth:
         return 401, {"error": "未授权"}
-    username = request.auth.user
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, {"error": "认证用户不存在"}
     session_ids = list(
-        Session.objects.filter(user=username)
+        Session.objects.filter(user=user)
         .order_by("-updated_at")
         .values_list("session_id", flat=True)
     )

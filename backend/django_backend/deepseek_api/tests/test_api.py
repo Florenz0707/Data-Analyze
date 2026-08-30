@@ -134,7 +134,7 @@ class ApiIntegrationTests(TestCase):
         )
 
         missing_session = SimpleNamespace(auth=APIKey(user="missing-user"))
-        self.assertEqual(api_module.clear_history(missing_session, "missing")[0], 404)
+        self.assertEqual(api_module.clear_history(missing_session, "missing")[0], 401)
         self.assertEqual(
             api_module.delete_external_model(missing_session, SimpleNamespace(model_name=""))[0],
             400,
@@ -178,15 +178,17 @@ class ApiIntegrationTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(create.status_code, 201)
+        user = User.objects.get(username="history-user")
+        session = Session.objects.get(session_id="history-session", user=user)
         History.objects.create(
-            session_id="history-session",
-            user="history-user",
+            session=session,
+            sequence=1,
             user_input="one",
             response="reply one",
         )
         History.objects.create(
-            session_id="history-session",
-            user="history-user",
+            session=session,
+            sequence=2,
             user_input="two",
             response="reply two",
         )
@@ -194,9 +196,7 @@ class ApiIntegrationTests(TestCase):
         listing = client.get("/api/sessions")
         history = client.get("/api/sessions/history", {"session_id": "history-session", "limit": 1})
         first_id, second_id = list(
-            History.objects.filter(session_id="history-session")
-            .order_by("id")
-            .values_list("id", flat=True)
+            History.objects.filter(session=session).order_by("id").values_list("id", flat=True)
         )
         before = client.get(
             "/api/sessions/history",
@@ -205,6 +205,30 @@ class ApiIntegrationTests(TestCase):
         after = client.get(
             "/api/sessions/history",
             {"session_id": "history-session", "after_id": first_id, "limit": 1},
+        )
+        before_cursor = client.get(
+            "/api/sessions/history",
+            {
+                "session_id": "history-session",
+                "before_cursor": after.json()["next_before_cursor"],
+                "limit": 1,
+            },
+        )
+        after_cursor = client.get(
+            "/api/sessions/history",
+            {
+                "session_id": "history-session",
+                "after_cursor": history.json()["next_after_cursor"],
+                "limit": 1,
+            },
+        )
+        invalid_pagination = client.get(
+            "/api/sessions/history",
+            {
+                "session_id": "history-session",
+                "before_id": second_id,
+                "after_id": first_id,
+            },
         )
         clear = client.delete("/api/sessions/history?session_id=history-session")
         deleted = client.delete(
@@ -217,11 +241,63 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(listing.json(), {"sessions": ["history-session"]})
         self.assertEqual(history.status_code, 200)
         self.assertEqual(len(history.json()["turns"]), 1)
+        self.assertEqual(history.json()["turns"][0]["id"], first_id)
+        self.assertEqual(history.json()["turns"][0]["sequence"], 1)
+        self.assertIn("message_id", history.json()["turns"][0])
+        self.assertIn("created_at", history.json()["turns"][0])
+        self.assertTrue(history.json()["has_more_after"])
+        self.assertIsInstance(history.json()["next_after_cursor"], str)
         self.assertEqual(before.json()["turns"][0]["user_input"], "one")
+        self.assertFalse(before.json()["has_more_before"])
         self.assertEqual(after.json()["turns"][0]["user_input"], "two")
+        self.assertFalse(after.json()["has_more_after"])
+        self.assertEqual(before_cursor.json()["turns"][0]["user_input"], "one")
+        self.assertEqual(after_cursor.json()["turns"][0]["user_input"], "two")
+        self.assertEqual(invalid_pagination.status_code, 400)
         self.assertEqual(clear.status_code, 200)
         self.assertEqual(deleted.status_code, 200)
         self.assertFalse(Session.objects.filter(session_id="history-session").exists())
+
+    def test_session_title_is_independent_and_delete_cascades_history(self):
+        client = self.authenticated_client("session-title-user")
+        create = client.post(
+            "/api/sessions",
+            data=json.dumps({"session_id": "titled-session", "title": "  项目讨论  "}),
+            content_type="application/json",
+        )
+        user = User.objects.get(username="session-title-user")
+        session = Session.objects.get(session_id="titled-session", user=user)
+        history = History.objects.create(
+            session=session,
+            sequence=1,
+            user_input="question",
+            response="answer",
+        )
+
+        self.assertEqual(create.status_code, 201)
+        self.assertEqual(create.json(), {"session_id": "titled-session", "title": "项目讨论"})
+        self.assertEqual(History.objects.filter(session=session).count(), 1)
+
+        deleted = client.delete(
+            "/api/sessions",
+            data=json.dumps({"session_id": "titled-session"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(deleted.status_code, 200)
+        self.assertFalse(History.objects.filter(pk=history.pk).exists())
+
+    def test_blank_session_title_falls_back_to_session_id(self):
+        client = self.authenticated_client("blank-title-user")
+
+        response = client.post(
+            "/api/sessions",
+            data=json.dumps({"session_id": "fallback-session", "title": "  "}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["title"], "fallback-session")
 
     def test_session_creation_and_deletion_validate_empty_and_duplicate_ids(self):
         client = self.authenticated_client("session-validation-user")
@@ -244,6 +320,7 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(empty_create.status_code, 400)
         self.assertEqual(create.status_code, 201)
+        self.assertEqual(create.json()["title"], "session")
         self.assertEqual(duplicate.status_code, 409)
         self.assertEqual(empty_delete.status_code, 400)
 
@@ -294,12 +371,16 @@ class ApiIntegrationTests(TestCase):
             data=json.dumps({"session_id": "history-chat"}),
             content_type="application/json",
         )
+        user = User.objects.get(username="history-chat-user")
+        session = Session.objects.get(session_id="history-chat", user=user)
         History.objects.create(
-            session_id="history-chat",
-            user="history-chat-user",
+            session=session,
+            sequence=1,
             user_input="old question",
             response="old answer",
         )
+        session.next_history_sequence = 1
+        session.save(update_fields=["next_history_sequence"])
 
         response = client.post(
             "/api/llm/chat",
@@ -315,6 +396,32 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(_generate.call_count, 1)
+
+    @patch("deepseek_api.api.generate_with_user_llm", return_value="idempotent answer")
+    def test_chat_message_id_makes_retries_idempotent(self, generate):
+        client = self.authenticated_client("idempotent-chat-user")
+        payload = {
+            "session_id": "idempotent-session",
+            "user_input": "same request",
+            "message_id": "b4b4b4b4-1111-4aaa-8bbb-123456789abc",
+        }
+
+        first = client.post(
+            "/api/llm/chat", data=json.dumps(payload), content_type="application/json"
+        )
+        second = client.post(
+            "/api/llm/chat", data=json.dumps(payload), content_type="application/json"
+        )
+
+        user = User.objects.get(username="idempotent-chat-user")
+        session = Session.objects.get(session_id="idempotent-session", user=user)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json(), second.json())
+        self.assertEqual(generate.call_count, 1)
+        self.assertEqual(History.objects.filter(session=session).count(), 1)
+        self.assertEqual(History.objects.get(session=session).sequence, 1)
+        self.assertEqual(session.next_history_sequence, 1)
 
     def test_refresh_uses_cookie_and_rotates_access_expiry(self):
         self.register_and_login("refresh-user")
@@ -414,8 +521,10 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(first.json(), {"reply": "fake answer"})
         self.assertEqual(second.json(), {"reply": "fake answer"})
         self.assertEqual(generate.call_count, 1)
-        self.assertEqual(History.objects.filter(session_id="chat-session").count(), 2)
-        self.assertTrue(Session.objects.filter(session_id="chat-session").exists())
+        user = User.objects.get(username="chat-user")
+        session = Session.objects.get(session_id="chat-session", user=user)
+        self.assertEqual(History.objects.filter(session=session).count(), 2)
+        self.assertTrue(Session.objects.filter(pk=session.pk).exists())
 
     @patch("deepseek_api.api.generate_with_user_llm", side_effect=RuntimeError("fake unavailable"))
     def test_chat_returns_service_unavailable_when_model_is_disabled(self, _generate):
@@ -429,3 +538,7 @@ class ApiIntegrationTests(TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertIn("服务未启用模型", response.json()["error"])
+        self.assertFalse(
+            Session.objects.filter(session_id="session", user__username="unavailable-user").exists()
+        )
+        self.assertFalse(History.objects.exists())

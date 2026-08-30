@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import UUID
+
 from ninja import Schema
 
 
@@ -10,6 +13,7 @@ class ChatIn(Schema):
     session_id: str = "default_session"
     user_input: str
     use_history: str | None = None
+    message_id: UUID | None = None
 
 
 class ChatOut(Schema):
@@ -17,12 +21,22 @@ class ChatOut(Schema):
 
 
 class HistoryItem(Schema):
+    id: int
+    sequence: int
+    message_id: UUID
+    created_at: datetime
     user_input: str
     response: str
 
 
 class HistoryListOut(Schema):
     turns: list[HistoryItem]
+    next_before_id: int | None = None
+    next_after_id: int | None = None
+    next_before_cursor: str | None = None
+    next_after_cursor: str | None = None
+    has_more_before: bool = False
+    has_more_after: bool = False
 
 
 class ErrorResponse(Schema):
@@ -50,10 +64,12 @@ class SelectLLMOut(Schema):
 
 class SessionIn(Schema):
     session_id: str = "default_session"
+    title: str | None = None
 
 
 class SessionOut(Schema):
     session_id: str
+    title: str = ""
 
 
 class SessionListOut(Schema):

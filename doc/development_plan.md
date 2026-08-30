@@ -1,7 +1,7 @@
 # 智能故障日志分析系统：后续开发与验收计划
 
 > 创建日期：2026-08-28
-> 当前状态：规划中
+> 当前状态：执行中
 > 关联文档：[`project_interview_guide.md`](./project_interview_guide.md)
 > 适用范围：前端、Django API、RAG、模型服务、数据、测试、安全与 Agent 化演进
 
@@ -105,18 +105,18 @@
 
 > 更新要求：每个开发周期至少更新一次状态、负责人和预计验收时间。
 
-| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                       | 负责人 | 预计验收   | 实际验收   |
-| ------ | ------------------------------ | -----: | ---------- | -------------------------- | ------ | ---------- | ---------- |
-| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）            | Codex  | 2026-08-29 | 2026-08-29 |
-| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                     | Codex  | TODO       | -          |
-| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（模型实例隔离完成） | Codex  | TODO       | -          |
-| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 未开始                     | TODO   | TODO       | -          |
-| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 未开始                     | TODO   | TODO       | -          |
-| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 未开始                     | TODO   | TODO       | -          |
-| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                     | TODO   | TODO       | -          |
-| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                     | TODO   | TODO       | -          |
-| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                     | TODO   | TODO       | -          |
-| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                     | TODO   | TODO       | -          |
+| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                               | 负责人 | 预计验收   | 实际验收   |
+| ------ | ------------------------------ | -----: | ---------- | -------------------------------------------------- | ------ | ---------- | ---------- |
+| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                    | Codex  | 2026-08-29 | 2026-08-29 |
+| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                             | Codex  | TODO       | -          |
+| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（模型实例隔离、Session/History 一致性完成） | Codex  | TODO       | -          |
+| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 未开始                                             | TODO   | TODO       | -          |
+| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 未开始                                             | TODO   | TODO       | -          |
+| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 未开始                                             | TODO   | TODO       | -          |
+| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                             | TODO   | TODO       | -          |
+| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                             | TODO   | TODO       | -          |
+| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                             | TODO   | TODO       | -          |
+| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                             | TODO   | TODO       | -          |
 
 ### 3.1 推荐推进顺序
 
@@ -333,14 +333,17 @@ flowchart LR
 
 #### Session/History 一致性
 
-- [ ] 将 `History` 与 `Session` 建立 ForeignKey；
-- [ ] 设计并验证数据迁移；
-- [ ] 处理现有孤立 History；
-- [ ] 删除 Session 时按设计级联或归档 History；
-- [ ] 创建 Session 和首条消息使用事务；
-- [ ] 为 Session 标题增加独立字段；
-- [ ] History API 返回 ID、时间和分页游标；
-- [ ] 增加多用户越权测试。
+- [x] 将 `History` 与 `Session` 建立 ForeignKey；
+- [x] 设计并验证数据迁移；
+- [x] 处理现有孤立 History；
+- [x] 删除 Session 时按设计级联或归档 History；
+- [x] 创建 Session 和首条消息使用事务；
+- [x] 为 Session 标题增加独立字段；
+- [x] History API 返回 ID、时间和分页游标；
+- [x] 增加多用户越权测试。
+- [x] 将 `Session.user` 从用户名字符串迁移为 Django `User` 外键；
+- [x] 以 Session 行锁、单调序号和 `message_id` 幂等保证同一会话写入一致性；
+- [x] 使用 `(created_at, id)` 复合游标，并保留旧 ID 游标兼容。
 
 #### 缓存正确性
 
@@ -384,12 +387,12 @@ flowchart LR
 ### 6.5 状态记录
 
 ```text
-状态：进行中（模型实例隔离子任务完成）
+状态：进行中（模型实例隔离、Session/History 一致性及其三项进一步改进完成）
 负责人：Codex
-更新时间：2026-08-29
-已完成：移除请求期全局 LlamaIndex 模型覆盖；显式传递 LLM/Embedding；新增线程安全有界实例缓存；用户模型名传入 Provider；缓存键加入 Provider、模型、endpoint 与版本；Fake Provider 并发隔离测试通过
-剩余工作：Session/History 外键与迁移、删除一致性、事务、错误码和限流等 M2 子任务
-验收证据：E-013、`doc/m2_model_instance_isolation.md`、`deepseek_project/model_runtime.py`、`deepseek_project/tests/test_model_runtime.py`
+更新时间：2026-08-30
+已完成：移除请求期全局 LlamaIndex 模型覆盖；显式传递 LLM/Embedding；新增线程安全有界实例缓存；用户模型名传入 Provider；缓存键加入 Provider、模型、endpoint 与版本；Fake Provider 并发隔离测试通过；完成 Session/History 外键迁移、孤立数据处理、删除级联、事务、标题、Django User 外键、同会话行锁/幂等写入和 `(created_at, id)` 复合游标
+剩余工作：缓存正确性、错误语义、限流和真实部署并发压测等 M2 子任务
+验收证据：E-013、E-014、E-015、`doc/m2_model_instance_isolation.md`、`doc/m2_session_history_consistency.md`、`deepseek_api/migrations/0007_session_history_foreign_key.py`、`deepseek_api/migrations/0008_session_user_and_history_ordering.py`
 ```
 
 ---
@@ -1136,29 +1139,33 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 ### 17.3 安全与可靠性指标
 
-| 指标                  | 当前基线 |  目标 | 最新实测 | 证据                                  | 更新时间   |
-| --------------------- | -------: | ----: | -------: | ------------------------------------- | ---------- |
-| 并发模型串台          |   未测试 |     0 |        0 | E-013（50 个 Fake Provider 并发请求） | 2026-08-29 |
-| 跨用户越权            |   未测试 |     0 |     TODO | TODO                                  | -          |
-| 明文外部密钥          | 当前存在 |     0 |     TODO | TODO                                  | -          |
-| SSRF 危险地址拦截率   |   未测试 |  100% |     TODO | TODO                                  | -          |
-| Trace 完整率          |   未实现 | ≥ 99% |     TODO | TODO                                  | -          |
-| 聊天请求成功率        |     100% | ≥ 99% |     100% | E-001                                 | 2026-08-28 |
-| 高危 Prompt Injection |   未测试 |     0 |     TODO | TODO                                  | -          |
+| 指标                            | 当前基线 |  目标 | 最新实测 | 证据                                             | 更新时间   |
+| ------------------------------- | -------: | ----: | -------: | ------------------------------------------------ | ---------- |
+| 并发模型串台                    |   未测试 |     0 |        0 | E-013（50 个 Fake Provider 并发请求）            | 2026-08-29 |
+| 跨用户越权                      |   未测试 |     0 |        0 | E-014（API 集成测试：另一用户读取/删除均为 404） | 2026-08-29 |
+| Session 删除后孤立 History      |   未测试 |     0 |        0 | E-014（级联删除 API 测试）                       | 2026-08-29 |
+| 模型失败后残留空 Session        |   未测试 |     0 |        0 | E-014（事务回滚 API 测试）                       | 2026-08-29 |
+| 同 Session 重复 message_id 写入 |   未测试 |     0 |        0 | E-015（幂等重试 API 测试）                       | 2026-08-30 |
+| 复合游标边界重复/遗漏           |   未测试 |     0 |        0 | E-015（before/after 游标 API 测试）              | 2026-08-30 |
+| 明文外部密钥                    | 当前存在 |     0 |     TODO | TODO                                             | -          |
+| SSRF 危险地址拦截率             |   未测试 |  100% |     TODO | TODO                                             | -          |
+| Trace 完整率                    |   未实现 | ≥ 99% |     TODO | TODO                                             | -          |
+| 聊天请求成功率                  |     100% | ≥ 99% |     100% | E-001                                            | 2026-08-28 |
+| 高危 Prompt Injection           |   未测试 |     0 |     TODO | TODO                                             | -          |
 
 ### 17.4 工程质量门禁
 
-| 指标                    |           目标 |               最新实测 | 测试条件                                               | 证据         | 更新时间   |
-| ----------------------- | -------------: | ---------------------: | ------------------------------------------------------ | ------------ | ---------- |
-| pre-commit Hook 通过率  |           100% |          12/12（100%） | 全部已跟踪文件；新增配置显式复验                       | E-011        | 2026-08-28 |
-| ESLint 错误/警告        |            0/0 |                    0/0 | Node 20.20.2、ESLint 10.9.1                            | E-011        | 2026-08-28 |
-| Prettier 格式差异       |              0 |                      0 | Prettier 3.9.6                                         | E-011        | 2026-08-28 |
-| 前端生产构建            |           通过 |                   通过 | Vite 7.3.6、4364 modules                               | E-001、E-011 | 2026-08-28 |
-| 前端运行时依赖漏洞      | 高危 0、中危 0 |         高危 7、中危 2 | `npm audit --omit=dev`                                 | R-011        | 2026-08-28 |
-| 后端测试                |       全部通过 |             43/43 通过 | `DJANGO_TESTING=true`；独立测试数据库；无真实模型/网络 | E-002        | 2026-08-29 |
-| 后端核心模块行覆盖率    |          ≥ 80% |                    87% | 43 tests；排除 migrations/tests/asgi/wsgi              | E-002        | 2026-08-29 |
-| 后端关键 API 覆盖率     |           100% |                   100% | `deepseek_api/api.py` 正常、异常、认证与参数分支       | E-002        | 2026-08-29 |
-| 前端 Store/API 行覆盖率 |          ≥ 75% | API 100%、Store 92.28% | Vitest v8；10 个文件、14 tests                         | E-002        | 2026-08-29 |
+| 指标                    |           目标 |               最新实测 | 测试条件                                                   | 证据         | 更新时间   |
+| ----------------------- | -------------: | ---------------------: | ---------------------------------------------------------- | ------------ | ---------- |
+| pre-commit Hook 通过率  |           100% |          12/12（100%） | 全部已跟踪文件；新增配置显式复验                           | E-011        | 2026-08-28 |
+| ESLint 错误/警告        |            0/0 |                    0/0 | Node 20.20.2、ESLint 10.9.1                                | E-011        | 2026-08-28 |
+| Prettier 格式差异       |              0 |                      0 | Prettier 3.9.6                                             | E-011        | 2026-08-28 |
+| 前端生产构建            |           通过 |                   通过 | Vite 7.3.6、4364 modules                                   | E-001、E-011 | 2026-08-28 |
+| 前端运行时依赖漏洞      | 高危 0、中危 0 |         高危 7、中危 2 | `npm audit --omit=dev`                                     | R-011        | 2026-08-28 |
+| 后端测试                |       全部通过 |             50/50 通过 | `DJANGO_TESTING=true`；独立测试数据库；无真实模型/网络     | E-015        | 2026-08-30 |
+| 后端核心模块行覆盖率    |          ≥ 80% |                    89% | 1059 statements、50 tests；排除 migrations/tests/asgi/wsgi | E-015        | 2026-08-30 |
+| 后端关键 API 覆盖率     |           100% |                    95% | `deepseek_api/api.py`；新增游标错误分支尚未全部覆盖        | E-015        | 2026-08-30 |
+| 前端 Store/API 行覆盖率 |          ≥ 75% | API 100%、Store 92.28% | Vitest v8；10 个文件、14 tests                             | E-002        | 2026-08-29 |
 
 ---
 
@@ -1166,42 +1173,46 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 > 只有证据登记完成后，里程碑 Checklist 才能勾选。
 
-| 编号  | 里程碑 | 证据类型             | 路径或链接                                                                                                                                                                                                                                                                       | 结论                                                                                                                       | 验收人 | 日期       |
-| ----- | ------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- |
-| E-001 | M0     | 基线报告             | `evaluation/m0/baseline_report.md`、`evaluation/m0/evidence/`、`evaluation/m0/evidence/double_review_results.json`、`evaluation/m0/evidence/double_review_annotations.csv`、`evaluation/m0/evidence/adjudication_results.json`、`evaluation/m0/evidence/dataset_validation.json` | 自动化基线、严格数据集校验、10 条结构化评分和 10 条冲突裁决完成；评审包含 AI，非双真人                                     | Codex  | 2026-08-29 |
-| E-012 | M0     | 评测工具边界回归     | `evaluation/m0/test_evaluation_tools.py`、`evaluation/m0/evidence/evaluation_tool_tests.json`                                                                                                                                                                                    | 3/3 通过；空结果和无正样本不再触发未定义异常                                                                               | Codex  | 2026-08-28 |
-| E-002 | M1     | 测试与覆盖率         | `backend/django_backend/deepseek_api/tests/`、`backend/django_backend/deepseek_project/tests/`、`frontend/vue_frontend/tests/`、`frontend/vue_frontend/vitest.config.js`、`.github/workflows/quality.yml`                                                                        | 后端 43/43；核心覆盖率 87%，API 100%；前端 API 100%、Store 92.28%、总体 94.02%；Fake Provider/临时 Chroma 与 Mock E2E 通过 | Codex  | 2026-08-29 |
-| E-013 | M2     | 模型实例隔离报告     | `doc/m2_model_instance_isolation.md`、`backend/django_backend/deepseek_project/model_runtime.py`、`backend/django_backend/deepseek_project/tests/test_model_runtime.py`、`backend/django_backend/deepseek_api/tests/test_services.py`                                            | 请求不修改全局 LlamaIndex 模型状态；50 个并发 Fake Provider 测试通过；模型选择、endpoint 和缓存隔离通过                    | Codex  | 2026-08-29 |
-| E-003 | M2     | 并发与数据迁移报告   | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-004 | M3     | 安全测试报告         | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-005 | M4     | 检索评测报告         | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-006 | M5     | 生成质量报告         | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-007 | M6     | 性能报告             | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-008 | M7     | 故障演练与部署报告   | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-009 | M8     | Agent 评测和安全报告 | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-010 | M9     | Multi-Agent 对照实验 | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                     | TODO   | -          |
-| E-011 | M1     | 工程质量门禁         | `AGENTS.md`、`.pre-commit-config.yaml`、`ruff.toml`、`.prettierrc.json`、`frontend/vue_frontend/eslint.config.js`                                                                                                                                                                | pre-commit、ESLint、Prettier、前端构建和后端 Ruff 全部通过；CI workflow 已加入，分支保护待平台配置                         | Codex  | 2026-08-29 |
+| 编号  | 里程碑 | 证据类型                         | 路径或链接                                                                                                                                                                                                                                                                       | 结论                                                                                                                                              | 验收人 | 日期       |
+| ----- | ------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- |
+| E-001 | M0     | 基线报告                         | `evaluation/m0/baseline_report.md`、`evaluation/m0/evidence/`、`evaluation/m0/evidence/double_review_results.json`、`evaluation/m0/evidence/double_review_annotations.csv`、`evaluation/m0/evidence/adjudication_results.json`、`evaluation/m0/evidence/dataset_validation.json` | 自动化基线、严格数据集校验、10 条结构化评分和 10 条冲突裁决完成；评审包含 AI，非双真人                                                            | Codex  | 2026-08-29 |
+| E-012 | M0     | 评测工具边界回归                 | `evaluation/m0/test_evaluation_tools.py`、`evaluation/m0/evidence/evaluation_tool_tests.json`                                                                                                                                                                                    | 3/3 通过；空结果和无正样本不再触发未定义异常                                                                                                      | Codex  | 2026-08-28 |
+| E-002 | M1     | 测试与覆盖率                     | `backend/django_backend/deepseek_api/tests/`、`backend/django_backend/deepseek_project/tests/`、`frontend/vue_frontend/tests/`、`frontend/vue_frontend/vitest.config.js`、`.github/workflows/quality.yml`                                                                        | 后端 43/43；核心覆盖率 87%，API 100%；前端 API 100%、Store 92.28%、总体 94.02%；Fake Provider/临时 Chroma 与 Mock E2E 通过                        | Codex  | 2026-08-29 |
+| E-013 | M2     | 模型实例隔离报告                 | `doc/m2_model_instance_isolation.md`、`backend/django_backend/deepseek_project/model_runtime.py`、`backend/django_backend/deepseek_project/tests/test_model_runtime.py`、`backend/django_backend/deepseek_api/tests/test_services.py`                                            | 请求不修改全局 LlamaIndex 模型状态；50 个并发 Fake Provider 测试通过；模型选择、endpoint 和缓存隔离通过                                           | Codex  | 2026-08-29 |
+| E-014 | M2     | Session/History 一致性报告       | `doc/m2_session_history_consistency.md`、`backend/django_backend/deepseek_api/migrations/0007_session_history_foreign_key.py`、`backend/django_backend/deepseek_api/tests/test_api.py`                                                                                           | 49/49 后端测试通过；0007 临时 SQLite 迁移演练完成；有效历史绑定、孤立历史清理、删除级联、事务回滚、游标契约和跨用户 404 均通过                    | Codex  | 2026-08-29 |
+| E-015 | M2     | 用户外键、并发写入与复合游标报告 | `doc/m2_session_history_consistency.md`、`backend/django_backend/deepseek_api/migrations/0008_session_user_and_history_ordering.py`、`backend/django_backend/deepseek_api/tests/test_api.py`                                                                                     | 50/50 后端测试通过；核心覆盖率 89%；0008 临时 SQLite 迁移演练完成；User 外键、Session 行锁、sequence/message_id 幂等和 `(created_at,id)` 游标通过 | Codex  | 2026-08-30 |
+| E-003 | M2     | 并发与数据迁移报告               | `doc/m2_session_history_consistency.md`（数据一致性部分）；真实多连接压测待补充                                                                                                                                                                                                  | 用户外键、基础并发写入和复合游标子任务已验收，M2 其余并发/缓存/错误语义仍待验收                                                                   | Codex  | 2026-08-30 |
+| E-004 | M3     | 安全测试报告                     | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-005 | M4     | 检索评测报告                     | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-006 | M5     | 生成质量报告                     | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-007 | M6     | 性能报告                         | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-008 | M7     | 故障演练与部署报告               | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-009 | M8     | Agent 评测和安全报告             | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-010 | M9     | Multi-Agent 对照实验             | TODO                                                                                                                                                                                                                                                                             | 待验收                                                                                                                                            | TODO   | -          |
+| E-011 | M1     | 工程质量门禁                     | `AGENTS.md`、`.pre-commit-config.yaml`、`ruff.toml`、`.prettierrc.json`、`frontend/vue_frontend/eslint.config.js`                                                                                                                                                                | pre-commit、ESLint、Prettier、前端构建和后端 Ruff 全部通过；CI workflow 已加入，分支保护待平台配置                                                | Codex  | 2026-08-29 |
 
 ---
 
 ## 19. 风险与阻塞项
 
-| 编号  | 风险                                                  | 概率 | 影响 | 缓解措施                                                          | 负责人 | 状态   |
-| ----- | ----------------------------------------------------- | ---: | ---: | ----------------------------------------------------------------- | ------ | ------ |
-| R-001 | 本地模型资源不足                                      |   高 |   高 | Provider 抽象、容量限制、云端回退                                 | TODO   | 开放   |
-| R-002 | 数据集重复和噪声导致检索失真                          |   高 |   高 | 数据去重、Schema、评测集                                          | TODO   | 开放   |
-| R-003 | 缺少真实业务标注                                      |   高 |   高 | 专家评审、小规模高质量 Gold Set                                   | TODO   | 开放   |
-| R-004 | 全局模型状态造成并发串台                              |   高 |   高 | M2 已完成模型层显式依赖注入；继续进行真实部署并发压测             | Codex  | 已缓解 |
-| R-005 | 外部接口密钥和 SSRF                                   |   高 |   高 | M3 加密与网络限制                                                 | TODO   | 开放   |
-| R-006 | Agent 化增加幻觉和越权                                |   中 |   高 | 只读工具、权限校验、审计、预算                                    | TODO   | 开放   |
-| R-007 | 目标指标不适合实际硬件                                |   中 |   中 | M0 后记录决策并调整一次                                           | TODO   | 开放   |
-| R-008 | 评测模型输出不稳定                                    |   中 |   中 | 固定参数、多次运行、统计区间                                      | TODO   | 开放   |
-| R-009 | 索引迁移导致服务不可用                                |   中 |   高 | 新旧索引并存、原子切换、回滚                                      | TODO   | 开放   |
-| R-010 | 计划范围过大                                          |   高 |   中 | 严格按里程碑门槛，M8/M9 可延后                                    | TODO   | 开放   |
-| R-011 | 前端运行时依赖存在 7 个高危、2 个中危审计项           |   高 |   高 | 单独评估并升级 Axios、MarkdownIt 及相关传递依赖，回归构建与主流程 | TODO   | 开放   |
-| R-012 | 后端开发环境未完整同步，测试依赖会触发大型 GPU 包下载 |   低 |   中 | 当前 `.venv` 已同步；后续仍应拆分测试/推理依赖组                  | Codex  | 已解除 |
-| R-013 | 10 条无证据负样本均未明确拒答，存在幻觉式确定性诊断   |   高 |   高 | 增加检索阈值、证据门禁和拒答模板，并对负样本强制回归              | TODO   | 开放   |
-| R-014 | Chroma 文档未保存源文件、行号和稳定日志 ID metadata   |   高 |   中 | M4 重建索引 Schema，原生写入 log_id、source、row 与数据版本       | TODO   | 开放   |
+| 编号  | 风险                                                            | 概率 | 影响 | 缓解措施                                                                   | 负责人 | 状态   |
+| ----- | --------------------------------------------------------------- | ---: | ---: | -------------------------------------------------------------------------- | ------ | ------ |
+| R-001 | 本地模型资源不足                                                |   高 |   高 | Provider 抽象、容量限制、云端回退                                          | TODO   | 开放   |
+| R-002 | 数据集重复和噪声导致检索失真                                    |   高 |   高 | 数据去重、Schema、评测集                                                   | TODO   | 开放   |
+| R-003 | 缺少真实业务标注                                                |   高 |   高 | 专家评审、小规模高质量 Gold Set                                            | TODO   | 开放   |
+| R-004 | 全局模型状态造成并发串台                                        |   高 |   高 | M2 已完成模型层显式依赖注入；继续进行真实部署并发压测                      | Codex  | 已缓解 |
+| R-005 | 外部接口密钥和 SSRF                                             |   高 |   高 | M3 加密与网络限制                                                          | TODO   | 开放   |
+| R-006 | Agent 化增加幻觉和越权                                          |   中 |   高 | 只读工具、权限校验、审计、预算                                             | TODO   | 开放   |
+| R-007 | 目标指标不适合实际硬件                                          |   中 |   中 | M0 后记录决策并调整一次                                                    | TODO   | 开放   |
+| R-008 | 评测模型输出不稳定                                              |   中 |   中 | 固定参数、多次运行、统计区间                                               | TODO   | 开放   |
+| R-009 | 索引迁移导致服务不可用                                          |   中 |   高 | 新旧索引并存、原子切换、回滚                                               | TODO   | 开放   |
+| R-010 | 计划范围过大                                                    |   高 |   中 | 严格按里程碑门槛，M8/M9 可延后                                             | TODO   | 开放   |
+| R-011 | 前端运行时依赖存在 7 个高危、2 个中危审计项                     |   高 |   高 | 单独评估并升级 Axios、MarkdownIt 及相关传递依赖，回归构建与主流程          | TODO   | 开放   |
+| R-012 | 后端开发环境未完整同步，测试依赖会触发大型 GPU 包下载           |   低 |   中 | 当前 `.venv` 已同步；后续仍应拆分测试/推理依赖组                           | Codex  | 已解除 |
+| R-013 | 10 条无证据负样本均未明确拒答，存在幻觉式确定性诊断             |   高 |   高 | 增加检索阈值、证据门禁和拒答模板，并对负样本强制回归                       | TODO   | 开放   |
+| R-014 | Chroma 文档未保存源文件、行号和稳定日志 ID metadata             |   高 |   中 | M4 重建索引 Schema，原生写入 log_id、source、row 与数据版本                | TODO   | 开放   |
+| R-015 | 0007 迁移会删除无法归属的孤立 History，误操作可能造成数据丢失   |   中 |   高 | 生产迁移前强制备份；先在副本演练；保留孤立行导出/归档方案                  | Codex  | 已缓解 |
+| R-016 | SQLite 不支持真正的 `select_for_update`，无法代表生产并发锁语义 |   中 |   高 | 生产使用 PostgreSQL/MySQL 做多连接压测；保留 message_id 幂等和唯一序号约束 | Codex  | 开放   |
 
 ### 19.1 阻塞项更新模板
 
@@ -1223,17 +1234,21 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 > 重大目标、架构或指标调整必须登记，不只修改最终结论。
 
-| ADR     | 日期       | 决策                                                                                             | 原因                                                       | 替代方案                                    | 影响                                                     | 状态   |
-| ------- | ---------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- | ------ |
-| ADR-001 | 2026-08-28 | 先完成固定 RAG Pipeline，再开发 Agent                                                            | 当前正确性、评测和安全基础不足                             | 直接加入 Agent 框架                         | Agent 里程碑置于 M8                                      | 已接受 |
-| ADR-002 | 2026-08-28 | Multi-Agent 仅作为对照实验                                                                       | 成本、延迟和复杂度较高                                     | 默认使用多 Agent                            | 必须证明相对单 Agent 收益                                | 已接受 |
-| ADR-003 | 2026-08-28 | 使用 Ruff、ESLint flat config、Prettier 和 pre-commit 作为统一质量门禁                           | 覆盖 Python、JS/TS/Vue 与结构化文本，并可在提交前复现      | 依赖开发者手动运行各工具                    | 首次建立门禁会产生全仓机械格式化                         | 已接受 |
-| ADR-004 | 2026-08-28 | 前端继续以 npm 和已跟踪的 `package-lock.json` 为依赖基准                                         | 仓库既有锁文件和本机可用工具均为 npm                       | 迁移 pnpm/yarn                              | 未经批准不更新其他锁文件                                 | 已接受 |
-| ADR-005 | 2026-08-28 | M0 日志 ID 使用 `<CSV 文件名>:<六位数据行号>`                                                    | 当前 Chroma 未保存来源 metadata，但 CSV 顺序固定且可校验   | 使用 Chroma 随机 UUID                       | 评测器需按建库序列化规则反向映射；M4 应原生写入 metadata | 已接受 |
-| ADR-006 | 2026-08-28 | 负样本不计入 Recall/MRR/NDCG，单独评估拒答率                                                     | 当前检索器固定返回 Top-K，负样本没有相关文档可计算排序指标 | 将负样本记为 Recall=0                       | 避免扭曲检索指标，同时暴露无证据生成问题                 | 已接受 |
-| ADR-007 | 2026-08-29 | 用户授权 Codex 完成 M0 抽样评分和冲突裁决，结果标记为 AI 辅助                                    | 用户要求先完成 M0 剩余验收工作，同时保留评审者类型真实性   | 等待第二名真人评审                          | 项目内部 M0 可闭环；生产级质量声明仍需真人复核           | 已接受 |
-| ADR-008 | 2026-08-29 | M1 测试默认使用 Django 独立数据库、Fake/Mock Provider 和临时运行目录，真实模型评测与普通回归分离 | 避免测试依赖生产数据、网络、密钥和本机模型缓存             | 测试直接连接 Ollama/共享 Chroma             | 普通回归可在 CI 重复运行；真实模型仅保留在独立评测流程   | 已接受 |
-| ADR-009 | 2026-08-29 | 请求级 LLM/Embedding 依赖显式传递，实例按 provider、model、endpoint 使用线程安全有界缓存         | 避免并发请求覆盖全局 Settings 并控制本地模型资源占用       | 每个请求重新加载模型；继续修改全局 Settings | 请求不串台且避免重复加载；多进程共享和显存预算留待后续   | 已接受 |
+| ADR     | 日期       | 决策                                                                                                  | 原因                                                                       | 替代方案                                                  | 影响                                                               | 状态   |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| ADR-001 | 2026-08-28 | 先完成固定 RAG Pipeline，再开发 Agent                                                                 | 当前正确性、评测和安全基础不足                                             | 直接加入 Agent 框架                                       | Agent 里程碑置于 M8                                                | 已接受 |
+| ADR-002 | 2026-08-28 | Multi-Agent 仅作为对照实验                                                                            | 成本、延迟和复杂度较高                                                     | 默认使用多 Agent                                          | 必须证明相对单 Agent 收益                                          | 已接受 |
+| ADR-003 | 2026-08-28 | 使用 Ruff、ESLint flat config、Prettier 和 pre-commit 作为统一质量门禁                                | 覆盖 Python、JS/TS/Vue 与结构化文本，并可在提交前复现                      | 依赖开发者手动运行各工具                                  | 首次建立门禁会产生全仓机械格式化                                   | 已接受 |
+| ADR-004 | 2026-08-28 | 前端继续以 npm 和已跟踪的 `package-lock.json` 为依赖基准                                              | 仓库既有锁文件和本机可用工具均为 npm                                       | 迁移 pnpm/yarn                                            | 未经批准不更新其他锁文件                                           | 已接受 |
+| ADR-005 | 2026-08-28 | M0 日志 ID 使用 `<CSV 文件名>:<六位数据行号>`                                                         | 当前 Chroma 未保存来源 metadata，但 CSV 顺序固定且可校验                   | 使用 Chroma 随机 UUID                                     | 评测器需按建库序列化规则反向映射；M4 应原生写入 metadata           | 已接受 |
+| ADR-006 | 2026-08-28 | 负样本不计入 Recall/MRR/NDCG，单独评估拒答率                                                          | 当前检索器固定返回 Top-K，负样本没有相关文档可计算排序指标                 | 将负样本记为 Recall=0                                     | 避免扭曲检索指标，同时暴露无证据生成问题                           | 已接受 |
+| ADR-007 | 2026-08-29 | 用户授权 Codex 完成 M0 抽样评分和冲突裁决，结果标记为 AI 辅助                                         | 用户要求先完成 M0 剩余验收工作，同时保留评审者类型真实性                   | 等待第二名真人评审                                        | 项目内部 M0 可闭环；生产级质量声明仍需真人复核                     | 已接受 |
+| ADR-008 | 2026-08-29 | M1 测试默认使用 Django 独立数据库、Fake/Mock Provider 和临时运行目录，真实模型评测与普通回归分离      | 避免测试依赖生产数据、网络、密钥和本机模型缓存                             | 测试直接连接 Ollama/共享 Chroma                           | 普通回归可在 CI 重复运行；真实模型仅保留在独立评测流程             | 已接受 |
+| ADR-009 | 2026-08-29 | 请求级 LLM/Embedding 依赖显式传递，实例按 provider、model、endpoint 使用线程安全有界缓存              | 避免并发请求覆盖全局 Settings 并控制本地模型资源占用                       | 每个请求重新加载模型；继续修改全局 Settings               | 请求不串台且避免重复加载；多进程共享和显存预算留待后续             | 已接受 |
+| ADR-010 | 2026-08-29 | `History` 通过非空 ForeignKey 归属 `Session`，删除 Session 级联删除 History；迁移无法归属的旧 History | 消除孤立历史和重复用户条件；无法证明归属的数据不应进入普通用户查询         | 保留字符串冗余列；静默保留孤立行；删除 Session 时手动清理 | 数据库保证归属和删除一致性；迁移前必须备份，生产审计场景可先归档   | 已接受 |
+| ADR-011 | 2026-08-30 | `Session.user` 迁移为 Django `User` 外键；无法解析旧用户名的 Session 及其 History 在迁移中清理        | 用户归属应由数据库约束保证，避免用户名修改或删除后留下不可归属会话         | 继续保存用户名字符串；保留未知用户占位符                  | 用户删除可级联清理会话；迁移前需备份，其他用户字段后续继续统一     | 已接受 |
+| ADR-012 | 2026-08-30 | 同一 Session 的 Chat 使用 `select_for_update`、单调 sequence 和可选 `message_id` 幂等                 | 避免并发请求读取相同历史、生成重复写入或覆盖顺序；重试不应产生重复 History | 仅依赖时间排序；仅在应用内加锁；允许客户端重复写入        | 生产数据库实现会话级串行化；模型调用期间持锁，需后续压测和缩短事务 | 已接受 |
+| ADR-013 | 2026-08-30 | History API 使用 `(created_at, id)` 不透明复合游标，并暂时兼容旧 ID 游标                              | 时间排序需要稳定 tie-breaker；只用自增 ID 不足以表达时间边界               | offset 分页；只用 created_at；只用 id                     | 可稳定处理同一时间戳记录；后续可增加签名和过期策略                 | 已接受 |
 
 ### 20.1 ADR 模板
 
@@ -1255,17 +1270,19 @@ ADR 编号：ADR-XXX
 
 ## 21. 变更日志
 
-| 日期       | 修改人 | 变更内容                                                                                                                               | 关联里程碑 | 证据/提交                                                 |
-| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------- |
-| 2026-08-28 | Codex  | 创建开发计划、验收指标和维护 Checklist                                                                                                 | 全部       | `doc/development_plan.md`                                 |
-| 2026-08-28 | Codex  | 建立开发范式、Ruff/ESLint/Prettier 配置与强制 pre-commit 流程                                                                          | M1         | E-011                                                     |
-| 2026-08-28 | Codex  | 执行 M0 自动化基线：固定环境、建立 50 条评测集并采集检索/生成/性能证据                                                                 | M0         | E-001                                                     |
-| 2026-08-28 | Codex  | 记录 10 条负样本的用户审核与独立 AI 辅助复核，补充结构化评分及双人验收缺口                                                             | M0         | `evaluation/m0/evidence/double_review_results.json`       |
-| 2026-08-28 | user   | 指定 Codex 作为第二评审角色；完成 10 条结构化评分，双评审角色覆盖达到 20%，保留实际执行者审计标记                                      | M0         | `evaluation/m0/evidence/double_review_results.json`       |
-| 2026-08-28 | Codex  | 修复检索评测工具边界语义并补充 3 项回归测试，避免空结果索引错误和空均值异常                                                            | M0         | E-012                                                     |
-| 2026-08-29 | Codex  | 按用户授权完成 10 条负样本的结构化评分、冲突裁决并补全完整基线报告；保留 AI 辅助评审限制                                               | M0         | E-001、`evaluation/m0/evidence/adjudication_results.json` |
-| 2026-08-29 | Codex  | 执行 M1 第一、二批：建立后端/前端测试、配置校验与脱敏摘要、环境变量、CI 质量门禁，并修复聊天 400 schema 与 Embedding 回退兼容性        | M1         | E-002、E-011                                              |
-| 2026-08-29 | Codex  | 执行 M2 模型实例隔离：移除全局 Settings 动态覆盖，接入显式 runtime、模型实例缓存、模型选择透传和模型范围缓存键，并补充并发隔离说明文档 | M2         | E-013                                                     |
+| 日期       | 修改人 | 变更内容                                                                                                                                                   | 关联里程碑 | 证据/提交                                                 |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------- |
+| 2026-08-28 | Codex  | 创建开发计划、验收指标和维护 Checklist                                                                                                                     | 全部       | `doc/development_plan.md`                                 |
+| 2026-08-28 | Codex  | 建立开发范式、Ruff/ESLint/Prettier 配置与强制 pre-commit 流程                                                                                              | M1         | E-011                                                     |
+| 2026-08-28 | Codex  | 执行 M0 自动化基线：固定环境、建立 50 条评测集并采集检索/生成/性能证据                                                                                     | M0         | E-001                                                     |
+| 2026-08-28 | Codex  | 记录 10 条负样本的用户审核与独立 AI 辅助复核，补充结构化评分及双人验收缺口                                                                                 | M0         | `evaluation/m0/evidence/double_review_results.json`       |
+| 2026-08-28 | user   | 指定 Codex 作为第二评审角色；完成 10 条结构化评分，双评审角色覆盖达到 20%，保留实际执行者审计标记                                                          | M0         | `evaluation/m0/evidence/double_review_results.json`       |
+| 2026-08-28 | Codex  | 修复检索评测工具边界语义并补充 3 项回归测试，避免空结果索引错误和空均值异常                                                                                | M0         | E-012                                                     |
+| 2026-08-29 | Codex  | 按用户授权完成 10 条负样本的结构化评分、冲突裁决并补全完整基线报告；保留 AI 辅助评审限制                                                                   | M0         | E-001、`evaluation/m0/evidence/adjudication_results.json` |
+| 2026-08-29 | Codex  | 执行 M1 第一、二批：建立后端/前端测试、配置校验与脱敏摘要、环境变量、CI 质量门禁，并修复聊天 400 schema 与 Embedding 回退兼容性                            | M1         | E-002、E-011                                              |
+| 2026-08-29 | Codex  | 执行 M2 模型实例隔离：移除全局 Settings 动态覆盖，接入显式 runtime、模型实例缓存、模型选择透传和模型范围缓存键，并补充并发隔离说明文档                     | M2         | E-013                                                     |
+| 2026-08-29 | Codex  | 执行 M2 Session/History 一致性修复：建立外键、迁移并清理孤立数据、删除级联、Chat 事务、Session 标题和 History 游标契约，并补充说明文档                     | M2         | E-014                                                     |
+| 2026-08-30 | Codex  | 执行 M2 Session/History 进一步改进：Session 用户外键、同会话行锁/sequence/message_id 幂等写入和 `(created_at,id)` 复合游标，并完成 0008 迁移演练和文档更新 | M2         | E-015                                                     |
 
 ### 21.1 后续更新示例
 
@@ -1277,7 +1294,7 @@ ADR 编号：ADR-XXX
 
 ## 22. 下一步行动
 
-严格按依赖关系，下一次开发应从 M0 开始，而不是直接修改 Agent 或界面功能。
+严格按依赖关系，下一步继续完成 M2 的缓存正确性、错误语义和并发压测，再进入 M3；不要直接修改 Agent 或界面功能。
 
 ### 22.1 第一批任务
 
