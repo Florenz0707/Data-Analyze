@@ -2,6 +2,8 @@ import hashlib
 import json
 import threading
 import time
+import uuid
+from typing import Any
 
 from deepseek_project.configuration import load_llm_config
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
@@ -19,6 +21,15 @@ rate_lock = threading.Lock()
 # 重要：不要在模块导入时实例化模型，避免在 manage.py 的其他命令下也加载模型
 SYSTEM = None
 _init_lock = threading.Lock()
+
+_REPLY_CACHE_NAMESPACE_KEY = "deepseek:reply-cache:namespace"
+_CACHEABLE_GENERATION_PARAMETERS = (
+    "max_new_tokens",
+    "temperature",
+    "top_p",
+    "repetition_penalty",
+    "do_sample",
+)
 
 
 def _get_system():
@@ -458,10 +469,25 @@ def get_cached_reply(
     *,
     provider: str | None = None,
     model: str | None = None,
+    parameters: dict[str, Any] | None = None,
+    history: list[tuple[str, str]] | None = None,
 ) -> str | None:
-    """Read a reply using a key scoped to user, session, model, and runtime versions."""
-    cache_key = _build_reply_cache_key(prompt, session_id, user, provider=provider, model=model)
-    return cache.get(cache_key)
+    """Read a valid reply using the complete request and runtime cache identity."""
+    cache_key = _build_reply_cache_key(
+        prompt,
+        session_id,
+        user,
+        provider=provider,
+        model=model,
+        parameters=parameters,
+        history=history,
+    )
+    value = cache.get(cache_key)
+    if isinstance(value, str) and value.strip():
+        return value
+    if value is not None:
+        cache.delete(cache_key)
+    return None
 
 
 def set_cached_reply(
@@ -473,15 +499,58 @@ def set_cached_reply(
     *,
     provider: str | None = None,
     model: str | None = None,
-):
-    """Write a non-empty successful reply with a bounded, model-scoped TTL."""
-    if not reply or not reply.strip():
-        return
+    parameters: dict[str, Any] | None = None,
+    history: list[tuple[str, str]] | None = None,
+    cacheable: bool = True,
+) -> bool:
+    """Write a successful reply with configured TTL; return whether it was stored."""
+    if not cacheable or not isinstance(reply, str) or not reply.strip():
+        return False
     cfg = _load_env_cfg()
     if timeout is None:
         timeout = int(cfg.get("REPLY_CACHE_TTL", 3600))
-    cache_key = _build_reply_cache_key(prompt, session_id, user, provider=provider, model=model)
+    if timeout <= 0:
+        return False
+    cache_key = _build_reply_cache_key(
+        prompt,
+        session_id,
+        user,
+        provider=provider,
+        model=model,
+        parameters=parameters,
+        history=history,
+    )
     cache.set(cache_key, reply, timeout)
+    return True
+
+
+def invalidate_reply_cache() -> str:
+    """Rotate the shared reply-cache namespace so all previous replies become stale."""
+    namespace = uuid.uuid4().hex
+    cache.set(_REPLY_CACHE_NAMESPACE_KEY, namespace, timeout=None)
+    return namespace
+
+
+def _get_reply_cache_namespace() -> str:
+    namespace = cache.get(_REPLY_CACHE_NAMESPACE_KEY)
+    if isinstance(namespace, str) and namespace:
+        return namespace
+    namespace = "initial"
+    cache.add(_REPLY_CACHE_NAMESPACE_KEY, namespace, timeout=None)
+    return str(cache.get(_REPLY_CACHE_NAMESPACE_KEY) or namespace)
+
+
+def _get_generation_parameters(config: dict[str, Any], provider: str) -> dict[str, Any]:
+    section_name = {
+        "transformers": "TRANSFORMERS_CONFIG",
+        "ollama": "OLLAMA_CONFIG",
+        "openai_compat": "OPENAI_COMPAT_CONFIG",
+        "dashscope": "DASHSCOPE_CONFIG",
+    }.get(provider)
+    section = config.get(section_name, {}) if section_name else {}
+    if not isinstance(section, dict):
+        return {}
+    return {key: section[key] for key in _CACHEABLE_GENERATION_PARAMETERS if key in section}
 
 
 def _build_reply_cache_key(
@@ -491,23 +560,37 @@ def _build_reply_cache_key(
     *,
     provider: str | None = None,
     model: str | None = None,
+    parameters: dict[str, Any] | None = None,
+    history: list[tuple[str, str]] | None = None,
 ) -> str:
-    """Build a stable key scoped to user, model endpoint, prompt, and cache versions."""
+    """Build a stable SHA-256 key from all inputs that can change a reply."""
     cfg = _load_env_cfg()
     normalized_provider = (provider or cfg.get("LLM_PROVIDER") or "").lower()
     resolved_model = model or configured_model(cfg, normalized_provider)
+    request_parameters = dict(_get_generation_parameters(cfg, normalized_provider))
+    request_parameters.update(parameters or {})
     identity = {
         "user": user.user,
         "session": session_id,
         "prompt": prompt,
+        "history": history or [],
+        "parameters": request_parameters,
         "provider": normalized_provider,
         "model": resolved_model,
         "endpoint": configured_endpoint(cfg, normalized_provider) if normalized_provider else "",
         "prompt_version": cfg.get("PROMPT_VERSION", "default"),
         "index_version": cfg.get("INDEX_VERSION", "default"),
         "response_top_k": cfg.get("RESPONSE_TOP_K", 10),
+        "cache_schema_version": cfg.get("CACHE_SCHEMA_VERSION", "v1"),
+        "cache_namespace": _get_reply_cache_namespace(),
     }
-    identity_text = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    identity_text = json.dumps(
+        identity,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
     return f"reply:{generate_cache_key(identity_text)}"
 
 
@@ -516,6 +599,6 @@ def generate_cache_key(original_key: str) -> str:
     生成安全的缓存键。
     对原始字符串进行哈希处理，确保键长度固定且仅包含安全字符。
     """
-    # 使用SHA256哈希函数生成固定长度的键（64位十六进制字符串）
+    # 使用 SHA-256 哈希函数生成固定长度的键（64 位十六进制字符串）。
     hash_obj = hashlib.sha256(original_key.encode("utf-8"))
     return hash_obj.hexdigest()

@@ -1,10 +1,11 @@
 import time
 from pathlib import Path
 
-from deepseek_api.models import APIKey, RateLimit
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
+
+from deepseek_api.models import APIKey, RateLimit
 
 
 class Command(BaseCommand):

@@ -19,6 +19,7 @@ from deepseek_api.services import (
     get_local_models,
     get_or_create_session,
     get_or_create_user_pref,
+    invalidate_reply_cache,
     parse_session_context,
     refresh_access_token,
     select_history_by_similarity,
@@ -83,13 +84,54 @@ class ServicePureFunctionTests(SimpleTestCase):
     def test_cache_key_is_stable_and_does_not_expose_prompt(self):
         user = APIKey(user="alice")
 
-        key = _build_reply_cache_key("secret prompt", "session-1", user)
+        key = _build_reply_cache_key(
+            "secret prompt",
+            "session-1",
+            user,
+            parameters={"temperature": 0.2},
+            history=[("previous question", "previous answer")],
+        )
         selected_key = _build_reply_cache_key(
-            "secret prompt", "session-1", user, provider="ollama", model="other-model"
+            "secret prompt",
+            "session-1",
+            user,
+            provider="ollama",
+            model="other-model",
+            parameters={"temperature": 0.2},
+            history=[("previous question", "previous answer")],
         )
 
-        self.assertEqual(key, _build_reply_cache_key("secret prompt", "session-1", user))
+        self.assertEqual(
+            key,
+            _build_reply_cache_key(
+                "secret prompt",
+                "session-1",
+                user,
+                parameters={"temperature": 0.2},
+                history=[("previous question", "previous answer")],
+            ),
+        )
         self.assertNotEqual(key, selected_key)
+        self.assertNotEqual(
+            key,
+            _build_reply_cache_key(
+                "secret prompt",
+                "session-1",
+                user,
+                parameters={"temperature": 0.7},
+                history=[("previous question", "previous answer")],
+            ),
+        )
+        self.assertNotEqual(
+            key,
+            _build_reply_cache_key(
+                "secret prompt",
+                "session-1",
+                user,
+                parameters={"temperature": 0.2},
+                history=[("different question", "previous answer")],
+            ),
+        )
         self.assertNotIn("secret prompt", key)
         self.assertEqual(len(generate_cache_key("value")), 64)
 
@@ -120,6 +162,38 @@ class ServiceDatabaseTests(TestCase):
         self.assertEqual(get_cached_reply("same prompt", "session-1", alice), "alice reply")
         self.assertIsNone(get_cached_reply("same prompt", "session-1", bob))
         self.assertIsNone(get_cached_reply("same prompt", "session-2", alice))
+
+    def test_cache_uses_configured_ttl_and_rejects_non_success_values(self):
+        alice = APIKey(user="alice")
+
+        with patch.object(services.cache, "set", wraps=cache.set) as cache_set:
+            self.assertTrue(set_cached_reply("prompt", "reply", "session", alice, timeout=17))
+            cache_set.assert_called_once()
+            self.assertEqual(cache_set.call_args.args[2], 17)
+
+        self.assertFalse(set_cached_reply("prompt", "", "session", alice))
+        self.assertFalse(set_cached_reply("prompt", None, "session", alice))
+        self.assertFalse(
+            set_cached_reply("prompt", "error payload", "session", alice, cacheable=False)
+        )
+
+    def test_cache_namespace_rotation_invalidates_previous_entries(self):
+        alice = APIKey(user="alice")
+
+        self.assertTrue(set_cached_reply("prompt", "reply", "session", alice))
+        self.assertEqual(get_cached_reply("prompt", "session", alice), "reply")
+        namespace = invalidate_reply_cache()
+
+        self.assertTrue(namespace)
+        self.assertIsNone(get_cached_reply("prompt", "session", alice))
+
+    def test_invalid_cached_value_is_removed_instead_of_returned(self):
+        alice = APIKey(user="alice")
+        key = _build_reply_cache_key("prompt", "session", alice)
+        cache.set(key, {"error": "model unavailable"}, timeout=60)
+
+        self.assertIsNone(get_cached_reply("prompt", "session", alice))
+        self.assertIsNone(cache.get(key))
 
     def test_token_validation_and_refresh_reject_expired_values(self):
         api_key = create_api_key("alice")

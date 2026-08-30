@@ -196,6 +196,20 @@ def load_llm_config(
         raise ConfigurationError("RESPONSE_TOP_K 必须在 1 到 100 之间")
     config["RESPONSE_TOP_K"] = response_top_k
 
+    try:
+        reply_cache_ttl = int(config.get("REPLY_CACHE_TTL", 3600))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("REPLY_CACHE_TTL 必须是非负整数") from exc
+    if reply_cache_ttl < 0:
+        raise ConfigurationError("REPLY_CACHE_TTL 必须是非负整数")
+    config["REPLY_CACHE_TTL"] = reply_cache_ttl
+    for key, default in {
+        "PROMPT_VERSION": "v1",
+        "INDEX_VERSION": "v1",
+        "CACHE_SCHEMA_VERSION": "v1",
+    }.items():
+        config[key] = str(config.get(key, default))
+
     llm_provider = str(config.get("LLM_PROVIDER") or "ollama").strip().lower()
     embedding_provider = str(config.get("EMBEDDING_PROVIDER") or "auto").strip().lower()
     if llm_provider not in SUPPORTED_LLM_PROVIDERS:

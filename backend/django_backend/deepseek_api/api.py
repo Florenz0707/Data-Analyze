@@ -239,12 +239,25 @@ def chat(request, data: ChatIn):
             selected = []
         query = compose_prompt_with_history(selected, user_input, hist_cfg)
         logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
+        cache_parameters = {
+            "history_mode": use_history_mode,
+            "history_max_turns": hist_cfg.get("max_turns", 8),
+            "history_top_k": hist_cfg.get("top_k", 3),
+            "history_sim_threshold": hist_cfg.get("sim_threshold", 0.25),
+            "history_max_tokens": hist_cfg.get("max_tokens", 1000),
+        }
 
         # 5. 调用大模型（带缓存）。
         user_obj = request.auth
         user_pref = services.get_or_create_user_pref(user_obj)
         cached_reply = get_cached_reply(
-            query, sid, user_obj, provider=user_pref.provider, model=user_pref.model or None
+            query,
+            sid,
+            user_obj,
+            provider=user_pref.provider,
+            model=user_pref.model or None,
+            parameters=cache_parameters,
+            history=selected,
         )
         if cached_reply:
             reply = cached_reply
@@ -258,6 +271,8 @@ def chat(request, data: ChatIn):
                     user_obj,
                     provider=user_pref.provider,
                     model=user_pref.model or None,
+                    parameters=cache_parameters,
+                    history=selected,
                 )
             except RuntimeError as e:
                 transaction.set_rollback(True)

@@ -125,6 +125,13 @@ uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit
 
 当前测试覆盖配置校验、Token、历史选择、缓存、注册登录、会话隔离、Chat 缓存和模型失败路径。
 
+### 6.3 回复缓存正确性
+
+- `REPLY_CACHE_TTL` 控制最终回答缓存时长，默认 3600 秒，设置为 `0` 可关闭缓存写入。
+- 缓存键使用 SHA-256，并绑定用户、Session、完整 Prompt、选中的历史、生成参数、Provider/模型/endpoint、Prompt 版本、索引版本和缓存命名空间。
+- 更新知识库或 Prompt 后执行 `DJANGO_TESTING=true uv run --project . python manage.py invalidate_reply_cache`，通过轮换命名空间使旧回复立即逻辑失效。
+- 空回复、非字符串值和显式标记为不可缓存的错误响应不会写入正常回复缓存。
+
 ### 6.2 Session/History 数据契约
 
 - `History` 通过数据库 ForeignKey 属于 `Session`，删除 Session 会级联删除 History。

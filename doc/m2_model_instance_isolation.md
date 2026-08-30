@@ -41,7 +41,7 @@ Provider 工厂现在接收可选的 `model` 参数，并把它真正传给 Olla
 
 ### 2.3 缓存正确性
 
-回复缓存键现在包含：用户、Session、Prompt、Provider、模型、endpoint、Prompt 版本、索引版本和 `RESPONSE_TOP_K`。因此相同问题在不同模型、endpoint 或索引版本下不会错误复用。空回复不写入缓存，TTL 可通过 `REPLY_CACHE_TTL` 配置，默认 3600 秒。
+回复缓存现在由独立的 M2 缓存正确性子任务维护：键包含用户、Session、完整 Prompt、选中历史、生成参数、Provider、模型、endpoint、Prompt/索引版本和可轮换命名空间，并使用 SHA-256 摘要。空值和错误响应不写入，TTL 默认 3600 秒；Prompt 或索引更新后可通过 `invalidate_reply_cache` 管理命令批量逻辑失效。详细契约见 `doc/m2_cache_correctness.md`。
 
 ## 3. 相关模型与组件
 
@@ -66,7 +66,7 @@ cd backend/django_backend
 DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 ```
 
-当前结果：47/47 通过。其中包括：
+当前结果：54/54 通过。其中包括：
 
 - 50 个并发访问同一模型 key 只构造一个实例；
 - 不同模型和 endpoint 不共享缓存实例；

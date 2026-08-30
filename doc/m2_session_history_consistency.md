@@ -63,7 +63,7 @@ Chat API 使用 `transaction.atomic()` 和 `Session.objects.select_for_update()`
 5. 原子递增 Session 序号，写入新的 History；
 6. 更新 Session 的 `updated_at`。
 
-模型调用返回 `RuntimeError` 时显式标记事务回滚，再返回 503。因此，对于新 Session 的首条消息，模型失败不会留下空 Session；已有 Session 也不会新增半条 History。缓存本身属于后续 M2 缓存正确性子任务的范围，当前事务保证的是数据库状态一致性。生产数据库使用 PostgreSQL/MySQL 时，Session 行锁可将同一会话的模型调用和历史写入串行化；SQLite 的 `select_for_update()` 不提供真正的行锁，主要用于开发和测试，仍需真实数据库并发压测。
+模型调用返回 `RuntimeError` 时显式标记事务回滚，再返回 503。因此，对于新 Session 的首条消息，模型失败不会留下空 Session；已有 Session 也不会新增半条 History。回复缓存的身份、TTL 和批量失效契约见 `doc/m2_cache_correctness.md`。生产数据库使用 PostgreSQL/MySQL 时，Session 行锁可将同一会话的模型调用和历史写入串行化；SQLite 的 `select_for_update()` 不提供真正的行锁，主要用于开发和测试，仍需真实数据库并发压测。
 
 ### 2.3 用户隔离
 
@@ -144,9 +144,9 @@ DJANGO_TESTING=true uv run --project . python manage.py makemigrations --check -
 
 结果：
 
-- 后端全量测试：50/50 通过；
-- 后端核心模块覆盖率：89%（1059 statements，排除 migrations/tests/asgi/wsgi；50 个测试）；
-- `deepseek_api/api.py` 行覆盖率：95%；新增部分游标错误分支尚未全部覆盖；
+- 后端全量测试：54/54 通过；
+- 后端核心模块覆盖率：88%（`api/models/services/configuration/model_runtime`，982 statements）；
+- `deepseek_api/api.py` 行覆盖率：95%（321 statements、15 missed）；
 - Django system check：通过；
 - `makemigrations --check --dry-run`：无模型漂移；
 - 临时 SQLite 迁移演练：0007 有效旧 History 绑定 1 条、孤立 History 清理 1 条；0008 旧用户名解析 1 条、无对应用户 Session 清理 1 条，并初始化 sequence/message_id；

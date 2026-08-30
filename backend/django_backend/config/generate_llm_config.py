@@ -50,6 +50,11 @@ LLM_MAX_PART_LENGTH: 70       # 最大分析点长度（每条分析点的最大
 
 # 检索配置
 RESPONSE_TOP_K: 10              # 默认回答组织时的TopK条数（由系统使用）
+MODEL_CACHE_MAX_SIZE: 4          # 进程内 LLM/Embedding 实例缓存上限
+REPLY_CACHE_TTL: 3600            # 最终回答缓存 TTL（秒）；0 表示关闭写入
+PROMPT_VERSION: "v1"             # 系统 Prompt 版本，变更后应递增或执行缓存失效
+INDEX_VERSION: "v1"              # 知识库/向量索引版本，重建后应递增或执行缓存失效
+CACHE_SCHEMA_VERSION: "v1"       # 缓存键结构版本，变更键契约时递增
 # 兼容老配置：如仍存在 TOP_K，将被视作 RESPONSE_TOP_K 的别名（建议迁移后删除）
 
 # 会话历史相关配置（控制是否、以及如何注入历史）

@@ -26,6 +26,9 @@ class ConfigurationTests(SimpleTestCase):
         config = load_llm_config()
 
         self.assertEqual(config["RESPONSE_TOP_K"], 10)
+        self.assertEqual(config["REPLY_CACHE_TTL"], 3600)
+        self.assertEqual(config["PROMPT_VERSION"], "v1")
+        self.assertEqual(config["INDEX_VERSION"], "v1")
         self.assertNotIn("TOP_K", config)
         self.assertTrue(Path(config["LOG_PATH"]).is_absolute())
         self.assertTrue(Path(config["SYSTEM_PROMPT_PATH"]).is_file())
@@ -35,6 +38,10 @@ class ConfigurationTests(SimpleTestCase):
         config = self._load_temp_config({"TOP_K": 7})
 
         self.assertEqual(config["RESPONSE_TOP_K"], 7)
+
+    def test_negative_reply_cache_ttl_fails_fast(self):
+        with self.assertRaisesRegex(ConfigurationError, "REPLY_CACHE_TTL"):
+            self._load_temp_config({"REPLY_CACHE_TTL": -1})
 
     def test_unknown_provider_fails_before_provider_initialization(self):
         with self.assertRaisesRegex(ConfigurationError, "不支持的 LLM provider"):
