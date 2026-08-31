@@ -1362,6 +1362,8 @@ ADR 编号：ADR-XXX
 | 2026-08-31 | Codex  | 完成 M4/M5 联合性能调优：流式构建评测输入、消除 Prompt 证据重复、设置上下文预算、启用 Ollama JSON mode，并以固定集复测检索；质量无回归，真实生成和受资源竞争影响的构建耗时保持待复测                                                                             | M4/M5      | E-027、`doc/m4_m5_joint_performance_tuning.md`            |
 | 2026-08-31 | Codex  | 固定当前配置（未改配置文件）执行 M4/M5 基准并优化：M4 增量索引批量写入，M5 使用紧凑输出协议/真实 Evidence ID/精简修复请求；M4 检索无回归，构建复测 50.77s→47.69s（单次差异，非归因），M5 3 条 smoke 通过率 0/3→2/3、模型调用 6→4；修正真实 Schema 统计不再硬编码 | M4/M5      | E-028                                                     |
 
+| 2026-08-31 | Codex | 修复 CI 配置测试：测试显式读取 Git 跟踪的 `llm_config.yaml.example`，并同步 M5 `PROMPT_VERSION=m5-v1` 契约，避免被本地忽略配置覆盖 | M1/M5 | CI 配置测试 |
+
 ### 21.1 后续更新示例
 
 ```text

@@ -25,12 +25,15 @@ class ConfigurationTests(SimpleTestCase):
             parse_bool("maybe", False)
 
     def test_repository_config_uses_project_root_and_canonical_top_k(self):
-        config = load_llm_config()
+        project_root = Path(__file__).resolve().parents[2]
+        config = load_llm_config(
+            project_root / "config" / "llm_config.yaml.example", project_root=project_root
+        )
 
         self.assertEqual(config["RESPONSE_TOP_K"], 10)
         self.assertEqual(config["INDEX_BUILD_BATCH_SIZE"], 4)
         self.assertEqual(config["REPLY_CACHE_TTL"], 3600)
-        self.assertEqual(config["PROMPT_VERSION"], "v1")
+        self.assertEqual(config["PROMPT_VERSION"], "m5-v1")
         self.assertEqual(config["INDEX_VERSION"], "v1")
         self.assertNotIn("TOP_K", config)
         self.assertTrue(Path(config["LOG_PATH"]).is_absolute())
