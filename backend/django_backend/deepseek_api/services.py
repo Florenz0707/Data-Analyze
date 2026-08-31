@@ -9,6 +9,7 @@ from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
 from deepseek_project.configuration import load_llm_config
+from deepseek_project.external_endpoint import ExternalEndpointError, validate_external_endpoint
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
 from django.conf import settings
 from django.core.cache import cache
@@ -391,6 +392,10 @@ def build_llm_for_provider(provider: str, model: str | None = None):
 
 def build_llm_for_external_api(external_api: ExternalLLMAPI):
     """Build/cache an OpenAI-compatible client from one user's encrypted row."""
+    try:
+        validate_external_endpoint(external_api.base_url)
+    except ExternalEndpointError as exc:
+        raise RuntimeError("自定义模型地址不安全或格式无效") from exc
     api_key = decrypt_external_api_key(external_api.api_key_encrypted)
     cfg = _load_env_cfg()
     openai_cfg = dict(cfg.get("OPENAI_COMPAT_CONFIG") or {})

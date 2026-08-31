@@ -417,7 +417,7 @@ class ServiceDatabaseTests(TestCase):
         user = create_api_key("external-service-user")
         external = ExternalLLMAPI.objects.create(
             user=user.user,
-            base_url="https://provider.example/v1",
+            base_url="https://93.184.216.34/v1",
             model_name="remote-model",
             api_key_encrypted=encrypt_external_api_key("secret-key"),
             alias="Remote",
@@ -440,7 +440,7 @@ class ServiceDatabaseTests(TestCase):
         user = create_api_key("external-builder-user")
         external = ExternalLLMAPI.objects.create(
             user=user.user,
-            base_url="https://provider.example/v1",
+            base_url="https://93.184.216.34/v1",
             model_name="remote-model",
             api_key_encrypted=encrypt_external_api_key("saved-secret"),
         )

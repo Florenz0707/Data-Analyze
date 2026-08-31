@@ -414,7 +414,7 @@ class ApiIntegrationTests(TestCase):
             "/api/llm/extern",
             data=json.dumps(
                 {
-                    "base_url": "https://example.invalid/v1",
+                    "base_url": "https://93.184.216.34/v1",
                     "model_name": "remote-model",
                     "api_key": "fake-key",
                 }
@@ -426,16 +426,36 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(response.json()["code"], "MODEL_UNAVAILABLE")
         self.assertEqual(ExternalLLMAPI.objects.count(), 0)
 
+    @patch("deepseek_api.api._validate_openai_compat")
+    def test_external_model_rejects_ssrf_endpoint_before_probe(self, validate):
+        client = self.authenticated_client("external-ssrf-user")
+        response = client.post(
+            "/api/llm/extern",
+            data=json.dumps(
+                {
+                    "base_url": "http://127.0.0.1:8080/v1",
+                    "model_name": "remote-model",
+                    "api_key": "fake-key",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "VALIDATION_ERROR")
+        validate.assert_not_called()
+        self.assertEqual(ExternalLLMAPI.objects.count(), 0)
+
     @patch("openai.OpenAI")
     def test_external_endpoint_probe_reports_success_and_failure(self, openai_class):
         from deepseek_api.api import _validate_openai_compat
 
         client = openai_class.return_value
         client.chat.completions.create.return_value = Mock(id="probe-id")
-        self.assertTrue(_validate_openai_compat("https://example.test/v1", "key", "model"))
+        self.assertTrue(_validate_openai_compat("https://93.184.216.34/v1", "key", "model"))
         client.chat.completions.create.side_effect = RuntimeError("secret-key echoed by provider")
         with self.assertLogs("deepseek_api.api", level="WARNING") as logs:
-            self.assertFalse(_validate_openai_compat("https://example.test/v1", "key", "model"))
+            self.assertFalse(_validate_openai_compat("https://93.184.216.34/v1", "key", "model"))
         self.assertNotIn("secret-key", "\n".join(logs.output))
 
     def test_authenticated_chat_rejects_empty_input(self):
@@ -589,7 +609,7 @@ class ApiIntegrationTests(TestCase):
             "/api/llm/extern",
             data=json.dumps(
                 {
-                    "base_url": "https://example.invalid/v1",
+                    "base_url": "https://93.184.216.34/v1",
                     "model_name": "remote-model",
                     "api_key": "fake-key",
                     "alias": "Remote",
@@ -623,7 +643,7 @@ class ApiIntegrationTests(TestCase):
     def test_external_model_selection_and_delete_fallback(self, _validate):
         client = self.authenticated_client("external-selection-user")
         payload = {
-            "base_url": "https://example.invalid/v1",
+            "base_url": "https://93.184.216.34/v1",
             "model_name": "remote-model",
             "api_key": "fake-key",
             "alias": "Remote",
@@ -655,7 +675,7 @@ class ApiIntegrationTests(TestCase):
     def test_external_alias_conflict_is_rejected(self, _validate):
         client = self.authenticated_client("external-alias-user")
         first = {
-            "base_url": "https://example.invalid/v1",
+            "base_url": "https://93.184.216.34/v1",
             "model_name": "model-a",
             "api_key": "fake-key-a",
             "alias": "Shared",
@@ -678,7 +698,7 @@ class ApiIntegrationTests(TestCase):
     def test_model_validation_has_separate_rate_limit(self, _validate):
         client = self.authenticated_client("limited-model-validation")
         payload = {
-            "base_url": "https://example.invalid/v1",
+            "base_url": "https://93.184.216.34/v1",
             "model_name": "remote-model",
             "api_key": "fake-key",
         }

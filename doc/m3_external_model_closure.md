@@ -51,4 +51,4 @@ DJANGO_SECRET_KEY=<stable-deployment-secret>
 
 ## 7. 边界与后续改进
 
-本任务没有放开任意 Base URL 的网络访问。SSRF 防护、协议/地址校验、DNS 重绑定和重定向限制属于 M3 后续安全任务。进一步还应接入 KMS/Vault、增加密钥审计和按版本轮换、将外部配置的用户字段升级为数据库 User 外键，并补充真实 Provider 的脱敏集成测试。
+外部 Base URL 的 SSRF 与输入安全边界已在独立的 `doc/m3_ssrf_input_security.md` 中完成；进一步还应接入 KMS/Vault、增加密钥审计和按版本轮换、将外部配置的用户字段升级为数据库 User 外键，并补充真实 Provider 的脱敏集成测试。

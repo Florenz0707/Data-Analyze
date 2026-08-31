@@ -74,6 +74,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
 
     if p == "openai_compat":
         _maybe_load_dotenv()
+        from deepseek_project.external_endpoint import create_safe_http_client
         from langchain_openai import ChatOpenAI
 
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
@@ -86,17 +87,23 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         model = model or cfg.get("model", "gpt-4o-mini")
+        client_kwargs = {
+            "model": model,
+            "api_key": api_key,
+            "base_url": base_url,
+            "organization": organization,
+            "timeout": timeout,
+            "max_retries": max_retries,
+        }
+        if base_url:
+            client_kwargs["http_client"] = create_safe_http_client(base_url)
         return ChatOpenAI(
-            model=model,
-            api_key=api_key,
-            base_url=base_url,
-            organization=organization,
-            timeout=timeout,
-            max_retries=max_retries,
+            **client_kwargs,
         )
 
     if p == "dashscope":
         _maybe_load_dotenv()
+        from deepseek_project.external_endpoint import create_safe_http_client
         from langchain_openai import ChatOpenAI
 
         cfg = env_cfg.get("DASHSCOPE_CONFIG", {})
@@ -108,13 +115,16 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
         timeout = int(cfg.get("timeout", 60))
         max_retries = int(cfg.get("max_retries", 2))
         chat_model = model or cfg.get("chat_model", "qwen-turbo")
-        return ChatOpenAI(
-            model=chat_model,
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+        client_kwargs = {
+            "model": chat_model,
+            "api_key": api_key,
+            "base_url": base_url,
+            "timeout": timeout,
+            "max_retries": max_retries,
+        }
+        if base_url:
+            client_kwargs["http_client"] = create_safe_http_client(base_url)
+        return ChatOpenAI(**client_kwargs)
 
     raise ValueError(f"不支持的 LLM provider: {provider}")
 

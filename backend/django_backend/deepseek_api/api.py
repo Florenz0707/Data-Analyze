@@ -5,6 +5,11 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
+from deepseek_project.external_endpoint import (
+    ExternalEndpointError,
+    create_safe_http_client,
+    validate_external_endpoint,
+)
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -180,10 +185,18 @@ def _get_locked_session(user: User, session_id: str) -> Session:
 
 def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> bool:
     """Quickly validate an OpenAI-compatible chat endpoint with a 1-token request."""
+    http_client = None
     try:
         from openai import OpenAI
 
-        client = OpenAI(base_url=base_url, api_key=api_key, timeout=15)
+        http_client = create_safe_http_client(base_url)
+        client = OpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            timeout=15,
+            max_retries=0,
+            http_client=http_client,
+        )
         # minimal probe
         resp = client.chat.completions.create(
             model=model_name,
@@ -198,6 +211,9 @@ def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> boo
         # their contents because this boundary handles user-supplied secrets.
         logger.warning("Validate external API failed for model %s", model_name)
         return False
+    finally:
+        if http_client is not None:
+            http_client.close()
 
 
 def _request_rate_limit_scope(request) -> str:
@@ -747,6 +763,10 @@ def add_external_api(request, data: APIIn):
         return 400, error_payload(
             ErrorCode.VALIDATION_ERROR, "base_url、model_name、api_key 不能为空"
         )
+    try:
+        validate_external_endpoint(base_url)
+    except ExternalEndpointError:
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "base_url 不安全或格式无效")
 
     username = request.auth.user
     existing = ExternalLLMAPI.objects.filter(user=username, model_name=model_name).first()

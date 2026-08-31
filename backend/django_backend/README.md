@@ -73,7 +73,7 @@
 
 - 用户自定义模型通过 `/api/llm/extern` 管理；选择时可使用模型别名或模型名，后端只在当前用户范围内解析，并将偏好绑定到稳定配置 ID。
 - 外部 API Key 使用 Fernet 加密保存于 `ExternalLLMAPI.api_key_encrypted`，不出现在 API 响应和日志中。优先设置不入库的 `EXTERNAL_API_ENCRYPTION_KEY`；未设置时由稳定的 `DJANGO_SECRET_KEY` 派生。
-- 更新相同模型名会重新加密 API Key；删除当前使用的外部模型时，用户偏好自动回退到 `llm_config.yaml` 的默认模型。Base URL 的协议、内网地址和重定向校验仍属于后续 SSRF 防护任务。
+- 更新相同模型名会重新加密 API Key；删除当前使用的外部模型时，用户偏好自动回退到 `llm_config.yaml` 的默认模型。Base URL 默认只允许 HTTPS，并会校验公网地址、DNS、重定向、超时和响应大小，详见 `doc/m3_ssrf_input_security.md`。
 
 ## 4. 环境准备
 
