@@ -109,7 +109,7 @@
 
 - 数据迁移：
   - uv run python manage.py migrate （或激活虚拟环境后直接 python manage.py migrate）
-  - 切换数据库后无需新增专用迁移；Django 会在目标数据库上按既有 0001–0008 顺序执行迁移。生产切换前请备份并在目标数据库副本演练。
+  - 切换数据库后无需新增专用迁移；Django 会在目标数据库上按既有 0001–0010 顺序执行迁移。生产切换前请备份并在目标数据库副本演练。
   - 0007 迁移会把旧 History 绑定到 Session，并删除无法匹配所属 Session 的孤立记录；0008 会把 Session 用户名迁移为 Django User 外键，并清理无法匹配用户的 Session；生产迁移前请先备份数据库。
 - 可选：初始化命令（如有需要）
   - uv run python manage.py initdb
@@ -117,6 +117,8 @@
     - 仅 SQLite 可在 ORM 种子后尝试执行原始 SQL：uv run python manage.py initdb --use-sql --sql init.sql；MySQL/PostgreSQL 请不要使用 `--use-sql`
 - 启动开发服务器：
   - uv run python manage.py runserver 0.0.0.0:8000
+- Token 生命周期：Access Token 默认 15 分钟；Refresh Token 使用 HttpOnly Cookie 并在刷新时轮换。`ACCESS_TOKEN_EXPIRY_SECONDS`、`REFRESH_TOKEN_EXPIRY_SECONDS`、`AUTH_COOKIE_SECURE` 和 `AUTH_COOKIE_SAMESITE` 可按环境配置。
+- 退出登录：前端调用 `POST /api/logout`，服务端撤销当前 Access/Refresh Token 家族并清理 Refresh Cookie。
 
 方式 B：脚本方式快速验证链路（检索 + 生成）
 

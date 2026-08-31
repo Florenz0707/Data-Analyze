@@ -66,9 +66,7 @@ class Command(BaseCommand):
             },
         )
         if created:
-            self.stdout.write(
-                self.style.SUCCESS(f"Created demo API key: {demo_key_value} for user '{demo_user}'")
-            )
+            self.stdout.write(self.style.SUCCESS(f"Created demo API key for user '{demo_user}'"))
         else:
             # ensure expiry is in the future
             if api_key_obj.expiry_time < now + 60:

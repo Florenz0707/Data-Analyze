@@ -494,13 +494,12 @@ sequenceDiagram
 
 ### 5.5 Axios 拦截器
 
-请求拦截器统一注入 Bearer Token，避免每个 API 函数重复编写认证逻辑。响应拦截器遇到 401 时清除 Token 并跳转登录页。
+请求拦截器统一注入 Bearer Token，响应拦截器携带 Refresh Cookie；受保护请求遇到 401 时共享一次刷新请求，成功后重放原请求，失败才清理 Token 并跳转登录页。
 
 不足：
 
-- 没有调用已有的 Refresh Token 接口进行静默刷新；
 - Token 放在 LocalStorage 中，发生 XSS 时可能被读取；
-- 更安全的生产方案通常是短期 Access Token 放内存、Refresh Token 放 HttpOnly Cookie，并加入单次刷新队列避免并发刷新风暴。
+- 更安全的生产方案是短期 Access Token 放内存、Refresh Token 放 HttpOnly Cookie，并配合 CSRF 防护、设备级撤销和审计。
 
 ### 5.6 Markdown 渲染
 
@@ -562,22 +561,23 @@ Vue 响应式状态变化后，会触发组件重新执行渲染逻辑并生成�
 
 ### 6.1 API 分组
 
-| 方法            | 路径                    | 功能                                         |
-| --------------- | ----------------------- | -------------------------------------------- |
-| POST            | `/api/users/register`   | 注册用户                                     |
-| POST            | `/api/users/login`      | 登录并返回 Access Token、设置 Refresh Cookie |
-| POST            | `/api/refresh`          | 使用 Refresh Token 延长 Access Token 有效期  |
-| POST            | `/api/llm/chat`         | 执行多轮 RAG 对话                            |
-| GET             | `/api/sessions`         | 获取当前用户会话列表                         |
-| POST            | `/api/sessions`         | 创建会话                                     |
-| DELETE          | `/api/sessions`         | 删除会话                                     |
-| GET             | `/api/sessions/history` | 获取结构化会话历史                           |
-| DELETE          | `/api/sessions/history` | 清空会话历史                                 |
-| GET             | `/api/llm/providers`    | 获取允许的 Provider                          |
-| GET             | `/api/llm/local_models` | 获取本地模型列表                             |
-| GET             | `/api/llm/my`           | 获取用户当前模型偏好                         |
-| POST            | `/api/llm/select`       | 更新用户模型偏好                             |
-| GET/POST/DELETE | `/api/llm/extern`       | 管理用户自定义兼容接口                       |
+| 方法            | 路径                    | 功能                                           |
+| --------------- | ----------------------- | ---------------------------------------------- |
+| POST            | `/api/users/register`   | 注册用户                                       |
+| POST            | `/api/users/login`      | 登录并返回 Access Token、设置 Refresh Cookie   |
+| POST            | `/api/refresh`          | 使用 Refresh Token 轮换并签发新的 Access Token |
+| POST            | `/api/logout`           | 服务端撤销 Access/Refresh Token 并清理 Cookie  |
+| POST            | `/api/llm/chat`         | 执行多轮 RAG 对话                              |
+| GET             | `/api/sessions`         | 获取当前用户会话列表                           |
+| POST            | `/api/sessions`         | 创建会话                                       |
+| DELETE          | `/api/sessions`         | 删除会话                                       |
+| GET             | `/api/sessions/history` | 获取结构化会话历史                             |
+| DELETE          | `/api/sessions/history` | 清空会话历史                                   |
+| GET             | `/api/llm/providers`    | 获取允许的 Provider                            |
+| GET             | `/api/llm/local_models` | 获取本地模型列表                               |
+| GET             | `/api/llm/my`           | 获取用户当前模型偏好                           |
+| POST            | `/api/llm/select`       | 更新用户模型偏好                               |
+| GET/POST/DELETE | `/api/llm/extern`       | 管理用户自定义兼容接口                         |
 
 ### 6.2 Django Ninja 的作用
 
@@ -601,13 +601,13 @@ Django Ninja 使用 Schema 描述请求与响应，提供参数校验、类型�
 5. 受保护 Router 从请求头解析 Bearer Token；
 6. 查询 `APIKey` 并校验过期时间。
 
-当前 Token 是数据库可撤销的随机字符串，不是 JWT。优点是服务端可主动吊销；缺点是每次认证需要查数据库，且水平扩展时需要共享存储。
+当前 Token 是数据库可撤销的随机字符串，不是 JWT。Access Token 默认 15 分钟，Refresh Token 使用 HttpOnly Cookie 并采用一次性轮换；服务端保存新 Refresh Token 的 SHA-256 摘要，重用旧 Token 会撤销整个 Token 家族。优点是服务端可主动吊销；缺点是每次认证需要查数据库，且水平扩展时需要共享存储。
 
 ### 6.4 主要数据模型
 
 #### APIKey
 
-保存用户、Access Token、Access 过期时间、Refresh Token 和 Refresh 过期时间。
+保存用户、Access Token、Access 过期时间、撤销时间和兼容字段；Refresh Token 的新版本摘要、家族、绝对过期和轮换状态保存在 `RefreshToken` 表。
 
 #### RateLimit
 
@@ -967,10 +967,10 @@ flowchart LR
 
 #### Token
 
-- 随机 Token 使用 `random.choice`，安全敏感场景更适合 `secrets`；
-- Access Token 存 LocalStorage，存在 XSS 窃取风险；
-- 过期 API Key 在认证时会被删除，可能连带删除模型偏好；
-- 前端没有执行 Refresh Token 刷新流程。
+- Access Token 使用 `secrets` 生成，默认 15 分钟过期；
+- Refresh Token 放 HttpOnly Cookie，服务端按家族轮换并检测重用；
+- 过期 Access Token 不再删除 APIKey，仍可用有效 Refresh Token 恢复；
+- 前端 401 共享单次刷新请求，并重放等待中的请求；Access Token 仍兼容保存在 LocalStorage，生产可改为仅内存存储。
 
 #### 外部 API Key
 
@@ -1401,7 +1401,7 @@ flowchart TD
 
 ### Q12：前端为什么用 LocalStorage 存 Token？
 
-> 它实现简单且刷新页面后仍能登录，但 XSS 可以读取。项目中的 Refresh Token 已放 HttpOnly Cookie，不过前端刷新流程没有接通。生产上应缩短 Access Token 生命周期、尽量放内存，并通过 HttpOnly Refresh Cookie 静默刷新。
+> 它实现简单且刷新页面后仍能登录，但 XSS 可以读取。当前项目已使用短期 Access Token、HttpOnly Refresh Cookie、单次刷新队列和 Token 轮换；生产上仍应将 Access Token 改为仅内存存储，并补充 CSRF、设备级撤销和审计。
 
 ### Q13：CORS 和 Vite Proxy 有什么区别？
 

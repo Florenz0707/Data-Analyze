@@ -21,6 +21,7 @@ describe('API modules', () => {
     users.login('alice', 'secret');
     users.register('alice', 'secret');
     users.refreshToken();
+    users.logout();
     sessions.getSessionList();
     sessions.createSession('session-1');
     sessions.deleteSession('session-1');

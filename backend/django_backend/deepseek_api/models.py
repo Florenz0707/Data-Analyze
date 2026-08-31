@@ -1,6 +1,5 @@
 import logging
-import random
-import string
+import secrets
 import time
 import uuid
 
@@ -18,33 +17,57 @@ class APIKey(models.Model):
     expiry_time = models.IntegerField()  # 过期时间戳
     refresh_token = models.CharField(max_length=128, unique=True, null=True, blank=True)
     refresh_expiry_time = models.IntegerField(null=True, blank=True)
+    revoked_at = models.IntegerField(null=True, blank=True, db_index=True)
 
     @classmethod
     def generate_key(cls, length=32):
-        """生成随机 API Key"""
-        characters = string.ascii_letters + string.digits
-        return "".join(random.choice(characters) for _ in range(length))
+        """Generate an access token from the operating system CSPRNG."""
+        return secrets.token_urlsafe(length)[:length]
 
     @classmethod
     def generate_refresh_token(cls, length=64):
-        characters = string.ascii_letters + string.digits
-        return "".join(random.choice(characters) for _ in range(length))
+        """Generate a refresh token from the operating system CSPRNG."""
+        return secrets.token_urlsafe(length)
 
     def is_valid(self):
         """检查 API Key 是否未过期"""
-        return time.time() < self.expiry_time
+        return self.revoked_at is None and time.time() < self.expiry_time
 
     def refresh_validity(self, ttl_seconds: int):
         self.expiry_time = int(time.time()) + int(ttl_seconds)
         self.save(update_fields=["expiry_time"])
 
     def __str__(self):
-        return f"{self.user} - {self.key}"
+        token = self.key or ""
+        masked = f"{token[:4]}…{token[-4:]}" if len(token) > 8 else "[masked]"
+        return f"{self.user} - {masked}"
+
+
+class RefreshToken(models.Model):
+    """One server-side record for each refresh token rotation."""
+
+    api_key = models.ForeignKey(APIKey, on_delete=models.CASCADE, related_name="refresh_tokens")
+    token_hash = models.CharField(max_length=64, unique=True)
+    family_id = models.UUIDField(default=uuid.uuid4, db_index=True, editable=False)
+    issued_at = models.IntegerField()
+    expires_at = models.IntegerField()
+    used_at = models.IntegerField(null=True, blank=True)
+    revoked_at = models.IntegerField(null=True, blank=True)
+    replaced_by_hash = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["family_id", "revoked_at"]),
+            models.Index(fields=["api_key", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"refresh-family:{self.family_id} api-key:{self.api_key_id}"
 
 
 class RateLimit(models.Model):
     api_key = models.ForeignKey(
-        APIKey, on_delete=models.CASCADE, db_index=True, to_field="key", related_name="rate_limits"
+        APIKey, on_delete=models.CASCADE, db_index=True, related_name="rate_limits"
     )
     count = models.IntegerField(default=0)
     reset_time = models.IntegerField()  # 重置时间戳

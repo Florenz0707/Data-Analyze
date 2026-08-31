@@ -11,3 +11,7 @@ export const register = (username, password) => {
 export const refreshToken = () => {
   return apiClient.post('/refresh');
 };
+
+export const logout = () => {
+  return apiClient.post('/logout');
+};

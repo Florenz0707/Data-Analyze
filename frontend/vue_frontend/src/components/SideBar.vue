@@ -188,6 +188,7 @@ import { useChatStore } from '../stores/chat';
 import { useAuthStore } from '../stores/auth';
 import { useModelStore } from '../stores/model';
 import { useRouter } from 'vue-router';
+import { logout } from '../api/users';
 // import { useAppStore } from '../stores/app'; // 移除了 appStore，因为 "click again" 逻辑被简化
 
 const props = defineProps({
@@ -331,7 +332,12 @@ const handleLogout = () => {
     positiveText: 'Logout',
     negativeText: 'Cancel',
     positiveButtonProps: { type: 'error' },
-    onPositiveClick: () => {
+    onPositiveClick: async () => {
+      try {
+        await logout();
+      } catch {
+        // Clear local state even if the access token has already expired.
+      }
       authStore.clearApiKey();
       chatStore.clearUserChatData();
       router.push('/login');

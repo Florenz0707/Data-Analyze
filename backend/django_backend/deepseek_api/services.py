@@ -9,8 +9,9 @@ from deepseek_project.configuration import load_llm_config
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 
-from .models import APIKey, ConversationSession, RateLimit, UserLLMPreference
+from .models import APIKey, ConversationSession, RateLimit, RefreshToken, UserLLMPreference
 
 # 线程锁用于速率限制
 rate_lock = threading.Lock()
@@ -335,79 +336,187 @@ def generate_with_user_llm(user: APIKey, prompt: str) -> str:
 
 
 def create_api_key(user: str) -> APIKey:
-    """为用户创建或复用 API Key。
-    - 若存在未过期的 APIKey，则刷新其 expiry_time 并返回该对象（不生成新 key）
-    - 否则创建新的 APIKey，并生成 refresh_token（新的 refresh_token 仅在创建时生成）
-    """
+    """Issue or reuse an access token and rotate its refresh-token family."""
     now = int(time.time())
     expiry_seconds = int(settings.TOKEN_EXPIRY_SECONDS)
     refresh_expiry_seconds = int(getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", 30 * 24 * 3600))
 
-    # 清理已过期的 key
-    APIKey.objects.filter(user=user, expiry_time__lt=now).delete()
+    with transaction.atomic():
+        existing = (
+            APIKey.objects.select_for_update()
+            .filter(user=user, revoked_at__isnull=True)
+            .order_by("-created_at")
+            .first()
+        )
+        if existing is None:
+            api_key = APIKey.objects.create(
+                key=APIKey.generate_key(length=64),
+                user=user,
+                expiry_time=now + expiry_seconds,
+            )
+            RateLimit.objects.create(
+                api_key=api_key,
+                reset_time=now + int(settings.RATE_LIMIT_INTERVAL),
+            )
+            refresh_expiry = now + refresh_expiry_seconds
+        else:
+            api_key = existing
+            api_key.expiry_time = now + expiry_seconds
+            api_key.save(update_fields=["expiry_time"])
+            current = _get_current_refresh_record(api_key, now)
+            refresh_expiry = (
+                current.expires_at
+                if current is not None and current.expires_at > now
+                else now + refresh_expiry_seconds
+            )
 
-    # 复用未过期 key
-    existing = (
-        APIKey.objects.filter(user=user, expiry_time__gte=now).order_by("-created_at").first()
-    )
-    if existing:
-        # 刷新 access token 的有效期，并轮换 refresh_token（旧值失效）
-        existing.refresh_validity(expiry_seconds)
-        existing.refresh_token = APIKey.generate_refresh_token(length=96)
-        existing.refresh_expiry_time = now + refresh_expiry_seconds
-        existing.save(update_fields=["refresh_token", "refresh_expiry_time"])
-        return existing
-
-    # 创建新 key + refresh_token
-    key = APIKey.generate_key(length=64)
-    refresh_token = APIKey.generate_refresh_token(length=96)
-    api_key = APIKey.objects.create(
-        key=key,
-        user=user,
-        expiry_time=now + expiry_seconds,
-        refresh_token=refresh_token,
-        refresh_expiry_time=now + refresh_expiry_seconds,
-    )
-
-    # 创建对应的速率限制记录
-    RateLimit.objects.create(api_key=api_key, reset_time=now + int(settings.RATE_LIMIT_INTERVAL))
-
-    return api_key
+        _rotate_refresh_token(api_key, now=now, expires_at=refresh_expiry)
+        return api_key
 
 
 def validate_api_key(key_str: str) -> bool:
-    """验证 API Key 是否存在且未过期（若过期则删除）。"""
+    """Validate an access token without destroying its refresh-token family."""
     try:
         api_key = APIKey.objects.get(key=key_str)
-        if api_key.is_valid():
-            return True
-        api_key.delete()  # 删除过期key
-        return False
+        return api_key.is_valid()
     except APIKey.DoesNotExist:
         return False
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _get_current_refresh_record(api_key: APIKey, now: int) -> RefreshToken | None:
+    """Return the current token record, importing one legacy plaintext value once."""
+    current = (
+        RefreshToken.objects.select_for_update()
+        .filter(api_key=api_key, used_at__isnull=True, revoked_at__isnull=True)
+        .order_by("-issued_at")
+        .first()
+    )
+    if current is not None:
+        return current
+
+    # Migrate an old APIKey row lazily. New refresh tokens are only stored as
+    # hashes in RefreshToken; this keeps existing installations usable.
+    legacy = (api_key.refresh_token or "").strip()
+    if not legacy:
+        return None
+    return RefreshToken.objects.create(
+        api_key=api_key,
+        token_hash=_hash_token(legacy),
+        issued_at=now,
+        expires_at=int(api_key.refresh_expiry_time or now),
+    )
+
+
+def _rotate_refresh_token(api_key: APIKey, *, now: int, expires_at: int) -> str:
+    """Consume the current refresh token and issue a new token in its family."""
+    current = _get_current_refresh_record(api_key, now)
+    family_id = current.family_id if current is not None else uuid.uuid4()
+    raw_token = APIKey.generate_refresh_token(length=96)
+    token_hash = _hash_token(raw_token)
+    next_record = RefreshToken.objects.create(
+        api_key=api_key,
+        token_hash=token_hash,
+        family_id=family_id,
+        issued_at=now,
+        expires_at=expires_at,
+    )
+    if current is not None:
+        current.used_at = now
+        current.replaced_by_hash = next_record.token_hash
+        current.save(update_fields=["used_at", "replaced_by_hash"])
+
+    api_key.refresh_token = None
+    api_key.refresh_expiry_time = expires_at
+    api_key.save(update_fields=["refresh_token", "refresh_expiry_time"])
+    # The raw value is intentionally transient: API serialization needs it,
+    # while the database keeps only a digest for newly issued tokens.
+    api_key.refresh_token = raw_token
+    return raw_token
 
 
 def refresh_access_token(refresh_token: str) -> APIKey | None:
-    """使用 refresh_token 刷新访问令牌有效期。
-    - 找到对应 APIKey
-    - 若 refresh_token 已过期，则删除该记录并返回 None
-    - 否则仅刷新 access token 的 expiry_time，不更换 access_token/refresh_token
-    """
+    """Rotate a refresh token once and revoke its family on reuse."""
     now = int(time.time())
-    try:
-        api_key = APIKey.objects.get(refresh_token=refresh_token)
-    except APIKey.DoesNotExist:
+    token_hash = _hash_token((refresh_token or "").strip())
+    if not refresh_token:
         return None
 
-    # 检查 refresh token 过期
-    if api_key.refresh_expiry_time is None or now >= int(api_key.refresh_expiry_time):
-        api_key.delete()
-        return None
+    with transaction.atomic():
+        record = (
+            RefreshToken.objects.select_for_update()
+            .select_related("api_key")
+            .filter(token_hash=token_hash)
+            .first()
+        )
+        if record is None:
+            # Compatibility path for rows created before the hash-backed table.
+            api_key = (
+                APIKey.objects.select_for_update()
+                .filter(refresh_token=refresh_token, revoked_at__isnull=True)
+                .first()
+            )
+            if api_key is None:
+                return None
+            record = _get_current_refresh_record(api_key, now)
+            if record is None or record.token_hash != token_hash:
+                return None
+        api_key = APIKey.objects.select_for_update().get(pk=record.api_key_id)
 
-    # 刷新 access token 的有效期
-    api_key.expiry_time = now + int(settings.TOKEN_EXPIRY_SECONDS)
-    api_key.save(update_fields=["expiry_time"])
-    return api_key
+        if record.used_at is not None or record.revoked_at is not None:
+            _revoke_refresh_family(record.family_id, api_key, now)
+            return None
+        if now >= record.expires_at or api_key.revoked_at is not None:
+            record.revoked_at = now
+            record.save(update_fields=["revoked_at"])
+            return None
+
+        # Rotate the access token as well, so a token presented before the
+        # refresh cannot remain valid after the refresh exchange.
+        api_key.key = APIKey.generate_key(length=64)
+        api_key.expiry_time = now + int(settings.TOKEN_EXPIRY_SECONDS)
+        api_key.save(update_fields=["key", "expiry_time"])
+        _rotate_refresh_token(api_key, now=now, expires_at=record.expires_at)
+        return api_key
+
+
+def _revoke_refresh_family(family_id, api_key: APIKey, now: int) -> None:
+    RefreshToken.objects.filter(family_id=family_id, revoked_at__isnull=True).update(revoked_at=now)
+    api_key.revoked_at = now
+    api_key.save(update_fields=["revoked_at"])
+
+
+def revoke_tokens(*, refresh_token: str | None = None, access_token: str | None = None) -> None:
+    """Revoke the access token and refresh-token family associated with a logout."""
+    now = int(time.time())
+    with transaction.atomic():
+        api_key = None
+        if access_token:
+            api_key = APIKey.objects.select_for_update().filter(key=access_token).first()
+        if api_key is None and refresh_token:
+            record = (
+                RefreshToken.objects.select_for_update()
+                .filter(token_hash=_hash_token(refresh_token))
+                .first()
+            )
+            if record is not None:
+                api_key = APIKey.objects.select_for_update().get(pk=record.api_key_id)
+                _revoke_refresh_family(record.family_id, api_key, now)
+            else:
+                # Compatibility path for a legacy APIKey that has not yet
+                # been lazily imported into RefreshToken.
+                api_key = (
+                    APIKey.objects.select_for_update().filter(refresh_token=refresh_token).first()
+                )
+        if api_key is not None:
+            api_key.revoked_at = now
+            api_key.save(update_fields=["revoked_at"])
+            RefreshToken.objects.filter(api_key=api_key, revoked_at__isnull=True).update(
+                revoked_at=now
+            )
 
 
 def check_rate_limit(key_str: str) -> bool:

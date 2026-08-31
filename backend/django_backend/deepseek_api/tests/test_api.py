@@ -94,7 +94,7 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(malformed.status_code, 401)
         self.assertEqual(expired.json()["code"], "AUTH_INVALID")
         self.assertEqual(malformed.json()["code"], "AUTH_INVALID")
-        self.assertFalse(APIKey.objects.filter(pk=api_key.pk).exists())
+        self.assertTrue(APIKey.objects.filter(pk=api_key.pk).exists())
 
     def test_login_rejects_invalid_and_inactive_users(self):
         empty = self.client.post(
@@ -138,9 +138,10 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(api_module.add_external_api(request, SimpleNamespace())[0], 401)
         self.assertEqual(api_module.list_external_models(request)[0], 401)
         self.assertEqual(api_module.delete_external_model(request, SimpleNamespace())[0], 401)
-        self.assertEqual(api_module.refresh(SimpleNamespace(COOKIES={}))[0], 400)
+        self.assertEqual(api_module.refresh(SimpleNamespace(COOKIES={})).status_code, 400)
         self.assertEqual(
-            api_module.refresh(SimpleNamespace(COOKIES={"refresh_token": "invalid"}))[0], 403
+            api_module.refresh(SimpleNamespace(COOKIES={"refresh_token": "invalid"})).status_code,
+            403,
         )
 
         missing_session = SimpleNamespace(auth=APIKey(user="missing-user"))
@@ -473,14 +474,43 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(session.next_history_sequence, 1)
 
     def test_refresh_uses_cookie_and_rotates_access_expiry(self):
-        self.register_and_login("refresh-user")
+        first_access = self.register_and_login("refresh-user")
+        first_refresh = self.client.cookies["refresh_token"].value
 
         refreshed = self.client.post("/api/refresh")
         missing = Client().post("/api/refresh")
 
         self.assertEqual(refreshed.status_code, 200)
         self.assertTrue(refreshed["Authorization"].startswith("Bearer "))
+        self.assertNotEqual(refreshed["Authorization"], first_access)
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, first_refresh)
         self.assertEqual(missing.status_code, 400)
+
+    def test_refresh_token_reuse_revokes_session(self):
+        self.register_and_login("refresh-reuse-user")
+        stale_refresh = self.client.cookies["refresh_token"].value
+
+        self.assertEqual(self.client.post("/api/refresh").status_code, 200)
+        stale_client = Client()
+        stale_client.cookies["refresh_token"] = stale_refresh
+        reused = stale_client.post("/api/refresh")
+
+        self.assertEqual(reused.status_code, 403)
+        api_key = APIKey.objects.get(user="refresh-reuse-user")
+        self.assertIsNotNone(api_key.revoked_at)
+
+    def test_logout_revokes_access_and_clears_refresh_cookie(self):
+        client = self.authenticated_client("logout-user")
+        api_key = APIKey.objects.get(user="logout-user")
+
+        response = client.post("/api/logout")
+        protected = client.get("/api/sessions")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "退出成功"})
+        self.assertEqual(protected.status_code, 401)
+        api_key.refresh_from_db()
+        self.assertIsNotNone(api_key.revoked_at)
 
     @patch("deepseek_api.api.get_allowed_providers", return_value=["ollama", "transformers"])
     @patch(

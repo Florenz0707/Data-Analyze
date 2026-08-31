@@ -212,11 +212,9 @@ def api_key_auth(request):
             raise AuthenticationError(message="API Key 无效")
         api_key = APIKey.objects.get(key=key)
         # 过期校验
-        import time
-
-        if int(time.time()) >= int(api_key.expiry_time or 0):
-            # 删除过期 key
-            api_key.delete()
+        if api_key.revoked_at is not None:
+            raise AuthenticationError(message="API Key 已撤销")
+        if not api_key.is_valid():
             raise AuthenticationError(message="API Key 已过期")
         return api_key
     except (ValueError, APIKey.DoesNotExist):
@@ -288,11 +286,11 @@ def login(request, data: LoginIn):
     response["Authorization"] = f"Bearer {api_key_obj.key}"
     # 将 refresh_token 写入 HttpOnly Cookie
     response.set_cookie(
-        key="refresh_token",
+        key=settings.AUTH_REFRESH_COOKIE_NAME,
         value=api_key_obj.refresh_token or "",
         httponly=True,
-        secure=not settings.DEBUG,
-        samesite="Lax",
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
         max_age=getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", None),
         path="/",
     )
@@ -774,27 +772,72 @@ def delete_external_model(request, data: ModelIn):
     response={200: dict, 400: ErrorResponse, 403: ErrorResponse, 500: ErrorResponse},
 )
 def refresh(request):
-    token = (request.COOKIES.get("refresh_token") or "").strip()
+    token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
     if not token:
-        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "refresh_token 不能为空")
+        response = api.create_response(
+            request,
+            error_payload(ErrorCode.VALIDATION_ERROR, "refresh_token 不能为空"),
+            status=400,
+        )
+        response.delete_cookie(
+            settings.AUTH_REFRESH_COOKIE_NAME,
+            path="/",
+            samesite=settings.AUTH_COOKIE_SAMESITE,
+        )
+        return response
 
     api_key = services.refresh_access_token(token)
     if not api_key:
-        return 403, error_payload(ErrorCode.AUTH_INVALID, "refresh_token 无效或已过期")
+        response = api.create_response(
+            request,
+            error_payload(ErrorCode.AUTH_INVALID, "refresh_token 无效或已过期"),
+            status=403,
+        )
+        response.delete_cookie(
+            settings.AUTH_REFRESH_COOKIE_NAME,
+            path="/",
+            samesite=settings.AUTH_COOKIE_SAMESITE,
+        )
+        return response
 
     payload = {"message": "刷新成功"}
     response = api.create_response(request, payload, status=200)
     # 在响应头设置新的 Authorization，便于前端拿到新的 access token
     response["Authorization"] = f"Bearer {api_key.key}"
-    # 将现有 refresh_token 继续写入 HttpOnly Cookie（不更换，且不延长有效期）
+    # Rotate the refresh token while keeping its original absolute expiry.
     response.set_cookie(
-        key="refresh_token",
+        key=settings.AUTH_REFRESH_COOKIE_NAME,
         value=api_key.refresh_token or "",
         httponly=True,
-        secure=not settings.DEBUG,
-        samesite="Lax",
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
         max_age=getattr(settings, "REFRESH_TOKEN_EXPIRY_SECONDS", None),
         path="/",
+    )
+    return response
+
+
+@api.post(
+    "/logout",
+    response={200: dict, 500: ErrorResponse},
+)
+def logout(request):
+    """Revoke the current access token and refresh-token family."""
+    authorization = request.headers.get("Authorization", "")
+    access_token = None
+    try:
+        scheme, value = authorization.split()
+        if scheme.lower() == "bearer":
+            access_token = value
+    except ValueError:
+        pass
+    refresh_token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
+    services.revoke_tokens(refresh_token=refresh_token, access_token=access_token)
+    response = api.create_response(request, {"message": "退出成功"}, status=200)
+    response.delete_cookie(
+        settings.AUTH_REFRESH_COOKIE_NAME,
+        path="/",
+        samesite=settings.AUTH_COOKIE_SAMESITE,
     )
     return response
 

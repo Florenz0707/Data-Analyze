@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from deepseek_api import services
-from deepseek_api.models import APIKey, RateLimit
+from deepseek_api.models import APIKey, RateLimit, RefreshToken
 from deepseek_api.services import (
     _build_reply_cache_key,
     check_rate_limit,
@@ -205,6 +205,43 @@ class ServiceDatabaseTests(TestCase):
 
         self.assertIsNone(refresh_access_token(api_key.refresh_token))
         self.assertFalse(validate_api_key(api_key.key))
+
+    def test_expired_access_token_can_still_be_refreshed(self):
+        api_key = create_api_key("expired-access")
+        refresh_token = api_key.refresh_token
+        api_key.expiry_time = 0
+        api_key.save(update_fields=["expiry_time"])
+
+        self.assertFalse(validate_api_key(api_key.key))
+        refreshed = refresh_access_token(refresh_token)
+
+        self.assertIsNotNone(refreshed)
+        self.assertTrue(validate_api_key(refreshed.key))
+
+    def test_refresh_rotation_detects_reuse_and_revokes_the_family(self):
+        api_key = create_api_key("refresh-reuse")
+        first_refresh = api_key.refresh_token
+
+        rotated = refresh_access_token(first_refresh)
+        second_refresh = rotated.refresh_token
+
+        self.assertNotEqual(first_refresh, second_refresh)
+        self.assertEqual(RefreshToken.objects.filter(api_key=api_key).count(), 2)
+        self.assertIsNone(refresh_access_token(first_refresh))
+        api_key.refresh_from_db()
+        self.assertIsNotNone(api_key.revoked_at)
+        self.assertFalse(validate_api_key(api_key.key))
+        self.assertIsNone(refresh_access_token(second_refresh))
+
+    def test_access_rotation_keeps_rate_limit_bound_to_stable_api_key_id(self):
+        api_key = create_api_key("stable-rate-limit-owner")
+        refresh_token = api_key.refresh_token
+        original_rate_limit = RateLimit.objects.get(api_key=api_key)
+
+        refreshed = refresh_access_token(refresh_token)
+
+        self.assertNotEqual(refreshed.key, api_key.key)
+        self.assertEqual(RateLimit.objects.get(api_key=refreshed).pk, original_rate_limit.pk)
 
     @override_settings(RATE_LIMIT_MAX=1)
     def test_rate_limit_blocks_second_request_in_same_window(self):
