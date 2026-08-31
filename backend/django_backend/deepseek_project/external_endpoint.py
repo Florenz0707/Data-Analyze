@@ -185,7 +185,7 @@ class _PinnedHTTPTransport(httpx.BaseTransport):
             extensions=request.extensions,
         )
         response = self._pool.handle_request(core_request)
-        content_length = response.headers.get(b"content-length")
+        content_length = dict(response.headers).get(b"content-length")
         if content_length is not None and int(content_length) > self._max_response_bytes:
             response.close()
             raise httpx.ReadError("外部模型响应超过大小限制")

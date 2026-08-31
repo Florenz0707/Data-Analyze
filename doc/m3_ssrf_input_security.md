@@ -38,9 +38,12 @@ EXTERNAL_API_MAX_REDIRECTS=0
 
 - SSRF 安全测试覆盖协议、内网/环回/元数据 IP、IPv4-mapped IPv6、凭据/查询/片段、混合 DNS 结果、重定向目标和响应大小限制。
 - 外部模型 API 测试覆盖危险地址在探测前拦截，且日志不包含 API Key。
-- 后端全量测试：83/83 通过。
+- 外部端点定向测试：8/8 通过，覆盖 `httpcore.Response.headers` 列表兼容、声明响应大小超限和流式响应大小限制。
+- 后端全量测试：108/108 通过（使用 `config/db_config.yaml.example` 创建测试数据库）。
 - `makemigrations --check --dry-run`：无模型变化；本任务不新增迁移。
 - 未访问真实外部服务；网络测试使用公网 IP 字面量、Mock Provider 和 Mock Transport。
+
+此前真实 DeepSeek 请求在检索成功后被 OpenAI SDK 包装为 `APIConnectionError`。根因是自定义 httpcore 传输层把 `Response.headers`（列表形式）当作字典调用 `.get()`，触发 `AttributeError`；现已转换为字典后再读取 `content-length`，并加入回归测试。
 
 ## 6. 边界与后续改进
 

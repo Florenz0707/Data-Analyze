@@ -378,8 +378,12 @@ class ServiceDatabaseTests(TestCase):
     @patch("llama_index.llms.langchain.LangChainLLM")
     @patch("deepseek_api.services.build_llm_for_provider")
     @patch("deepseek_api.services._get_system")
+    @patch(
+        "deepseek_api.services._get_default_provider_model",
+        return_value=("ollama", "default-model"),
+    )
     def test_fake_llm_is_passed_to_one_request_without_global_mutation(
-        self, get_system, build_llm, llm_wrapper
+        self, _default_model, get_system, build_llm, llm_wrapper
     ):
         class FakeSystem:
             def query(self, prompt, **kwargs):

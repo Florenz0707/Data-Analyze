@@ -1,11 +1,14 @@
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import httpx
 from django.test import SimpleTestCase, override_settings
 
 from deepseek_project.external_endpoint import (
     ExternalEndpointError,
+    ResolvedEndpoint,
     _LimitedResponseStream,
+    _PinnedHTTPTransport,
     create_safe_http_client,
     validate_external_endpoint,
 )
@@ -78,3 +81,58 @@ class ExternalEndpointSecurityTests(SimpleTestCase):
 
         with self.assertRaises(httpx.ReadError):
             list(stream)
+
+    def test_transport_accepts_httpcore_header_list(self):
+        endpoint = ResolvedEndpoint(
+            url="https://provider.example/v1",
+            scheme="https",
+            hostname="provider.example",
+            port=443,
+            addresses=("8.8.8.8",),
+        )
+        transport = _PinnedHTTPTransport(endpoint, max_response_bytes=1024)
+        core_response = SimpleNamespace(
+            status=200,
+            headers=[
+                (b"content-length", b"2"),
+                (b"content-type", b"application/json"),
+            ],
+            stream=iter([b"{}"]),
+            extensions={},
+            close=Mock(),
+        )
+        transport._pool.handle_request = Mock(return_value=core_response)
+
+        try:
+            response = transport.handle_request(
+                httpx.Request("GET", "https://provider.example/v1/models")
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.read(), b"{}")
+        finally:
+            transport.close()
+
+    def test_transport_rejects_declared_oversized_response(self):
+        endpoint = ResolvedEndpoint(
+            url="https://provider.example/v1",
+            scheme="https",
+            hostname="provider.example",
+            port=443,
+            addresses=("8.8.8.8",),
+        )
+        transport = _PinnedHTTPTransport(endpoint, max_response_bytes=1)
+        core_response = SimpleNamespace(
+            status=200,
+            headers=[(b"content-length", b"2")],
+            stream=iter([b"{}"]),
+            extensions={},
+            close=Mock(),
+        )
+        transport._pool.handle_request = Mock(return_value=core_response)
+
+        try:
+            with self.assertRaises(httpx.ReadError):
+                transport.handle_request(httpx.Request("GET", "https://provider.example/v1/models"))
+            core_response.close.assert_called_once_with()
+        finally:
+            transport.close()

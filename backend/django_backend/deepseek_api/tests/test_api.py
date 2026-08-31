@@ -639,8 +639,12 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(not_found.status_code, 404)
         self.assertEqual(ExternalLLMAPI.objects.count(), 0)
 
+    @patch(
+        "deepseek_api.services._get_default_provider_model",
+        return_value=("ollama", "default-model"),
+    )
     @patch("deepseek_api.api._validate_openai_compat", return_value=True)
-    def test_external_model_selection_and_delete_fallback(self, _validate):
+    def test_external_model_selection_and_delete_fallback(self, _validate, _default_model):
         client = self.authenticated_client("external-selection-user")
         payload = {
             "base_url": "https://93.184.216.34/v1",
