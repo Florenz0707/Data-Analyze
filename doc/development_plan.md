@@ -105,18 +105,18 @@
 
 > 更新要求：每个开发周期至少更新一次状态、负责人和预计验收时间。
 
-| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                     | 负责人 | 预计验收   | 实际验收   |
-| ------ | ------------------------------ | -----: | ---------- | -------------------------------------------------------- | ------ | ---------- | ---------- |
-| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                          | Codex  | 2026-08-29 | 2026-08-29 |
-| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                                   | Codex  | TODO       | -          |
-| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，限流/多进程/共享缓存压测待完成） | Codex  | TODO       | -          |
-| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token 生命周期已完成）                           | Codex  | TODO       | -          |
-| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 未开始                                                   | TODO   | TODO       | -          |
-| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 未开始                                                   | TODO   | TODO       | -          |
-| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                                   | TODO   | TODO       | -          |
-| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                                   | TODO   | TODO       | -          |
-| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                                   | TODO   | TODO       | -          |
-| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                                   | TODO   | TODO       | -          |
+| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                | 负责人 | 预计验收   | 实际验收   |
+| ------ | ------------------------------ | -----: | ---------- | --------------------------------------------------- | ------ | ---------- | ---------- |
+| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                     | Codex  | 2026-08-29 | 2026-08-29 |
+| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                              | Codex  | TODO       | -          |
+| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，多进程/共享缓存压测待完成） | Codex  | TODO       | -          |
+| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token 生命周期、限流已完成）                | Codex  | TODO       | -          |
+| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 未开始                                              | TODO   | TODO       | -          |
+| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 未开始                                              | TODO   | TODO       | -          |
+| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                              | TODO   | TODO       | -          |
+| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                              | TODO   | TODO       | -          |
+| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                              | TODO   | TODO       | -          |
+| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                              | TODO   | TODO       | -          |
 
 ### 3.1 推荐推进顺序
 
@@ -423,12 +423,12 @@ flowchart LR
 
 #### 限流
 
-- [ ] 将限流接入实际请求链路；
-- [ ] 使用支持多进程的共享存储；
-- [ ] 区分登录、聊天、模型验证等接口限额；
-- [ ] 返回 `429` 和合理的 `Retry-After`；
-- [ ] 限流维度至少包含用户和 IP；
-- [ ] 增加突发流量和窗口重置测试。
+- [x] 将限流接入实际请求链路；
+- [x] 使用支持多进程的共享存储；
+- [x] 区分登录、聊天、模型验证等接口限额；
+- [x] 返回 `429` 和合理的 `Retry-After`；
+- [x] 限流维度至少包含用户和 IP；
+- [x] 增加突发流量和窗口重置测试。
 
 #### 外部模型闭环
 
@@ -476,14 +476,13 @@ flowchart LR
 ### 7.5 状态记录
 
 ```text
-状态：进行中（Token 生命周期子任务已完成）
+状态：进行中（Token 生命周期和限流子任务已完成）
 负责人：Codex
 更新时间：2026-08-31
 已完成：安全随机 Token、15 分钟默认 Access Token、HttpOnly Refresh Cookie、Refresh Token 哈希存储与家族轮换、重用检测、服务端 logout 吊销、过期 Access Token 保留 Refresh 能力、前端单次刷新队列和请求重放
-剩余工作：实际限流接入、外部模型密钥保护、SSRF 防护和 M3 集成验收
-验收证据：E-020、`doc/m3_token_lifecycle.md`、`deepseek_api/migrations/0009_apikey_revoked_at_refreshtoken.py`、`deepseek_api/migrations/0010_ratelimit_stable_apikey_fk.py`
-更新时间：2026-08-28
-验收证据：待补充
+剩余工作：外部模型密钥保护、SSRF 防护和 M3 集成验收
+验收证据：E-020、E-021、`doc/m3_token_lifecycle.md`、`doc/m3_rate_limiting.md`
+更新时间：2026-08-31
 ```
 
 ---
@@ -1193,8 +1192,8 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-014 | M2     | Session/History 一致性报告       | `doc/m2_session_history_consistency.md`、`backend/django_backend/deepseek_api/migrations/0007_session_history_foreign_key.py`、`backend/django_backend/deepseek_api/tests/test_api.py`                                                                                                                                                                                                                                | 49/49 后端测试通过；0007 临时 SQLite 迁移演练完成；有效历史绑定、孤立历史清理、删除级联、事务回滚、游标契约和跨用户 404 均通过                                                                        | Codex  | 2026-08-29 |
 | E-015 | M2     | 用户外键、并发写入与复合游标报告 | `doc/m2_session_history_consistency.md`、`backend/django_backend/deepseek_api/migrations/0008_session_user_and_history_ordering.py`、`backend/django_backend/deepseek_api/tests/test_api.py`                                                                                                                                                                                                                          | 50/50 后端测试通过；核心覆盖率 89%；0008 临时 SQLite 迁移演练完成；User 外键、Session 行锁、sequence/message_id 幂等和 `(created_at,id)` 游标通过                                                     | Codex  | 2026-08-30 |
 | E-016 | M2     | 缓存正确性报告                   | `doc/m2_cache_correctness.md`、`backend/django_backend/deepseek_api/services.py`、`backend/django_backend/deepseek_api/management/commands/invalidate_reply_cache.py`、`backend/django_backend/deepseek_api/tests/test_services.py`                                                                                                                                                                                   | 定向缓存/配置测试 27/27、后端全量测试 54/54 通过；SHA-256 完整身份键、TTL、命名空间失效、空值/错误值拒绝和用户/Session 隔离通过；核心覆盖率 88%、API 95%                                              | Codex  | 2026-08-30 |
-| E-017 | M2     | 错误语义区分报告                 | `doc/m2_error_semantics.md`、`backend/django_backend/deepseek_api/errors.py`、`backend/django_backend/deepseek_api/api.py`、`backend/django_backend/deepseek_api/schemas.py`、`backend/django_backend/deepseek_api/tests/test_api.py`、`frontend/vue_frontend/src/api/errors.js`、`frontend/vue_frontend/tests/errors.spec.js`                                                                                        | API 错误语义测试 25/25、前端错误码测试 16/16 通过；统一 `ErrorResponse`、稳定错误码、400/401/403/404/409/429/500/503 映射、参数详情、Retry-After 和前端错误提示通过；实际限流接入仍待后续任务         | Codex  | 2026-08-30 |
-| E-003 | M2     | 并发与数据迁移报告               | `doc/m2_session_history_consistency.md`、`evaluation/postgres_model_isolation.py`                                                                                                                                                                                                                                                                                                                                     | 用户外键、基础并发写入、复合游标、缓存正确性和错误语义已验收；当前 PostgreSQL 50 请求/20 worker 单实例验证通过；多进程、共享缓存、MySQL 和实际限流接入仍待验收                                        | Codex  | 2026-08-31 |
+| E-017 | M2     | 错误语义区分报告                 | `doc/m2_error_semantics.md`、`backend/django_backend/deepseek_api/errors.py`、`backend/django_backend/deepseek_api/api.py`、`backend/django_backend/deepseek_api/schemas.py`、`backend/django_backend/deepseek_api/tests/test_api.py`、`frontend/vue_frontend/src/api/errors.js`、`frontend/vue_frontend/tests/errors.spec.js`                                                                                        | API 错误语义测试 25/25、前端错误码测试 16/16 通过；统一 `ErrorResponse`、稳定错误码、400/401/403/404/409/429/500/503 映射、参数详情、Retry-After 和前端错误提示通过；实际限流链路已在 E-021 验收      | Codex  | 2026-08-30 |
+| E-003 | M2     | 并发与数据迁移报告               | `doc/m2_session_history_consistency.md`、`evaluation/postgres_model_isolation.py`                                                                                                                                                                                                                                                                                                                                     | 用户外键、基础并发写入、复合游标、缓存正确性和错误语义已验收；当前 PostgreSQL 50 请求/20 worker 单实例验证通过；多进程、共享缓存和 MySQL 仍待验收，M3 限流证据见 E-021                                | Codex  | 2026-08-31 |
 | E-004 | M3     | 安全测试报告                     | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                | TODO   | -          |
 | E-005 | M4     | 检索评测报告                     | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                | TODO   | -          |
 | E-006 | M5     | 生成质量报告                     | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                | TODO   | -          |
@@ -1206,6 +1205,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-018 | M1     | 配置模块重构报告                 | `doc/configuration_refactor.md`、`backend/django_backend/deepseek_project/configuration.py`、`backend/django_backend/deepseek_project/settings.py`、`backend/django_backend/config/llm_config.yaml.example`、`backend/django_backend/config/db_config.yaml.example`、`backend/django_backend/pyproject.toml`、`backend/django_backend/uv.lock`、`backend/django_backend/deepseek_project/tests/test_configuration.py` | 后端全量测试 62/62；配置解析覆盖规范文件回退、SQLite、MySQL、PostgreSQL、环境变量展开和无效配置；MySQL/PostgreSQL backend 与驱动锁定；`makemigrations --check --dry-run` 无变化；0001–0008 无需修改   | Codex  | 2026-08-30 |
 | E-019 | M2     | PostgreSQL 并发模型隔离集成验证  | `evaluation/postgres_model_isolation.py`、`doc/m2_model_instance_isolation.md`                                                                                                                                                                                                                                                                                                                                        | 当前数据库 `dbb` 的 `data-analyze` schema 上，50 请求/20 worker 使用 Fake Provider 完成真实 ORM/API 并发验证；模型串台 0 次，History/Session 各 50 条，临时数据已清理；不覆盖 MySQL、多进程和共享缓存 | Codex  | 2026-08-31 |
 | E-020 | M3     | Token 生命周期报告               | `doc/m3_token_lifecycle.md`、`deepseek_api/models.py`、`deepseek_api/services.py`、`deepseek_api/api.py`、`deepseek_api/migrations/0009_apikey_revoked_at_refreshtoken.py`、`deepseek_api/migrations/0010_ratelimit_stable_apikey_fk.py`、前端认证客户端和测试                                                                                                                                                        | 后端 67/67、前端 17/17；安全随机 Token、15 分钟 Access Token、Access/Refresh 轮换、重用检测、家族撤销、logout、Cookie 安全属性和并发 401 单次刷新通过；0009–0010 已应用到当前 PostgreSQL              | Codex  | 2026-08-31 |
+| E-021 | M3     | 限流实现与回归报告               | `doc/m3_rate_limiting.md`、`deepseek_api/models.py`、`deepseek_api/services.py`、`deepseek_api/api.py`、`deepseek_api/migrations/0011_ratelimitbucket.py`、`deepseek_api/tests/test_services.py`、`deepseek_api/tests/test_api.py`                                                                                                                                                                                    | 后端全量测试 72/72；数据库共享 bucket、用户/IP 双维度原子计数、登录/聊天/模型验证分级、突发拦截、窗口重置、429 和 Retry-After 通过；0001–0011 已应用到当前 PostgreSQL；多进程压测和 MySQL 矩阵待后续  | Codex  | 2026-08-31 |
 
 ---
 
@@ -1230,7 +1230,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | R-015 | 0007 迁移会删除无法归属的孤立 History，误操作可能造成数据丢失             |   中 |   高 | 生产迁移前强制备份；先在副本演练；保留孤立行导出/归档方案                                                                         | Codex  | 已缓解 |
 | R-016 | SQLite 不支持真正的 `select_for_update`，无法代表生产并发锁语义           |   中 |   高 | 已在当前 PostgreSQL 完成多连接模型隔离验证；仍需 PostgreSQL 同会话锁竞争、MySQL 和生产压测；保留 message_id 幂等和唯一序号约束    | Codex  | 开放   |
 | R-017 | 默认 LocMemCache 不是跨 worker 共享缓存，命名空间失效无法代表生产共享语义 |   中 |   中 | 生产切换 Redis 等共享后端；在 M6 做多进程一致性和缓存不可用降级演练                                                               | Codex  | 开放   |
-| R-018 | 错误码已统一但实际限流尚未接入请求链路，429 当前只覆盖异常映射契约        |   中 |   中 | M3 接入按用户/IP/接口维度的共享限流，并补充 Retry-After 和窗口重置压测                                                            | Codex  | 开放   |
+| R-018 | 限流已接入但固定窗口和数据库计数器在高吞吐场景仍有性能边界                |   中 |   中 | 当前使用共享数据库事务/行锁并覆盖用户/IP/接口维度；生产增加 Redis/Gateway 令牌桶、旧 bucket 清理和多进程压测                      | Codex  | 已缓解 |
 | R-019 | MySQL 尚未完成真实连接与迁移演练；PostgreSQL 尚未纳入 CI/生产矩阵         |   中 |   高 | PostgreSQL 当前实例已完成迁移和并发集成演练；仍需容器化 MySQL/PostgreSQL 矩阵执行 migrate、并发锁和故障测试，部署前备份并演练回滚 | Codex  | 开放   |
 
 ### 19.1 阻塞项更新模板
@@ -1273,6 +1273,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | ADR-016 | 2026-08-30 | LLM 与数据库分别使用跟踪的 `.yaml.example` 规范文件，本地覆盖文件被忽略；数据库通过统一加载器映射 Django backend | 配置契约应可审查，部署密钥不能入库，数据库切换不应污染 LLM 配置                       | 继续生成 Python 模板；将数据库硬编码在 settings；每种数据库维护独立迁移 | 干净检出可复现，MySQL/PostgreSQL 与 SQLite 共享迁移；真实数据库矩阵留待后续                         | 已接受 |
 | ADR-017 | 2026-08-31 | 使用独立脚本在当前 PostgreSQL 上以随机临时数据和 Fake Provider 验证真实 API/ORM 并发模型隔离                     | 需要覆盖真实多连接、事务和写入语义，同时避免真实模型调用、外部网络和生产数据污染      | 只依赖 SQLite 单测；直接调用真实模型；在数据库中保留固定测试用户        | 获得可重复的 PostgreSQL 单实例证据，脚本结束自动清理；多进程、MySQL、共享缓存和生产负载仍需另行验证 | 已接受 |
 | ADR-018 | 2026-08-31 | Refresh Token 使用哈希记录、家族轮换和重用即家族撤销；Access 过期不删除 APIKey                                   | 旧实现无法检测 Refresh 重放，且 Access 过期会破坏恢复链路；数据库行锁可保证一次性消费 | 长期复用单个 Refresh Token；只覆盖当前 Token；过期时删除 APIKey         | 可检测泄漏后的重放并保留恢复能力；需要共享数据库、迁移旧数据并做好客户端单次刷新                    | 已接受 |
+| ADR-019 | 2026-08-31 | 请求限流使用数据库共享固定窗口 bucket，事务内锁定用户/IP所有维度后一次性递增；接口在认证阶段选择分级策略         | 既要跨 worker 保持计数一致，又要让登录、聊天和模型验证拥有独立上限                    | 仅使用进程内锁；仅按 API Key 计数；直接依赖默认 LocMemCache             | 跨 PostgreSQL/MySQL worker 可复现且错误语义稳定；高吞吐仍需 Redis/Gateway 与多进程压测              | 已接受 |
 
 ### 20.1 ADR 模板
 
@@ -1313,6 +1314,7 @@ ADR 编号：ADR-XXX
 | 2026-08-30 | Codex  | 新增面向简历与面试的项目呈现文档，区分当前实现、量化证据、后续愿景和明确不足                                                                                                         | 全部       | `doc/present_on_resume.md`                                |
 | 2026-08-31 | Codex  | 使用当前 PostgreSQL 执行 50 请求/20 worker 的 Fake Provider 并发模型隔离验证，确认串台 0 次、History/Session 各 50 条并清理全部临时数据；同步更新 M2、配置和总计划文档               | M2         | E-019、`evaluation/postgres_model_isolation.py`           |
 | 2026-08-31 | Codex  | 执行 M3 Token 生命周期：使用安全随机 Token、短期 Access Token、哈希 Refresh Token 家族轮换/重用撤销、服务端 logout 和前端单次刷新队列；生成并应用 0009/0010 迁移，补充文档与回归测试 | M3         | E-020、`doc/m3_token_lifecycle.md`                        |
+| 2026-08-31 | Codex  | 执行 M3 限流：将数据库共享固定窗口接入认证链路，按登录/刷新/聊天/模型验证/API 分级并同时检查用户/IP；新增 0011 迁移、429/Retry-After、突发与窗口重置测试及实现报告                   | M3         | E-021、`doc/m3_rate_limiting.md`                          |
 
 ### 21.1 后续更新示例
 
@@ -1324,7 +1326,7 @@ ADR 编号：ADR-XXX
 
 ## 22. 下一步行动
 
-严格按依赖关系，下一步继续完成 M3 的实际限流接入、外部模型密钥保护和 SSRF 防护，再进入 M4；不要直接修改 Agent 或界面功能。
+严格按依赖关系，下一步继续完成 M3 的外部模型密钥保护和 SSRF 防护，再进行 M3 集成验收；不要直接修改 Agent 或界面功能。
 
 ### 22.1 第一批任务
 

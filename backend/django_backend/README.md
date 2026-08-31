@@ -63,6 +63,12 @@
 - 配置值支持 `${ENV_VAR}`，密码建议通过环境变量注入，不要写入 Git。
 - MySQL 使用 `mysqlclient`，PostgreSQL 使用 `psycopg[binary]`；两者已纳入 `pyproject.toml` 与 `uv.lock`。
 
+### 3.3 限流配置
+
+- 限流计数保存在数据库 `RateLimitBucket` 表中，按接口范围、用户/IP 和固定时间窗口计数，适用于 PostgreSQL/MySQL 多 worker 部署。
+- 可通过 `RATE_LIMIT_LOGIN_MAX`、`RATE_LIMIT_CHAT_MAX`、`RATE_LIMIT_MODEL_VALIDATE_MAX` 及对应的 `_INTERVAL` 配置登录、聊天和模型验证限额；`RATE_LIMIT_MAX`/`RATE_LIMIT_INTERVAL` 是通用默认值。
+- 超额请求返回 HTTP 429、稳定错误码 `RATE_LIMITED` 和 `Retry-After`。默认不信任 `X-Forwarded-For`，反向代理部署时需明确设置 `RATE_LIMIT_TRUST_PROXY=true`。
+
 ## 4. 环境准备
 
 - Python：建议 3.13（与 pyproject.toml 对齐）

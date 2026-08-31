@@ -86,6 +86,27 @@ class RateLimit(models.Model):
         return self.count >= max_requests
 
 
+class RateLimitBucket(models.Model):
+    """Shared fixed-window counter used by the request-level rate limiter."""
+
+    scope = models.CharField(max_length=64)
+    subject = models.CharField(max_length=128)
+    window_start = models.BigIntegerField()
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scope", "subject", "window_start"],
+                name="unique_rate_limit_bucket",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["scope", "subject", "window_start"]),
+            models.Index(fields=["window_start"]),
+        ]
+
+
 class ConversationSession(models.Model):
     session_id = models.CharField(max_length=100)
     # 修改为与 username 关联，而不是 APIKey

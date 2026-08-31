@@ -6,11 +6,12 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from deepseek_api import services
-from deepseek_api.models import APIKey, RateLimit, RefreshToken
+from deepseek_api.models import APIKey, RateLimit, RateLimitBucket, RefreshToken
 from deepseek_api.services import (
     _build_reply_cache_key,
     check_rate_limit,
     compose_prompt_with_history,
+    consume_rate_limits,
     create_api_key,
     generate_cache_key,
     get_allowed_providers,
@@ -249,6 +250,64 @@ class ServiceDatabaseTests(TestCase):
 
         self.assertTrue(check_rate_limit(api_key.key))
         self.assertFalse(check_rate_limit(api_key.key))
+
+    def test_rate_limit_consumes_user_and_ip_atomically_and_resets_window(self):
+        first = consume_rate_limits(
+            "chat",
+            [("user", "alice"), ("ip", "10.0.0.1")],
+            limit=2,
+            interval=60,
+            now=120,
+        )
+        second = consume_rate_limits(
+            "chat",
+            [("user", "alice"), ("ip", "10.0.0.1")],
+            limit=2,
+            interval=60,
+            now=121,
+        )
+        burst = consume_rate_limits(
+            "chat",
+            [("user", "alice"), ("ip", "10.0.0.1")],
+            limit=2,
+            interval=60,
+            now=122,
+        )
+        reset = consume_rate_limits(
+            "chat",
+            [("user", "alice"), ("ip", "10.0.0.1")],
+            limit=2,
+            interval=60,
+            now=180,
+        )
+
+        self.assertTrue(first.allowed)
+        self.assertEqual(first.remaining, 1)
+        self.assertTrue(second.allowed)
+        self.assertFalse(burst.allowed)
+        self.assertEqual(burst.retry_after, 58)
+        self.assertTrue(reset.allowed)
+        self.assertEqual(
+            RateLimitBucket.objects.filter(scope="chat").count(),
+            4,
+        )
+
+    def test_rate_limit_enforces_each_dimension_independently(self):
+        self.assertTrue(
+            consume_rate_limits(
+                "api", [("user", "alice"), ("ip", "10.0.0.1")], limit=1, interval=60, now=0
+            ).allowed
+        )
+        self.assertFalse(
+            consume_rate_limits(
+                "api", [("user", "alice"), ("ip", "10.0.0.2")], limit=1, interval=60, now=1
+            ).allowed
+        )
+        self.assertFalse(
+            consume_rate_limits(
+                "api", [("user", "bob"), ("ip", "10.0.0.1")], limit=1, interval=60, now=1
+            ).allowed
+        )
 
     def test_session_and_user_preference_are_created_once(self):
         api_key = create_api_key("alice")

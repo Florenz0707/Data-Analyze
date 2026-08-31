@@ -3,6 +3,7 @@ import json
 import threading
 import time
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
 from deepseek_project.configuration import load_llm_config
@@ -11,10 +12,14 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from .models import APIKey, ConversationSession, RateLimit, RefreshToken, UserLLMPreference
-
-# 线程锁用于速率限制
-rate_lock = threading.Lock()
+from .models import (
+    APIKey,
+    ConversationSession,
+    RateLimit,
+    RateLimitBucket,
+    RefreshToken,
+    UserLLMPreference,
+)
 
 # 与 TopKLogSystem 保持一致的生成流程：
 # - 复用同一个 TopKLogSystem 实例，避免每次请求重复构建索引
@@ -520,34 +525,122 @@ def revoke_tokens(*, refresh_token: str | None = None, access_token: str | None 
 
 
 def check_rate_limit(key_str: str) -> bool:
-    """检查 API Key 的请求频率是否超过限制"""
-    with rate_lock:
-        try:
-            rate_limit = RateLimit.objects.select_related("api_key").get(api_key__key=key_str)
+    """兼容旧调用方，并使用数据库共享窗口替代进程内线程锁。"""
+    if not APIKey.objects.filter(key=key_str).exists():
+        return False
+    return consume_rate_limits(
+        "legacy_api",
+        [("api_key", key_str)],
+        limit=int(settings.RATE_LIMIT_MAX),
+        interval=int(settings.RATE_LIMIT_INTERVAL),
+    ).allowed
 
-            current_time = time.time()
-            if current_time > rate_limit.reset_time:
-                rate_limit.count = 1
-                rate_limit.reset_time = current_time + settings.RATE_LIMIT_INTERVAL
-                rate_limit.save()
-                return True
-            elif rate_limit.count < settings.RATE_LIMIT_MAX:
-                rate_limit.count += 1
-                rate_limit.save()
-                return True
-            else:
-                return False
-        except RateLimit.DoesNotExist:
-            # 如果速率限制记录不存在，创建一个新的
-            try:
-                current_time = time.time()
-                api_key = APIKey.objects.get(key=key_str)
-                RateLimit.objects.create(
-                    api_key=api_key, count=1, reset_time=current_time + settings.RATE_LIMIT_INTERVAL
-                )
-                return True
-            except APIKey.DoesNotExist:
-                return False
+
+@dataclass(frozen=True)
+class RateLimitDecision:
+    """The outcome of consuming one or more dimensions of a rate limit."""
+
+    allowed: bool
+    retry_after: int
+    remaining: int
+    reset_at: int
+
+
+def _rate_limit_subject(dimension: str, value: str) -> str:
+    """Keep usernames and IP addresses out of the bucket table."""
+    raw = f"{dimension}:{value}".encode()
+    return hashlib.sha256(raw).hexdigest()
+
+
+def get_client_ip(request) -> str:
+    """Resolve the client IP, trusting forwarded headers only when configured."""
+    meta = getattr(request, "META", {})
+    if getattr(settings, "RATE_LIMIT_TRUST_PROXY", False):
+        forwarded = meta.get("HTTP_X_FORWARDED_FOR", "")
+        if forwarded:
+            return forwarded.split(",", 1)[0].strip() or "unknown"
+    return meta.get("REMOTE_ADDR", "unknown")
+
+
+def get_rate_limit_policy(scope: str) -> tuple[int, int]:
+    """Return the configured ``(limit, interval)`` pair for a request scope."""
+    suffix = {
+        "login": "LOGIN",
+        "refresh": "REFRESH",
+        "chat": "CHAT",
+        "model_validate": "MODEL_VALIDATE",
+        "api": "API",
+    }.get(scope)
+    if suffix is None:
+        raise ValueError(f"Unknown rate-limit scope: {scope}")
+    return (
+        int(getattr(settings, f"RATE_LIMIT_{suffix}_MAX", settings.RATE_LIMIT_MAX)),
+        int(getattr(settings, f"RATE_LIMIT_{suffix}_INTERVAL", settings.RATE_LIMIT_INTERVAL)),
+    )
+
+
+def consume_rate_limits(
+    scope: str,
+    subjects: list[tuple[str, str]],
+    *,
+    limit: int,
+    interval: int,
+    now: int | None = None,
+) -> RateLimitDecision:
+    """Atomically consume a fixed-window bucket for all supplied dimensions.
+
+    The counters live in the configured Django database, so row locks remain
+    effective across threads and worker processes when using PostgreSQL/MySQL.
+    """
+    if limit <= 0 or interval <= 0:
+        raise ValueError("Rate-limit limit and interval must be positive")
+    current = int(time.time()) if now is None else int(now)
+    window_start = current // interval * interval
+    reset_at = window_start + interval
+    unique_subjects = list(dict.fromkeys(subjects))
+    if not unique_subjects:
+        raise ValueError("At least one rate-limit subject is required")
+
+    with transaction.atomic():
+        buckets: list[RateLimitBucket] = []
+        for dimension, value in sorted(unique_subjects):
+            subject = _rate_limit_subject(dimension, str(value))
+            bucket, _ = RateLimitBucket.objects.get_or_create(
+                scope=scope,
+                subject=subject,
+                window_start=window_start,
+                defaults={"count": 0},
+            )
+            buckets.append(RateLimitBucket.objects.select_for_update().get(pk=bucket.pk))
+
+        if any(bucket.count >= limit for bucket in buckets):
+            return RateLimitDecision(
+                allowed=False,
+                retry_after=max(1, reset_at - current),
+                remaining=0,
+                reset_at=reset_at,
+            )
+
+        for bucket in buckets:
+            bucket.count += 1
+            bucket.save(update_fields=["count"])
+
+        remaining = min(limit - bucket.count for bucket in buckets)
+        return RateLimitDecision(
+            allowed=True,
+            retry_after=0,
+            remaining=remaining,
+            reset_at=reset_at,
+        )
+
+
+def enforce_request_rate_limit(request, scope: str, user: str | None = None) -> RateLimitDecision:
+    """Consume the user/IP dimensions for an authenticated or public request."""
+    limit, interval = get_rate_limit_policy(scope)
+    subjects = [("ip", get_client_ip(request))]
+    if user:
+        subjects.append(("user", user))
+    return consume_rate_limits(scope, subjects, limit=limit, interval=interval)
 
 
 def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:

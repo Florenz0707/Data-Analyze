@@ -198,6 +198,16 @@ def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> boo
         return False
 
 
+def _request_rate_limit_scope(request) -> str:
+    """Select the narrowest policy for the endpoint before the handler runs."""
+    path = request.path.rstrip("/")
+    if request.method == "POST" and path.endswith("/llm/chat"):
+        return "chat"
+    if request.method == "POST" and path.endswith("/llm/extern"):
+        return "model_validate"
+    return "api"
+
+
 def api_key_auth(request):
     """验证请求头中的API Key，并进行过期校验：
     - 若已过期，删除记录并拒绝
@@ -216,6 +226,11 @@ def api_key_auth(request):
             raise AuthenticationError(message="API Key 已撤销")
         if not api_key.is_valid():
             raise AuthenticationError(message="API Key 已过期")
+        decision = services.enforce_request_rate_limit(
+            request, _request_rate_limit_scope(request), api_key.user
+        )
+        if not decision.allowed:
+            raise Throttled(decision.retry_after)
         return api_key
     except (ValueError, APIKey.DoesNotExist):
         raise AuthenticationError(message="API Key 无效") from None
@@ -268,6 +283,10 @@ def login(request, data: LoginIn):
 
     if not username or not password:
         return 400, error_payload(ErrorCode.VALIDATION_ERROR, "用户名和密码不能为空")
+
+    decision = services.enforce_request_rate_limit(request, "login", username)
+    if not decision.allowed:
+        raise Throttled(decision.retry_after)
 
     user = authenticate(request, username=username, password=password)
     if user is None:
@@ -773,6 +792,9 @@ def delete_external_model(request, data: ModelIn):
 )
 def refresh(request):
     token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
+    decision = services.enforce_request_rate_limit(request, "refresh")
+    if not decision.allowed:
+        raise Throttled(decision.retry_after)
     if not token:
         response = api.create_response(
             request,

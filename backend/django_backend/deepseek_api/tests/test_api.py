@@ -5,10 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from ninja.errors import Throttled
 
-from deepseek_api.models import APIKey, ExternalLLMAPI, History, Session
+from deepseek_api.models import APIKey, ExternalLLMAPI, History, RateLimitBucket, Session
 from deepseek_api.services import create_api_key
 
 
@@ -121,6 +121,25 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(invalid.json()["code"], "AUTH_INVALID")
         self.assertEqual(inactive.json()["code"], "AUTH_FORBIDDEN")
 
+    @override_settings(RATE_LIMIT_LOGIN_MAX=1, RATE_LIMIT_LOGIN_INTERVAL=60)
+    def test_login_rate_limit_returns_retry_after(self):
+        self.client.post(
+            "/api/users/register",
+            data=json.dumps({"username": "limited-login", "password": "S3cure-password!"}),
+            content_type="application/json",
+        )
+        payload = json.dumps({"username": "limited-login", "password": "S3cure-password!"})
+
+        first = self.client.post("/api/users/login", data=payload, content_type="application/json")
+        second = self.client.post("/api/users/login", data=payload, content_type="application/json")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.json()["code"], "RATE_LIMITED")
+        self.assertGreaterEqual(int(second["Retry-After"]), 1)
+        self.assertLessEqual(int(second["Retry-After"]), 60)
+        self.assertEqual(RateLimitBucket.objects.filter(scope="login").count(), 2)
+
     def test_route_guards_return_stable_errors_when_called_directly(self):
         import deepseek_api.api as api_module
 
@@ -163,6 +182,22 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "VALIDATION_ERROR")
         self.assertTrue(response.json()["details"])
+
+    @override_settings(RATE_LIMIT_CHAT_MAX=1, RATE_LIMIT_CHAT_INTERVAL=60)
+    @patch("deepseek_api.api.generate_with_user_llm", return_value="limited answer")
+    def test_chat_rate_limit_blocks_burst(self, _generate):
+        client = self.authenticated_client("limited-chat")
+        payload = json.dumps({"session_id": "limited", "user_input": "question"})
+
+        first = client.post("/api/llm/chat", data=payload, content_type="application/json")
+        second = client.post("/api/llm/chat", data=payload, content_type="application/json")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.json()["code"], "RATE_LIMITED")
+        self.assertGreaterEqual(int(second["Retry-After"]), 1)
+        self.assertLessEqual(int(second["Retry-After"]), 60)
+        self.assertEqual(_generate.call_count, 1)
 
     def test_throttled_exception_uses_retry_after_and_stable_code(self):
         import deepseek_api.api as api_module
@@ -578,6 +613,29 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(deleted.status_code, 200)
         self.assertEqual(not_found.status_code, 404)
         self.assertEqual(ExternalLLMAPI.objects.count(), 0)
+
+    @override_settings(RATE_LIMIT_MODEL_VALIDATE_MAX=1, RATE_LIMIT_MODEL_VALIDATE_INTERVAL=60)
+    @patch("deepseek_api.api._validate_openai_compat", return_value=True)
+    def test_model_validation_has_separate_rate_limit(self, _validate):
+        client = self.authenticated_client("limited-model-validation")
+        payload = {
+            "base_url": "https://example.invalid/v1",
+            "model_name": "remote-model",
+            "api_key": "fake-key",
+        }
+
+        first = client.post(
+            "/api/llm/extern", data=json.dumps(payload), content_type="application/json"
+        )
+        second = client.post(
+            "/api/llm/extern", data=json.dumps(payload), content_type="application/json"
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.json()["code"], "RATE_LIMITED")
+        self.assertGreaterEqual(int(second["Retry-After"]), 1)
+        self.assertLessEqual(int(second["Retry-After"]), 60)
 
     @patch("deepseek_api.api.generate_with_user_llm", return_value="fake answer")
     def test_chat_persists_history_and_hits_cache(self, generate):
