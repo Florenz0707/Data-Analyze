@@ -1,0 +1,8 @@
+{
+  "context_items": 10,
+  "optimized_prompt_chars": 11822,
+  "evidence_marker_count": 1,
+  "duplicate_evidence_chars_removed": 9234,
+  "optimized_assembly_p50_us": 837.324180174619,
+  "note": "duplicate_evidence_chars_removed is the former second evidence block estimate; no model/network was invoked"
+}

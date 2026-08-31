@@ -174,12 +174,15 @@ def query_collection(
 
 def build_structured_index(client, data_root: Path, collection_name: str):
     collection = client.create_collection(collection_name)
-    documents = list(iter_llama_documents(data_root))
     started = time.perf_counter()
     rss_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     total_embedding_seconds = 0.0
-    for start in range(0, len(documents), 4):
-        batch = documents[start : start + 4]
+    document_count = 0
+    batch = []
+    for document in iter_llama_documents(data_root):
+        batch.append(document)
+        if len(batch) < 4:
+            continue
         embed_started = time.perf_counter()
         embeddings = embed_queries(
             "http://127.0.0.1:11434",
@@ -194,9 +197,27 @@ def build_structured_index(client, data_root: Path, collection_name: str):
             metadatas=[safe_metadata(document.metadata) for document in batch],
             embeddings=embeddings,
         )
+        document_count += len(batch)
+        batch = []
+    if batch:
+        embed_started = time.perf_counter()
+        embeddings = embed_queries(
+            "http://127.0.0.1:11434",
+            "bge-large:latest",
+            [document.text for document in batch],
+            300.0,
+        )
+        total_embedding_seconds += time.perf_counter() - embed_started
+        collection.add(
+            ids=[document.id_ for document in batch],
+            documents=[document.text for document in batch],
+            metadatas=[safe_metadata(document.metadata) for document in batch],
+            embeddings=embeddings,
+        )
+        document_count += len(batch)
     return {
         "collection": collection,
-        "document_count": len(documents),
+        "document_count": document_count,
         "total_seconds": time.perf_counter() - started,
         "embedding_seconds": total_embedding_seconds,
         "peak_rss_delta_kib": max(

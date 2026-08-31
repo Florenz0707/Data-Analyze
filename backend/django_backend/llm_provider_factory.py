@@ -70,7 +70,13 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
         llm_name = model or ocfg.get("model")
         if not llm_name:
             raise ValueError("OLLAMA_CONFIG.model 不能为空")
-        return OllamaLLM(model=llm_name, temperature=0.1)
+        kwargs: dict[str, Any] = {"model": llm_name, "temperature": 0.1}
+        # M5's server-side contract is JSON-first.  The setting remains
+        # overridable for providers that do not support Ollama's JSON mode.
+        kwargs["format"] = ocfg.get("format", "json")
+        if ocfg.get("max_new_tokens") is not None:
+            kwargs["num_predict"] = int(ocfg["max_new_tokens"])
+        return OllamaLLM(**kwargs)
 
     if p == "openai_compat":
         _maybe_load_dotenv()

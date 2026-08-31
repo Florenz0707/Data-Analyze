@@ -380,7 +380,12 @@ def chat(request, data: ChatIn):
         else:
             selected = []
         query = compose_prompt_with_history(selected, user_input, hist_cfg)
-        logger.info(f"传递给TopKLogSystem的query（含历史{len(selected)}段）：{query}")
+        logger.info(
+            "传递给 TopKLogSystem 的 query：session=%s history_turns=%s chars=%s",
+            sid,
+            len(selected),
+            len(query),
+        )
         cache_parameters = {
             "history_mode": use_history_mode,
             "history_max_turns": hist_cfg.get("max_turns", 8),
@@ -422,7 +427,7 @@ def chat(request, data: ChatIn):
                     ErrorCode.MODEL_UNAVAILABLE,
                     f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。",
                 )
-        logger.info(f"TopKLogSystem的回复：\n{reply}\n")
+        logger.info("TopKLogSystem 已生成回复：session=%s chars=%s", sid, len(reply))
 
         # 6. 写入结构化历史并更新会话时间
         session.next_history_sequence = F("next_history_sequence") + 1

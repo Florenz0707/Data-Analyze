@@ -1,0 +1,13 @@
+{
+  "evaluation_kind": "live_attempt",
+  "dataset": "evaluation/m0/gold_queries.jsonl",
+  "case_count_requested": 50,
+  "model": "deepseek-r1:7b",
+  "embedding_model": "bge-large:latest",
+  "result": "incomplete",
+  "exit_code": 124,
+  "timeout_seconds": 180,
+  "observed": "首条请求完成检索后触发模型生成与一次修复，未在限定时间内完成，未写出完整结果文件。随后 Prompt 优化后的 1 条 smoke 在 120 秒内仍未完成。",
+  "interpretation": "这是本地 Ollama 资源/生成延迟阻塞，不是质量通过或失败结论；真实质量指标保持待验收。",
+  "next_action": "在模型空闲、JSON mode 生效且可观测单条进度的条件下先完成 5 条 smoke，再扩展到 50 条。"
+}

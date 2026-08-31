@@ -274,6 +274,20 @@ def load_llm_config(
     if reply_cache_ttl < 0:
         raise ConfigurationError("REPLY_CACHE_TTL 必须是非负整数")
     config["REPLY_CACHE_TTL"] = reply_cache_ttl
+    try:
+        structured_repair_retries = int(config.get("STRUCTURED_REPAIR_RETRIES", 1))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("STRUCTURED_REPAIR_RETRIES 必须是 0 或 1") from exc
+    if not 0 <= structured_repair_retries <= 1:
+        raise ConfigurationError("STRUCTURED_REPAIR_RETRIES 必须是 0 或 1")
+    config["STRUCTURED_REPAIR_RETRIES"] = structured_repair_retries
+    try:
+        max_prompt_context_chars = int(config.get("MAX_PROMPT_CONTEXT_CHARS", 12000))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("MAX_PROMPT_CONTEXT_CHARS 必须是正整数") from exc
+    if not 1000 <= max_prompt_context_chars <= 100000:
+        raise ConfigurationError("MAX_PROMPT_CONTEXT_CHARS 必须在 1000 到 100000 之间")
+    config["MAX_PROMPT_CONTEXT_CHARS"] = max_prompt_context_chars
     for key, default in {
         "PROMPT_VERSION": "v1",
         "INDEX_VERSION": "v1",

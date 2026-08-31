@@ -40,6 +40,7 @@ _CACHEABLE_GENERATION_PARAMETERS = (
     "top_p",
     "repetition_penalty",
     "do_sample",
+    "format",
 )
 
 
