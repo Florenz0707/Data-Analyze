@@ -1,0 +1,36 @@
+# 数据库规范配置。首次使用时可复制为 config/db_config.yaml。
+# config/db_config.yaml 被 Git 忽略；密码建议使用 ${ENV_VAR} 注入。
+
+DATABASE:
+  # sqlite | mysql | postgresql（postgres 也可作为别名）
+  ENGINE: sqlite
+  NAME: "db.sqlite3"
+  USER: ""
+  PASSWORD: ""
+  HOST: ""
+  PORT: ""
+  CONN_MAX_AGE: 0
+  CONN_HEALTH_CHECKS: false
+  OPTIONS: {}
+
+# MySQL 示例：
+# DATABASE:
+#   ENGINE: mysql
+#   NAME: data_analyze
+#   USER: data_analyze
+#   PASSWORD: "${DB_PASSWORD}"
+#   HOST: "127.0.0.1"
+#   PORT: "3306"
+#   OPTIONS:
+#     charset: utf8mb4
+
+# PostgreSQL 示例：
+# DATABASE:
+#   ENGINE: postgresql
+#   NAME: data_analyze
+#   USER: data_analyze
+#   PASSWORD: "${DB_PASSWORD}"
+#   HOST: "127.0.0.1"
+#   PORT: "5432"
+#   OPTIONS:
+#     connect_timeout: 5

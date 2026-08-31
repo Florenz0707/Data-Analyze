@@ -11,6 +11,7 @@ from urllib.parse import urlsplit, urlunsplit
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SUPPORTED_DATABASE_ENGINES = {"sqlite", "mysql", "postgresql"}
 SUPPORTED_LLM_PROVIDERS = {"transformers", "ollama", "openai_compat", "dashscope"}
 SUPPORTED_EMBEDDING_PROVIDERS = {
     "auto",
@@ -116,6 +117,26 @@ def resolve_project_path(value: str | Path, project_root: Path = PROJECT_ROOT) -
     return path if path.is_absolute() else project_root / path
 
 
+def resolve_config_path(
+    filename: str,
+    *,
+    config_path: str | Path | None = None,
+    project_root: Path = PROJECT_ROOT,
+) -> Path:
+    """Resolve a local config file, falling back to its tracked example.
+
+    A developer-specific file is intentionally ignored by Git. The tracked
+    ``*.example`` file keeps a clean checkout runnable and documents the
+    complete configuration contract.
+    """
+    if config_path is not None:
+        return resolve_project_path(config_path, project_root)
+    local_path = resolve_project_path(f"config/{filename}", project_root)
+    if local_path.is_file():
+        return local_path
+    return local_path.with_name(f"{local_path.name}.example")
+
+
 def _require_mapping(config: dict[str, Any], key: str) -> dict[str, Any]:
     value = config.get(key, {})
     if not isinstance(value, dict):
@@ -172,7 +193,9 @@ def load_llm_config(
     Relative paths are returned as absolute strings rooted at ``project_root``.
     No provider or network client is initialized by this function.
     """
-    path = resolve_project_path(config_path or "config/llm_config.yaml", project_root)
+    path = resolve_config_path(
+        "llm_config.yaml", config_path=config_path, project_root=project_root
+    )
     try:
         with path.open(encoding="utf-8") as handle:
             raw_config = yaml.safe_load(handle) or {}
@@ -239,6 +262,107 @@ def load_llm_config(
                 raise ConfigurationError(f"{key} 不存在或不是文件: {config[key]}")
 
     return config
+
+
+def _expand_environment_values(value: Any) -> Any:
+    """Expand ``${VAR}`` placeholders in YAML scalar values."""
+    if isinstance(value, dict):
+        return {key: _expand_environment_values(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_expand_environment_values(item) for item in value]
+    if isinstance(value, str):
+        return os.path.expandvars(value)
+    return value
+
+
+def _database_engine(value: Any) -> str:
+    aliases = {
+        "sqlite": "sqlite",
+        "sqlite3": "sqlite",
+        "django.db.backends.sqlite3": "sqlite",
+        "postgres": "postgresql",
+        "postgresql": "postgresql",
+        "django.db.backends.postgresql": "postgresql",
+        "mysql": "mysql",
+        "django.db.backends.mysql": "mysql",
+    }
+    engine = aliases.get(str(value or "").strip().lower())
+    if engine is None:
+        supported = ", ".join(sorted(SUPPORTED_DATABASE_ENGINES))
+        raise ConfigurationError(f"不支持的数据库 ENGINE: {value!r}，可选值: {supported}")
+    return engine
+
+
+def _database_int(value: Any, key: str, default: int) -> int:
+    try:
+        parsed = int(default if value is None else value)
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError(f"数据库配置 {key} 必须是整数") from exc
+    if parsed < 0:
+        raise ConfigurationError(f"数据库配置 {key} 必须是非负整数")
+    return parsed
+
+
+def load_database_config(
+    config_path: str | Path | None = None,
+    *,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, Any]:
+    """Load the Django database configuration from a separate YAML file.
+
+    The file contains a top-level ``DATABASE`` mapping. SQLite remains the
+    safe default for local development and tests; MySQL and PostgreSQL use
+    Django's native backends and require their corresponding Python driver.
+    ``${ENV_VAR}`` placeholders are expanded after YAML parsing.
+    """
+    configured_path = config_path or os.getenv("DJANGO_DB_CONFIG")
+    path = resolve_config_path(
+        "db_config.yaml", config_path=configured_path, project_root=project_root
+    )
+    try:
+        with path.open(encoding="utf-8") as handle:
+            raw_config = _expand_environment_values(yaml.safe_load(handle) or {})
+    except OSError as exc:
+        raise ConfigurationError(f"无法读取数据库配置文件: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ConfigurationError(f"数据库配置 YAML 无效: {path}") from exc
+
+    if not isinstance(raw_config, dict):
+        raise ConfigurationError("数据库配置根节点必须是对象")
+    database = raw_config.get("DATABASE", raw_config)
+    if not isinstance(database, dict):
+        raise ConfigurationError("数据库配置 DATABASE 必须是对象")
+
+    engine = _database_engine(database.get("ENGINE", "sqlite"))
+    name = database.get("NAME")
+    if engine == "sqlite":
+        name = os.getenv("DJANGO_DB_PATH") or name or "db.sqlite3"
+        name = str(resolve_project_path(name, project_root))
+    elif not isinstance(name, str) or not name.strip():
+        raise ConfigurationError("MySQL/PostgreSQL 数据库配置 NAME 不能为空")
+    else:
+        name = name.strip()
+
+    result: dict[str, Any] = {
+        "ENGINE": f"django.db.backends.{'sqlite3' if engine == 'sqlite' else engine}",
+        "NAME": name,
+        "USER": str(database.get("USER") or ""),
+        "PASSWORD": str(database.get("PASSWORD") or ""),
+        "HOST": str(database.get("HOST") or ("localhost" if engine != "sqlite" else "")),
+        "PORT": str(database.get("PORT") or ("5432" if engine == "postgresql" else "3306"))
+        if engine != "sqlite"
+        else "",
+        "CONN_MAX_AGE": _database_int(database.get("CONN_MAX_AGE"), "CONN_MAX_AGE", 0),
+        "CONN_HEALTH_CHECKS": parse_bool(str(database.get("CONN_HEALTH_CHECKS")), False)
+        if database.get("CONN_HEALTH_CHECKS") is not None
+        else False,
+    }
+    options = database.get("OPTIONS", {})
+    if not isinstance(options, dict):
+        raise ConfigurationError("数据库配置 OPTIONS 必须是对象")
+    if options:
+        result["OPTIONS"] = options
+    return result
 
 
 def env_path(name: str, default: Path, *, base_dir: Path = PROJECT_ROOT) -> Path:

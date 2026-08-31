@@ -95,6 +95,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Created RateLimit row for demo key"))
 
     def _execute_sql_safe(self, sql_path_str: str):
+        if connection.vendor != "sqlite":
+            self.stdout.write(
+                self.style.WARNING(
+                    "Skipping SQLite-specific raw SQL on "
+                    f"{connection.vendor}; use ORM seeding for this database."
+                )
+            )
+            return
+
         # Resolve path: first as given, then project root fallback
         sql_path = Path(sql_path_str).resolve()
         if not sql_path.exists():

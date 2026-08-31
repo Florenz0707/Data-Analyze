@@ -126,6 +126,8 @@ def main() -> int:
     parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     args = parser.parse_args()
     config_path = BACKEND / "config" / "llm_config.yaml"
+    if not config_path.is_file():
+        config_path = BACKEND / "config" / "llm_config.yaml.example"
     with config_path.open(encoding="utf-8") as handle:
         config = yaml.safe_load(handle) or {}
     ollama_config = config.get("OLLAMA_CONFIG") or {}

@@ -1,4 +1,6 @@
--- Database initialization script for Django SQLite (db.sqlite3)
+-- Database initialization script for Django SQLite (db.sqlite3) only.
+-- MySQL/PostgreSQL deployments should use the ORM-based initdb command without
+-- --use-sql; this file contains SQLite-specific PRAGMA/INSERT OR IGNORE syntax.
 -- Usage:
 --   1) Apply migrations first to create tables:
 --        python manage.py migrate --noinput

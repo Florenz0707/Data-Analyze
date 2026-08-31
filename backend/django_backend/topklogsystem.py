@@ -17,7 +17,7 @@ import yaml
 from deepseek_project.configuration import (
     load_llm_config,
     redacted_config_summary,
-    resolve_project_path,
+    resolve_config_path,
 )
 
 # silence specific pydantic warnings about 'validate_default'
@@ -84,7 +84,7 @@ class TopKLogSystem:
         通过配置文件初始化系统。
         - config_path: YAML 配置文件路径，包含 provider、模型、代理、日志路径、系统提示与回答模板路径。
         """
-        config_file = resolve_project_path(config_path or "config/llm_config.yaml")
+        config_file = resolve_config_path("llm_config.yaml", config_path=config_path)
         self.config_path = str(config_file)
 
         # load provider config
@@ -616,7 +616,7 @@ class TopKLogSystem:
 if __name__ == "__main__":
     # 初始化系统（仅需提供配置文件路径）
     system = TopKLogSystem(
-        config_path="./config/llm_config.yaml",
+        config_path=None,
     )
 
     # 执行查询

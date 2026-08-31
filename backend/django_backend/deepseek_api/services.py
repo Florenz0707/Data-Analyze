@@ -46,7 +46,7 @@ def _get_system():
                 from topklogsystem import TopKLogSystem
 
                 SYSTEM = TopKLogSystem(
-                    config_path="./config/llm_config.yaml",
+                    config_path=None,
                 )
     return SYSTEM
 

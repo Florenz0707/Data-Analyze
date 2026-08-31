@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from django.test import SimpleTestCase
 
 from deepseek_project.configuration import (
     ConfigurationError,
+    load_database_config,
     load_llm_config,
     parse_bool,
     parse_csv,
@@ -33,6 +35,101 @@ class ConfigurationTests(SimpleTestCase):
         self.assertTrue(Path(config["LOG_PATH"]).is_absolute())
         self.assertTrue(Path(config["SYSTEM_PROMPT_PATH"]).is_file())
         self.assertTrue(Path(config["RESPONSE_TEMPLATE_PATH"]).is_file())
+
+    def test_tracked_llm_example_is_used_when_local_config_is_absent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "config").mkdir()
+            example = root / "config" / "llm_config.yaml.example"
+            example.write_text(
+                "LLM_PROVIDER: ollama\n"
+                "OLLAMA_CONFIG:\n"
+                "  model: chat\n"
+                "  embedding_model: embedding\n",
+                encoding="utf-8",
+            )
+
+            config = load_llm_config(project_root=root, validate_paths=False)
+
+        self.assertEqual(config["LLM_PROVIDER"], "ollama")
+
+    def test_database_config_supports_sqlite_default_and_legacy_path_override(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "config").mkdir()
+            (root / "config" / "db_config.yaml.example").write_text(
+                "DATABASE:\n  ENGINE: sqlite\n  NAME: db.sqlite3\n", encoding="utf-8"
+            )
+
+            with mock.patch.dict("os.environ", {"DJANGO_DB_PATH": "data/test.sqlite3"}):
+                config = load_database_config(project_root=root)
+
+        self.assertEqual(config["ENGINE"], "django.db.backends.sqlite3")
+        self.assertEqual(config["NAME"], str(root / "data" / "test.sqlite3"))
+
+    def test_database_config_normalizes_mysql_and_postgresql(self):
+        import yaml
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mysql_path = root / "mysql.yaml"
+            mysql_path.write_text(
+                yaml.safe_dump(
+                    {
+                        "DATABASE": {
+                            "ENGINE": "mysql",
+                            "NAME": "analytics",
+                            "USER": "app",
+                            "PASSWORD": "secret",
+                            "HOST": "mysql.example",
+                            "PORT": 3307,
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            postgres_path = root / "postgres.yaml"
+            postgres_path.write_text(
+                "DATABASE:\n  ENGINE: postgres\n  NAME: analytics\n", encoding="utf-8"
+            )
+
+            mysql = load_database_config(mysql_path, project_root=root)
+            postgres = load_database_config(postgres_path, project_root=root)
+
+        self.assertEqual(mysql["ENGINE"], "django.db.backends.mysql")
+        self.assertEqual(mysql["PORT"], "3307")
+        self.assertEqual(postgres["ENGINE"], "django.db.backends.postgresql")
+        self.assertEqual(postgres["PORT"], "5432")
+
+    def test_database_config_expands_environment_placeholders(self):
+        import yaml
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            path = root / "db_config.yaml"
+            path.write_text(
+                yaml.safe_dump(
+                    {
+                        "DATABASE": {
+                            "ENGINE": "postgresql",
+                            "NAME": "analytics",
+                            "PASSWORD": "${TEST_DATABASE_PASSWORD}",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict("os.environ", {"TEST_DATABASE_PASSWORD": "secret"}):
+                config = load_database_config(path, project_root=root)
+
+        self.assertEqual(config["PASSWORD"], "secret")
+
+    def test_database_config_rejects_invalid_remote_config(self):
+        with self.assertRaisesRegex(ConfigurationError, "NAME"):
+            self._load_database_config({"ENGINE": "mysql"})
+
+        with self.assertRaisesRegex(ConfigurationError, "不支持的数据库 ENGINE"):
+            self._load_database_config({"ENGINE": "oracle", "NAME": "db"})
 
     def test_legacy_top_k_is_normalized_with_warning(self):
         config = self._load_temp_config({"TOP_K": 7})
@@ -103,3 +200,12 @@ class ConfigurationTests(SimpleTestCase):
             path = root / "config" / "llm_config.yaml"
             path.write_text(yaml.safe_dump(config), encoding="utf-8")
             return load_llm_config(path, project_root=root)
+
+    def _load_database_config(self, overrides: dict) -> dict:
+        import yaml
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            path = root / "db_config.yaml"
+            path.write_text(yaml.safe_dump({"DATABASE": overrides}), encoding="utf-8")
+            return load_database_config(path, project_root=root)

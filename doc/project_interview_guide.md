@@ -59,14 +59,14 @@
 
 ### 1.5 技术栈
 
-| 层级 | 技术                                                               |
-| ---- | ------------------------------------------------------------------ |
-| 前端 | Vue 3、Vite、Pinia、Vue Router、Axios、Naive UI、Markdown-It       |
-| API  | Django 5、Django Ninja、Django ORM                                 |
-| RAG  | LlamaIndex、LangChain Adapter、ChromaDB                            |
-| 模型 | Transformers、Ollama、OpenAI 兼容 API、DashScope                   |
-| 存储 | SQLite、Chroma Persistent Store、浏览器 LocalStorage、Django Cache |
-| 数据 | Pandas、CSV/JSON/Markdown/TXT 日志文件                             |
+| 层级 | 技术                                                                                |
+| ---- | ----------------------------------------------------------------------------------- |
+| 前端 | Vue 3、Vite、Pinia、Vue Router、Axios、Naive UI、Markdown-It                        |
+| API  | Django 5、Django Ninja、Django ORM                                                  |
+| RAG  | LlamaIndex、LangChain Adapter、ChromaDB                                             |
+| 模型 | Transformers、Ollama、OpenAI 兼容 API、DashScope                                    |
+| 存储 | SQLite/MySQL/PostgreSQL、Chroma Persistent Store、浏览器 LocalStorage、Django Cache |
+| 数据 | Pandas、CSV/JSON/Markdown/TXT 日志文件                                              |
 
 ---
 
@@ -320,7 +320,7 @@ flowchart TB
         RAG[TopKLogSystem]
         Factory[LLM Provider Factory]
         Cache[Django Cache]
-        DB[(SQLite)]
+        DB[(SQLite/MySQL/PostgreSQL)]
         API --> Auth
         API --> Session
         API --> Service
@@ -358,23 +358,23 @@ flowchart TB
 | `backend/django_backend/deepseek_api/models.py`   | 数据库模型                          |
 | `backend/django_backend/topklogsystem.py`         | RAG 主流程                          |
 | `backend/django_backend/llm_provider_factory.py`  | LLM 与 Embedding Provider 构建      |
-| `backend/django_backend/config`                   | Prompt、回答模板和配置生成脚本      |
+| `backend/django_backend/config`                   | Prompt、回答模板和 YAML 规范配置    |
 | `backend/django_backend/data/log`                 | 日志知识数据                        |
 
 ### 4.4 数据存储划分
 
-| 数据                  | 存储位置               | 原因                        |
-| --------------------- | ---------------------- | --------------------------- |
-| Django 用户与密码哈希 | SQLite/Django Auth     | 关系数据和框架内置认证能力  |
-| Access/Refresh Token  | `APIKey` 表            | 需要过期校验和用户关联      |
-| 会话列表              | `Session` 表           | 支持用户隔离和更新时间排序  |
-| 每轮对话              | `History` 表           | 结构化读取和分页            |
-| 用户模型偏好          | `UserLLMPreference` 表 | 每个 Token 用户一份模型配置 |
-| 外部模型配置          | `ExternalLLMAPI` 表    | 保存用户自定义接口信息      |
-| 日志向量              | Chroma                 | 支持语义近邻检索            |
-| 前端当前 Token        | LocalStorage           | 页面刷新后保持登录状态      |
-| 前端会话状态          | Pinia + LocalStorage   | 响应式 UI 和本地回退        |
-| 重复回复              | Django Cache           | 减少重复 LLM 调用           |
+| 数据                  | 存储位置                              | 原因                        |
+| --------------------- | ------------------------------------- | --------------------------- |
+| Django 用户与密码哈希 | SQLite/MySQL/PostgreSQL + Django Auth | 关系数据和框架内置认证能力  |
+| Access/Refresh Token  | `APIKey` 表                           | 需要过期校验和用户关联      |
+| 会话列表              | `Session` 表                          | 支持用户隔离和更新时间排序  |
+| 每轮对话              | `History` 表                          | 结构化读取和分页            |
+| 用户模型偏好          | `UserLLMPreference` 表                | 每个 Token 用户一份模型配置 |
+| 外部模型配置          | `ExternalLLMAPI` 表                   | 保存用户自定义接口信息      |
+| 日志向量              | Chroma                                | 支持语义近邻检索            |
+| 前端当前 Token        | LocalStorage                          | 页面刷新后保持登录状态      |
+| 前端会话状态          | Pinia + LocalStorage                  | 响应式 UI 和本地回退        |
+| 重复回复              | Django Cache                          | 减少重复 LLM 调用           |
 
 ### 4.5 启动流程
 
@@ -1612,26 +1612,27 @@ flowchart TD
 
 ## 24. 代码证据索引
 
-| 主题              | 文件                                                   |
-| ----------------- | ------------------------------------------------------ |
-| JD                | `doc/job_description.md`                               |
-| 项目原始要求      | `doc/智能数据分析任务书-2025 V4.pdf`                   |
-| 前端会话状态      | `frontend/vue_frontend/src/stores/chat.js`             |
-| 前端模型状态      | `frontend/vue_frontend/src/stores/model.js`            |
-| Axios 认证        | `frontend/vue_frontend/src/api/client.js`              |
-| 前端模型与会话 UI | `frontend/vue_frontend/src/components/SideBar.vue`     |
-| Markdown 渲染     | `frontend/vue_frontend/src/components/ChatMessage.vue` |
-| 后端路由          | `backend/django_backend/deepseek_api/api.py`           |
-| 后端服务          | `backend/django_backend/deepseek_api/services.py`      |
-| 数据模型          | `backend/django_backend/deepseek_api/models.py`        |
-| API Schema        | `backend/django_backend/deepseek_api/schemas.py`       |
-| RAG 核心          | `backend/django_backend/topklogsystem.py`              |
-| Provider 工厂     | `backend/django_backend/llm_provider_factory.py`       |
-| Prompt            | `backend/django_backend/config/system_prompt.yaml`     |
-| 输出模板          | `backend/django_backend/config/response_template.md`   |
-| 配置模板          | `backend/django_backend/config/generate_llm_config.py` |
-| Django 配置       | `backend/django_backend/deepseek_project/settings.py`  |
-| Vite 代理         | `frontend/vue_frontend/vite.config.js`                 |
+| 主题              | 文件                                                    |
+| ----------------- | ------------------------------------------------------- |
+| JD                | `doc/job_description.md`                                |
+| 项目原始要求      | `doc/智能数据分析任务书-2025 V4.pdf`                    |
+| 前端会话状态      | `frontend/vue_frontend/src/stores/chat.js`              |
+| 前端模型状态      | `frontend/vue_frontend/src/stores/model.js`             |
+| Axios 认证        | `frontend/vue_frontend/src/api/client.js`               |
+| 前端模型与会话 UI | `frontend/vue_frontend/src/components/SideBar.vue`      |
+| Markdown 渲染     | `frontend/vue_frontend/src/components/ChatMessage.vue`  |
+| 后端路由          | `backend/django_backend/deepseek_api/api.py`            |
+| 后端服务          | `backend/django_backend/deepseek_api/services.py`       |
+| 数据模型          | `backend/django_backend/deepseek_api/models.py`         |
+| API Schema        | `backend/django_backend/deepseek_api/schemas.py`        |
+| RAG 核心          | `backend/django_backend/topklogsystem.py`               |
+| Provider 工厂     | `backend/django_backend/llm_provider_factory.py`        |
+| Prompt            | `backend/django_backend/config/system_prompt.yaml`      |
+| 输出模板          | `backend/django_backend/config/response_template.md`    |
+| LLM 配置规范      | `backend/django_backend/config/llm_config.yaml.example` |
+| 数据库配置规范    | `backend/django_backend/config/db_config.yaml.example`  |
+| Django 配置       | `backend/django_backend/deepseek_project/settings.py`   |
+| Vite 代理         | `frontend/vue_frontend/vite.config.js`                  |
 
 ---
 

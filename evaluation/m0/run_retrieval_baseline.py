@@ -34,7 +34,12 @@ def sha256(path: Path) -> str:
 
 
 def load_config() -> dict:
-    with (BACKEND / "config" / "llm_config.yaml").open(encoding="utf-8") as handle:
+    config_dir = BACKEND / "config"
+    config_path = config_dir / "llm_config.yaml"
+    if not config_path.is_file():
+        config_path = config_dir / "llm_config.yaml.example"
+
+    with config_path.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
 
 

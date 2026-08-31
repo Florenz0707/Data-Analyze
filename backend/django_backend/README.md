@@ -9,7 +9,7 @@
 - 多 Provider 支持：
   - 本地/离线：Transformers（HF）、Ollama
   - 云端/在线：OpenAI 兼容端点、阿里云 DashScope
-- 配置即插即用：通过 config/llm_config.yaml 一处集中切换 LLM 与 Embeddings 提供方、模型及参数。
+- 配置即插即用：LLM/Embedding 使用 `llm_config.yaml`，数据库使用独立的 `db_config.yaml`。
 - Django API：以 Django + django-ninja 提供简洁的后端接口与管理命令（如 initdb）。
 
 ## 2. 关键目录与文件
@@ -20,10 +20,11 @@
   - management/commands/initdb.py：初始化示例数据或表结构的管理命令
 - topklogsystem.py：日志检索 + LLM 生成的脚本式入口（便于本地快速验证链路）
 - config/
-  - llm_config.yaml：核心配置（LLM/Embedding Provider、模型、参数、代理等）
+  - llm_config.yaml.example：被 Git 跟踪的 LLM 规范配置；本地 `llm_config.yaml` 可由它复制并覆盖
+  - db_config.yaml.example：被 Git 跟踪的数据库规范配置；本地 `db_config.yaml` 可由它复制并覆盖
   - system_prompt.yaml：系统提示词模板（含 {log_context}/{query}/{MAX_PARTS_NUM}/{MAX_PART_LENGTH} 占位符）
   - response_template.md：答案渲染模板
-  - available_local_models.json / generate_local_model.py / generate_llm_config.py：本地模型与配置辅助脚本
+  - available_local_models.json / generate_local_model.py：本地模型辅助脚本
 - data/
   - log/：示例日志数据
   - vector_stores/：向量索引持久化目录（如 chroma.sqlite3）
@@ -31,13 +32,12 @@
 - pyproject.toml：Python 依赖与项目信息（PEP 621）
 - uv.lock：依赖锁定文件（建议使用 uv 同步）
 
-## 3. 配置说明（config/llm_config.yaml）
+## 3. 配置说明
 
-首次生成配置与本地模型清单：
+### 3.1 LLM 配置
 
-- 生成 llm_config.yaml（首次克隆仓库或不存在时）
-  - 命令：uv run python config/generate_llm_config.py
-  - 作用：在 config/ 目录下创建/覆盖 llm_config.yaml，并给出可用 Provider/模型的示例条目，便于后续按需修改。
+- 首次克隆时可执行 `cp config/llm_config.yaml.example config/llm_config.yaml`；如果不创建本地文件，程序会直接使用被跟踪的 `.example` 配置。
+- `llm_config.yaml.example` 是完整、可审查的配置契约；实际密钥、代理和机器相关路径只写入被 Git 忽略的 `llm_config.yaml`。
 - 生成 available_local_models.json（用于枚举本地可用的 HF/Ollama 模型等）
   - 命令：uv run python config/generate_local_model.py
   - 作用：在 config/ 目录下生成/刷新 available_local_models.json，供配置与选择参考。
@@ -54,11 +54,21 @@
 
 提示：如更换 EMBEDDING_PROVIDER 或 embedding_model/embedding_dimensions，须删除 data/vector_stores 后重建索引，避免维度不匹配。
 
+### 3.2 数据库配置（config/db_config.yaml）
+
+- 首次使用可执行 `cp config/db_config.yaml.example config/db_config.yaml`；未创建本地文件时回退到跟踪的 `.example` 配置。
+- 配置根节点为 `DATABASE`，`ENGINE` 支持 `sqlite`、`mysql` 和 `postgresql`（`postgres` 为别名）。
+- SQLite 的 `NAME` 是相对于后端项目根目录的数据库文件路径；MySQL/PostgreSQL 的 `NAME`、`USER`、`PASSWORD`、`HOST`、`PORT` 会直接映射到 Django。
+- `DJANGO_DB_CONFIG` 可指定另一份数据库 YAML；SQLite 仍兼容 `DJANGO_DB_PATH` 作为路径覆盖。
+- 配置值支持 `${ENV_VAR}`，密码建议通过环境变量注入，不要写入 Git。
+- MySQL 使用 `mysqlclient`，PostgreSQL 使用 `psycopg[binary]`；两者已纳入 `pyproject.toml` 与 `uv.lock`。
+
 ## 4. 环境准备
 
 - Python：建议 3.13（与 pyproject.toml 对齐）
 - 可选 GPU：如使用本地 Transformers 推理，建议安装匹配 CUDA 的 PyTorch
 - 建议包管理器：uv（已提供 uv.lock）
+- 若连接 MySQL/PostgreSQL，请执行 `uv sync` 安装对应驱动，并确认数据库用户已创建且具备迁移权限。
 - 本地密钥：在项目根目录创建并填写 api_key.env，或在系统环境中设置：
   - OPENAI_API_KEY / OPENAI_BASE_URL（如使用 OpenAI 兼容端点）
   - DASHSCOPE_API_KEY / DASHSCOPE_BASE_URL（如使用 DashScope）
@@ -99,11 +109,12 @@
 
 - 数据迁移：
   - uv run python manage.py migrate （或激活虚拟环境后直接 python manage.py migrate）
+  - 切换数据库后无需新增专用迁移；Django 会在目标数据库上按既有 0001–0008 顺序执行迁移。生产切换前请备份并在目标数据库副本演练。
   - 0007 迁移会把旧 History 绑定到 Session，并删除无法匹配所属 Session 的孤立记录；0008 会把 Session 用户名迁移为 Django User 外键，并清理无法匹配用户的 Session；生产迁移前请先备份数据库。
 - 可选：初始化命令（如有需要）
   - uv run python manage.py initdb
     - 仅迁移不写入种子：uv run python manage.py initdb --no-seed
-    - 在 ORM 种子后尝试执行原始 SQL（谨慎使用）：uv run python manage.py initdb --use-sql --sql init.sql
+    - 仅 SQLite 可在 ORM 种子后尝试执行原始 SQL：uv run python manage.py initdb --use-sql --sql init.sql；MySQL/PostgreSQL 请不要使用 `--use-sql`
 - 启动开发服务器：
   - uv run python manage.py runserver 0.0.0.0:8000
 

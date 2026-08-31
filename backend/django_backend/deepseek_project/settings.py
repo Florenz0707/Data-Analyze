@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from .configuration import env_path, parse_bool, parse_csv
+from .configuration import load_database_config, parse_bool, parse_csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,13 +58,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "deepseek_project.wsgi.application"
 
-# Database
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": env_path("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3", base_dir=BASE_DIR),
-    }
-}
+# Database configuration is kept separate from LLM/application settings.
+DATABASES = {"default": load_database_config(project_root=BASE_DIR)}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
