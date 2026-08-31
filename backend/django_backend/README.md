@@ -69,6 +69,12 @@
 - 可通过 `RATE_LIMIT_LOGIN_MAX`、`RATE_LIMIT_CHAT_MAX`、`RATE_LIMIT_MODEL_VALIDATE_MAX` 及对应的 `_INTERVAL` 配置登录、聊天和模型验证限额；`RATE_LIMIT_MAX`/`RATE_LIMIT_INTERVAL` 是通用默认值。
 - 超额请求返回 HTTP 429、稳定错误码 `RATE_LIMITED` 和 `Retry-After`。默认不信任 `X-Forwarded-For`，反向代理部署时需明确设置 `RATE_LIMIT_TRUST_PROXY=true`。
 
+### 3.4 外部模型配置
+
+- 用户自定义模型通过 `/api/llm/extern` 管理；选择时可使用模型别名或模型名，后端只在当前用户范围内解析，并将偏好绑定到稳定配置 ID。
+- 外部 API Key 使用 Fernet 加密保存于 `ExternalLLMAPI.api_key_encrypted`，不出现在 API 响应和日志中。优先设置不入库的 `EXTERNAL_API_ENCRYPTION_KEY`；未设置时由稳定的 `DJANGO_SECRET_KEY` 派生。
+- 更新相同模型名会重新加密 API Key；删除当前使用的外部模型时，用户偏好自动回退到 `llm_config.yaml` 的默认模型。Base URL 的协议、内网地址和重定向校验仍属于后续 SSRF 防护任务。
+
 ## 4. 环境准备
 
 - Python：建议 3.13（与 pyproject.toml 对齐）

@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import threading
@@ -6,15 +7,18 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
+from cryptography.fernet import Fernet, InvalidToken
 from deepseek_project.configuration import load_llm_config
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Q
 
 from .models import (
     APIKey,
     ConversationSession,
+    ExternalLLMAPI,
     RateLimit,
     RateLimitBucket,
     RefreshToken,
@@ -313,8 +317,69 @@ def set_user_pref(user: APIKey, provider: str, model: str | None = None) -> "Use
     pref = get_or_create_user_pref(user)
     pref.provider = (provider or "").lower()
     pref.model = model or ""
-    pref.save()
+    pref.external_api = None
+    pref.save(update_fields=["provider", "model", "external_api", "updated_at"])
     return pref
+
+
+def set_external_user_pref(user: APIKey, external_api: ExternalLLMAPI) -> "UserLLMPreference":
+    """Bind a user's preference to a stable external configuration row."""
+    pref = get_or_create_user_pref(user)
+    pref.provider = "external"
+    pref.model = external_api.model_name
+    pref.external_api = external_api
+    pref.save(update_fields=["provider", "model", "external_api", "updated_at"])
+    return pref
+
+
+def reset_user_pref_to_default(user: APIKey) -> "UserLLMPreference":
+    """Move a preference away from a deleted external model."""
+    provider, model = _get_default_provider_model()
+    return set_user_pref(user, provider, model)
+
+
+def resolve_external_api(user: APIKey, identifier: str | None) -> ExternalLLMAPI | None:
+    """Resolve an alias or model name only within the authenticated user scope."""
+    value = (identifier or "").strip()
+    if not value:
+        return None
+    return (
+        ExternalLLMAPI.objects.filter(user=user.user)
+        .filter(Q(alias__iexact=value) | Q(model_name__iexact=value))
+        .order_by("id")
+        .first()
+    )
+
+
+def _external_cipher() -> Fernet:
+    configured_key = getattr(settings, "EXTERNAL_API_ENCRYPTION_KEY", "")
+    if configured_key:
+        try:
+            return Fernet(configured_key.encode("ascii"))
+        except (ValueError, UnicodeEncodeError) as exc:
+            raise RuntimeError("EXTERNAL_API_ENCRYPTION_KEY 不是有效的 Fernet 密钥") from exc
+
+    # The Django secret is a stable deployment secret and provides a safe
+    # migration path for development installations without a second secret.
+    seed = str(settings.SECRET_KEY).encode("utf-8")
+    derived_key = base64.urlsafe_b64encode(hashlib.sha256(seed).digest())
+    return Fernet(derived_key)
+
+
+def encrypt_external_api_key(api_key: str) -> str:
+    """Encrypt a user-supplied external provider key before persistence."""
+    value = (api_key or "").strip()
+    if not value:
+        raise ValueError("外部模型 API Key 不能为空")
+    return _external_cipher().encrypt(value.encode("utf-8")).decode("ascii")
+
+
+def decrypt_external_api_key(encrypted_api_key: str) -> str:
+    """Decrypt an external provider key only at the outbound provider boundary."""
+    try:
+        return _external_cipher().decrypt(encrypted_api_key.encode("ascii")).decode("utf-8")
+    except (InvalidToken, UnicodeDecodeError, ValueError, UnicodeEncodeError) as exc:
+        raise RuntimeError("外部模型 API Key 无法解密，请检查部署密钥") from exc
 
 
 def build_llm_for_provider(provider: str, model: str | None = None):
@@ -324,16 +389,45 @@ def build_llm_for_provider(provider: str, model: str | None = None):
     return llm
 
 
+def build_llm_for_external_api(external_api: ExternalLLMAPI):
+    """Build/cache an OpenAI-compatible client from one user's encrypted row."""
+    api_key = decrypt_external_api_key(external_api.api_key_encrypted)
+    cfg = _load_env_cfg()
+    openai_cfg = dict(cfg.get("OPENAI_COMPAT_CONFIG") or {})
+    openai_cfg.update(
+        {
+            "base_url": external_api.base_url,
+            "model": external_api.model_name,
+            "api_key": api_key,
+            # Credential changes must not reuse a client with the old key.
+            "cache_identity": (
+                f"{external_api.base_url}#credential-"
+                f"{hashlib.sha256(api_key.encode('utf-8')).hexdigest()[:16]}"
+            ),
+        }
+    )
+    cfg["LLM_PROVIDER"] = "openai_compat"
+    cfg["OPENAI_COMPAT_CONFIG"] = openai_cfg
+    llm, _ = get_cached_llm("openai_compat", external_api.model_name, cfg)
+    return llm
+
+
 def generate_with_user_llm(user: APIKey, prompt: str) -> str:
     """Generate with an explicit user-selected LLM without mutating global state."""
     system = _get_system()
     pref = get_or_create_user_pref(user)
-    try:
-        llm = build_llm_for_provider(pref.provider, pref.model or None)
-    except Exception:
-        # 回退到默认
-        provider, model = _get_default_provider_model()
-        llm = build_llm_for_provider(provider, model)
+    if pref.external_api_id:
+        try:
+            llm = build_llm_for_external_api(pref.external_api)
+        except Exception as exc:
+            raise RuntimeError("自定义模型配置不可用") from exc
+    else:
+        try:
+            llm = build_llm_for_provider(pref.provider, pref.model or None)
+        except Exception:
+            # 内置模型配置失败时保持原有默认回退行为。
+            provider, model = _get_default_provider_model()
+            llm = build_llm_for_provider(provider, model)
     from llama_index.llms.langchain import LangChainLLM
 
     result = system.query(prompt, llm=LangChainLLM(llm=llm))

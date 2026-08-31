@@ -110,7 +110,9 @@ def configured_endpoint(config: dict[str, Any], provider: str) -> str:
         "dashscope": "DASHSCOPE_CONFIG",
     }[provider]
     section = config.get(section_name) or {}
-    return str(section.get("base_url") or section.get("host") or "")
+    return str(
+        section.get("cache_identity") or section.get("base_url") or section.get("host") or ""
+    )
 
 
 def get_cached_llm(

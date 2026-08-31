@@ -6,13 +6,21 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from deepseek_api import services
-from deepseek_api.models import APIKey, RateLimit, RateLimitBucket, RefreshToken
+from deepseek_api.models import (
+    APIKey,
+    ExternalLLMAPI,
+    RateLimit,
+    RateLimitBucket,
+    RefreshToken,
+)
 from deepseek_api.services import (
     _build_reply_cache_key,
     check_rate_limit,
     compose_prompt_with_history,
     consume_rate_limits,
     create_api_key,
+    decrypt_external_api_key,
+    encrypt_external_api_key,
     generate_cache_key,
     get_allowed_providers,
     get_cached_reply,
@@ -25,6 +33,7 @@ from deepseek_api.services import (
     refresh_access_token,
     select_history_by_similarity,
     set_cached_reply,
+    set_external_user_pref,
     validate_api_key,
 )
 
@@ -390,3 +399,60 @@ class ServiceDatabaseTests(TestCase):
         self.assertEqual(result, "fake:question")
         build_llm.assert_called_once_with("ollama", "selected-model")
         llm_wrapper.assert_called_once_with(llm=fake_llm)
+
+    @patch("llama_index.llms.langchain.LangChainLLM")
+    @patch("deepseek_api.services.build_llm_for_external_api")
+    @patch("deepseek_api.services._get_system")
+    def test_external_preference_uses_stable_row_and_decrypted_key_at_boundary(
+        self, get_system, build_llm, llm_wrapper
+    ):
+        class FakeSystem:
+            def query(self, prompt, **kwargs):
+                return {"response": "external answer"}
+
+        get_system.return_value = FakeSystem()
+        fake_llm = object()
+        build_llm.return_value = fake_llm
+        llm_wrapper.side_effect = lambda llm: llm
+        user = create_api_key("external-service-user")
+        external = ExternalLLMAPI.objects.create(
+            user=user.user,
+            base_url="https://provider.example/v1",
+            model_name="remote-model",
+            api_key_encrypted=encrypt_external_api_key("secret-key"),
+            alias="Remote",
+        )
+        preference = set_external_user_pref(user, external)
+
+        result = services.generate_with_user_llm(user, "question")
+
+        self.assertEqual(result, "external answer")
+        self.assertEqual(preference.external_api_id, external.pk)
+        self.assertNotEqual(external.api_key_encrypted, "secret-key")
+        self.assertEqual(decrypt_external_api_key(external.api_key_encrypted), "secret-key")
+        build_llm.assert_called_once_with(external)
+        llm_wrapper.assert_called_once_with(llm=fake_llm)
+
+    @patch("deepseek_api.services.get_cached_llm")
+    def test_external_builder_passes_saved_endpoint_model_and_key_without_secret_cache_identity(
+        self, get_cached_llm
+    ):
+        user = create_api_key("external-builder-user")
+        external = ExternalLLMAPI.objects.create(
+            user=user.user,
+            base_url="https://provider.example/v1",
+            model_name="remote-model",
+            api_key_encrypted=encrypt_external_api_key("saved-secret"),
+        )
+        get_cached_llm.return_value = ("fake-llm", object())
+
+        result = services.build_llm_for_external_api(external)
+
+        self.assertEqual(result, "fake-llm")
+        provider, model, config = get_cached_llm.call_args.args
+        self.assertEqual((provider, model), ("openai_compat", "remote-model"))
+        external_config = config["OPENAI_COMPAT_CONFIG"]
+        self.assertEqual(external_config["base_url"], external.base_url)
+        self.assertEqual(external_config["model"], external.model_name)
+        self.assertEqual(external_config["api_key"], "saved-secret")
+        self.assertNotIn("saved-secret", external_config["cache_identity"])

@@ -9,7 +9,7 @@ from django.test import Client, TestCase, override_settings
 from ninja.errors import Throttled
 
 from deepseek_api.models import APIKey, ExternalLLMAPI, History, RateLimitBucket, Session
-from deepseek_api.services import create_api_key
+from deepseek_api.services import create_api_key, decrypt_external_api_key
 
 
 class ApiIntegrationTests(TestCase):
@@ -433,8 +433,10 @@ class ApiIntegrationTests(TestCase):
         client = openai_class.return_value
         client.chat.completions.create.return_value = Mock(id="probe-id")
         self.assertTrue(_validate_openai_compat("https://example.test/v1", "key", "model"))
-        client.chat.completions.create.side_effect = RuntimeError("offline")
-        self.assertFalse(_validate_openai_compat("https://example.test/v1", "key", "model"))
+        client.chat.completions.create.side_effect = RuntimeError("secret-key echoed by provider")
+        with self.assertLogs("deepseek_api.api", level="WARNING") as logs:
+            self.assertFalse(_validate_openai_compat("https://example.test/v1", "key", "model"))
+        self.assertNotIn("secret-key", "\n".join(logs.output))
 
     def test_authenticated_chat_rejects_empty_input(self):
         client = self.authenticated_client("empty-chat-user")
@@ -596,6 +598,9 @@ class ApiIntegrationTests(TestCase):
             content_type="application/json",
         )
         listed = client.get("/api/llm/extern")
+        stored = ExternalLLMAPI.objects.get(user="external-user", model_name="remote-model")
+        self.assertNotEqual(stored.api_key_encrypted, "fake-key")
+        self.assertEqual(decrypt_external_api_key(stored.api_key_encrypted), "fake-key")
         deleted = client.delete(
             "/api/llm/extern",
             data=json.dumps({"model_name": "Remote"}),
@@ -613,6 +618,60 @@ class ApiIntegrationTests(TestCase):
         self.assertEqual(deleted.status_code, 200)
         self.assertEqual(not_found.status_code, 404)
         self.assertEqual(ExternalLLMAPI.objects.count(), 0)
+
+    @patch("deepseek_api.api._validate_openai_compat", return_value=True)
+    def test_external_model_selection_and_delete_fallback(self, _validate):
+        client = self.authenticated_client("external-selection-user")
+        payload = {
+            "base_url": "https://example.invalid/v1",
+            "model_name": "remote-model",
+            "api_key": "fake-key",
+            "alias": "Remote",
+        }
+        added = client.post(
+            "/api/llm/extern", data=json.dumps(payload), content_type="application/json"
+        )
+        selected = client.post(
+            "/api/llm/select",
+            data=json.dumps({"provider": "Remote", "model": "stale-model"}),
+            content_type="application/json",
+        )
+        current = client.get("/api/llm/my")
+        deleted = client.delete(
+            "/api/llm/extern",
+            data=json.dumps({"model_name": "Remote"}),
+            content_type="application/json",
+        )
+        fallback = client.get("/api/llm/my")
+
+        self.assertEqual(added.status_code, 200)
+        self.assertEqual(selected.status_code, 200)
+        self.assertEqual(selected.json(), {"provider": "Remote", "model": "remote-model"})
+        self.assertEqual(current.json(), {"provider": "Remote", "model": "remote-model"})
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(fallback.json()["provider"], "ollama")
+
+    @patch("deepseek_api.api._validate_openai_compat", return_value=True)
+    def test_external_alias_conflict_is_rejected(self, _validate):
+        client = self.authenticated_client("external-alias-user")
+        first = {
+            "base_url": "https://example.invalid/v1",
+            "model_name": "model-a",
+            "api_key": "fake-key-a",
+            "alias": "Shared",
+        }
+        second = {**first, "model_name": "model-b", "api_key": "fake-key-b"}
+
+        created = client.post(
+            "/api/llm/extern", data=json.dumps(first), content_type="application/json"
+        )
+        conflict = client.post(
+            "/api/llm/extern", data=json.dumps(second), content_type="application/json"
+        )
+
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(conflict.status_code, 409)
+        self.assertEqual(conflict.json()["code"], "RESOURCE_CONFLICT")
 
     @override_settings(RATE_LIMIT_MODEL_VALIDATE_MAX=1, RATE_LIMIT_MODEL_VALIDATE_INTERVAL=60)
     @patch("deepseek_api.api._validate_openai_compat", return_value=True)

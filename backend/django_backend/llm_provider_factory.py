@@ -79,7 +79,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("OPENAI_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "OPENAI_API_KEY")
-        api_key = os.getenv(api_key_env_name)
+        api_key = cfg.get("api_key") or os.getenv(api_key_env_name)
         if not api_key:
             raise RuntimeError(f"未找到 API Key: 请设置 {api_key_env_name}")
         organization = cfg.get("organization") or os.getenv("OPENAI_ORG")
@@ -102,7 +102,7 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
         cfg = env_cfg.get("DASHSCOPE_CONFIG", {})
         base_url = cfg.get("base_url") or os.getenv("DASHSCOPE_BASE_URL")
         api_key_env_name = cfg.get("api_key_env_name", "DASHSCOPE_API_KEY")
-        api_key = os.getenv(api_key_env_name)
+        api_key = cfg.get("api_key") or os.getenv(api_key_env_name)
         if not api_key:
             raise RuntimeError(f"未找到 API Key: 请设置 {api_key_env_name}")
         timeout = int(cfg.get("timeout", 60))

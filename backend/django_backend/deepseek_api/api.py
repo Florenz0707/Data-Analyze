@@ -23,7 +23,7 @@ from ninja.errors import (
 
 from . import services
 from .errors import ErrorCode, error_payload
-from .models import APIKey, ExternalLLMAPI, History, Session
+from .models import APIKey, ExternalLLMAPI, History, Session, UserLLMPreference
 from .schemas import (
     APIIn,
     ChatIn,
@@ -193,8 +193,10 @@ def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> boo
         )
         # if no exception, treat as OK
         return bool(resp and getattr(resp, "id", None))
-    except Exception as e:
-        logger.warning(f"Validate external API failed: {e}")
+    except Exception:
+        # Provider exceptions may echo request headers or URLs; do not log
+        # their contents because this boundary handles user-supplied secrets.
+        logger.warning("Validate external API failed for model %s", model_name)
         return False
 
 
@@ -682,6 +684,11 @@ def get_my_llm(request):
     if not request.auth:
         return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     pref = services.get_or_create_user_pref(request.auth)
+    if pref.external_api_id:
+        return {
+            "provider": pref.external_api.display_name(),
+            "model": pref.external_api.model_name,
+        }
     return {"provider": pref.provider, "model": pref.model or None}
 
 
@@ -699,14 +706,20 @@ def select_llm(request, data: SelectLLMIn):
     if not request.auth:
         return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
     allowed = set(get_allowed_providers())
-    provider = (data.provider or "").lower()
-    if provider not in allowed:
+    provider = (data.provider or "").strip().lower()
+    if provider in allowed:
+        pref = set_user_pref(request.auth, provider, data.model)
+        return {"provider": pref.provider, "model": pref.model or None}
+
+    external_identifier = data.model if provider == "external" else data.provider
+    external_api = services.resolve_external_api(request.auth, external_identifier)
+    if external_api is None:
         return 400, error_payload(
             ErrorCode.VALIDATION_ERROR,
-            f"不允许的 provider: {provider}. 仅允许: {sorted(allowed)}",
+            f"不允许的 provider: {data.provider}. 仅允许内置 provider 或当前用户的自定义模型",
         )
-    pref = set_user_pref(request.auth, provider, data.model)
-    return {"provider": pref.provider, "model": pref.model or None}
+    pref = services.set_external_user_pref(request.auth, external_api)
+    return {"provider": external_api.display_name(), "model": pref.model or None}
 
 
 # ===== External API management =====
@@ -716,6 +729,7 @@ def select_llm(request, data: SelectLLMIn):
         200: dict,
         400: ErrorResponse,
         401: ErrorResponse,
+        409: ErrorResponse,
         429: ErrorResponse,
         500: ErrorResponse,
         503: ErrorResponse,
@@ -734,16 +748,29 @@ def add_external_api(request, data: APIIn):
             ErrorCode.VALIDATION_ERROR, "base_url、model_name、api_key 不能为空"
         )
 
+    username = request.auth.user
+    existing = ExternalLLMAPI.objects.filter(user=username, model_name=model_name).first()
+    alias_conflict = ExternalLLMAPI.objects.filter(user=username).filter(
+        Q(alias__iexact=alias) | Q(model_name__iexact=alias)
+    )
+    if existing is not None:
+        alias_conflict = alias_conflict.exclude(pk=existing.pk)
+    if alias and alias_conflict.exists():
+        return 409, error_payload(ErrorCode.RESOURCE_CONFLICT, "该自定义模型别名已存在")
+
     # quick validation
     ok = _validate_openai_compat(base_url, api_key, model_name)
     if not ok:
         return 503, error_payload(ErrorCode.MODEL_UNAVAILABLE, "无法连接到该接口或模型不可用")
 
-    username = request.auth.user
-    obj, created = ExternalLLMAPI.objects.update_or_create(
+    ExternalLLMAPI.objects.update_or_create(
         user=username,
         model_name=model_name,
-        defaults={"base_url": base_url, "api_key": api_key, "alias": alias},
+        defaults={
+            "base_url": base_url,
+            "api_key_encrypted": services.encrypt_external_api_key(api_key),
+            "alias": alias,
+        },
     )
     return {"message": "保存成功"}
 
@@ -782,7 +809,13 @@ def delete_external_model(request, data: ModelIn):
     qs = ExternalLLMAPI.objects.filter(user=username).filter(Q(model_name=key) | Q(alias=key))
     if not qs.exists():
         return 404, error_payload(ErrorCode.RESOURCE_NOT_FOUND, "未找到该模型配置")
-    qs.delete()
+    with transaction.atomic():
+        selected_preferences = UserLLMPreference.objects.select_for_update().filter(
+            external_api__in=qs
+        )
+        for preference in selected_preferences:
+            services.reset_user_pref_to_default(preference.user)
+        qs.delete()
     return {"message": "已删除"}
 
 

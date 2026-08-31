@@ -209,6 +209,13 @@ class UserLLMPreference(models.Model):
     user = models.OneToOneField(APIKey, on_delete=models.CASCADE, related_name="llm_pref")
     provider = models.CharField(max_length=64)  # transformers|ollama|openai_compat|dashscope
     model = models.CharField(max_length=256, blank=True, default="")  # 可选：具体模型名
+    external_api = models.ForeignKey(
+        "ExternalLLMAPI",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="preferences",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -221,7 +228,7 @@ class ExternalLLMAPI(models.Model):
     user = models.CharField(max_length=100, db_index=True)
     base_url = models.CharField(max_length=512)
     model_name = models.CharField(max_length=128)
-    api_key = models.CharField(max_length=256)
+    api_key_encrypted = models.CharField(max_length=512)
     alias = models.CharField(max_length=128, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
