@@ -1,5 +1,13 @@
 """Deterministic data cleaning and document construction for the log corpus."""
 
+from .index_version import (
+    INDEX_SCHEMA_VERSION,
+    IndexSpec,
+    IndexStateStore,
+    build_index_spec,
+    cleanup_old_index_collections,
+    compute_data_content_hash,
+)
 from .log_documents import (
     CHUNKER_VERSION,
     CLEANER_VERSION,
@@ -28,4 +36,10 @@ __all__ = [
     "discover_csv_files",
     "iter_document_chunks",
     "iter_llama_documents",
+    "INDEX_SCHEMA_VERSION",
+    "IndexSpec",
+    "IndexStateStore",
+    "build_index_spec",
+    "cleanup_old_index_collections",
+    "compute_data_content_hash",
 ]

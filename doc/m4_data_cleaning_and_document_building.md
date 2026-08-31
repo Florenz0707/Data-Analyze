@@ -2,7 +2,7 @@
 
 ## 1. 本次范围
 
-本次完成 M4 的“数据清洗”和“文档构建”子任务，暂不宣称完成索引版本、增量切换、混合召回或 Reranker。清洗层与索引层解耦，后续索引构建可以复用同一份规范记录和文档 Metadata。
+本报告记录 M4 的“数据清洗”和“文档构建”子任务。索引版本和检索实现及固定集实测已在后续报告中记录，见 `doc/m4_index_version_and_retrieval.md` 和 `evaluation/m4/retrieval_benchmark_report.md`。
 
 ## 2. 统一 Schema 与解析
 
@@ -69,10 +69,10 @@ DJANGO_DB_CONFIG=config/db_config.yaml.example \
 ## 6. 验收
 
 - M4 数据清洗和文档构建定向测试：9/9 通过；
-- 后端全量测试：91/91 通过；
+- 本次 M4 相关代码合并后的后端全量测试：98/98 通过；
 - `pre-commit run --all-files`、前端 lint/格式检查/构建需在本次变更完成后执行；
 - 本任务未新增数据库迁移，也未访问真实外部模型服务。
 
 ## 7. 后续边界
 
-下一步继续完成 M4 的索引版本和增量更新：将 Embedding 模型/维度、数据内容哈希、解析器和分块版本纳入索引身份，实现新旧索引并存、验收后原子切换、失败回滚和状态查询；之后再进行相似度阈值、混合召回、Reranker 和固定评测集对照实验。
+索引版本和检索的实现、定向测试与操作命令见 `doc/m4_index_version_and_retrieval.md`；固定集对照结果见 `evaluation/m4/retrieval_benchmark_report.md`。后续仍需在真实全量 Embedding 重建中记录耗时和峰值内存，并优化未超过 legacy 的结构化/Hybrid 质量。

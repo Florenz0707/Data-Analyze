@@ -28,6 +28,7 @@ class ConfigurationTests(SimpleTestCase):
         config = load_llm_config()
 
         self.assertEqual(config["RESPONSE_TOP_K"], 10)
+        self.assertEqual(config["INDEX_BUILD_BATCH_SIZE"], 4)
         self.assertEqual(config["REPLY_CACHE_TTL"], 3600)
         self.assertEqual(config["PROMPT_VERSION"], "v1")
         self.assertEqual(config["INDEX_VERSION"], "v1")
@@ -139,6 +140,30 @@ class ConfigurationTests(SimpleTestCase):
     def test_negative_reply_cache_ttl_fails_fast(self):
         with self.assertRaisesRegex(ConfigurationError, "REPLY_CACHE_TTL"):
             self._load_temp_config({"REPLY_CACHE_TTL": -1})
+
+    def test_index_build_batch_size_is_bounded(self):
+        with self.assertRaisesRegex(ConfigurationError, "INDEX_BUILD_BATCH_SIZE"):
+            self._load_temp_config({"INDEX_BUILD_BATCH_SIZE": 33})
+
+    def test_retrieval_configuration_is_normalized_and_validated(self):
+        config = self._load_temp_config(
+            {
+                "RETRIEVAL_MIN_SCORE": "0.25",
+                "RETRIEVAL_MODE": "HYBRID",
+                "RETRIEVAL_CANDIDATE_MULTIPLIER": "4",
+                "HYBRID_VECTOR_WEIGHT": "0.8",
+                "HYBRID_LEXICAL_WEIGHT": "0.2",
+                "RERANKER_ENABLED": "yes",
+            }
+        )
+
+        self.assertEqual(config["RETRIEVAL_MIN_SCORE"], 0.25)
+        self.assertEqual(config["RETRIEVAL_MODE"], "hybrid")
+        self.assertEqual(config["RETRIEVAL_CANDIDATE_MULTIPLIER"], 4)
+        self.assertTrue(config["RERANKER_ENABLED"])
+
+        with self.assertRaisesRegex(ConfigurationError, "RETRIEVAL_MIN_SCORE"):
+            self._load_temp_config({"RETRIEVAL_MIN_SCORE": 1.1})
 
     def test_unknown_provider_fails_before_provider_initialization(self):
         with self.assertRaisesRegex(ConfigurationError, "不支持的 LLM provider"):

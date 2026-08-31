@@ -51,6 +51,83 @@ class TopKLogSystemIsolationTests(SimpleTestCase):
             ],
         )
 
+    def test_retrieval_applies_metadata_filter_and_threshold(self):
+        from topklogsystem import TopKLogSystem
+
+        system = TopKLogSystem.__new__(TopKLogSystem)
+        system.log_index = Mock()
+        system.embedding = object()
+        system.default_top_k = 5
+        system.retrieval_min_score = 0.8
+        system.log_index.as_retriever.return_value.retrieve.return_value = [
+            SimpleNamespace(
+                text="matching event",
+                score=0.9,
+                node=SimpleNamespace(
+                    node_id="match",
+                    metadata={"service": "payments"},
+                ),
+            ),
+            SimpleNamespace(
+                text="wrong service",
+                score=0.99,
+                node=SimpleNamespace(
+                    node_id="wrong-service",
+                    metadata={"service": "search"},
+                ),
+            ),
+            SimpleNamespace(
+                text="weak event",
+                score=0.2,
+                node=SimpleNamespace(
+                    node_id="weak",
+                    metadata={"service": "payments"},
+                ),
+            ),
+        ]
+
+        result = system.retrieve_logs("event", metadata_filter={"service": "payments"})
+
+        self.assertEqual([item["document_id"] for item in result], ["match"])
+        system.log_index.as_retriever.assert_called_once()
+        self.assertIn("filters", system.log_index.as_retriever.call_args.kwargs)
+
+    def test_no_evidence_status_and_hybrid_scores_are_explicit(self):
+        from topklogsystem import TopKLogSystem
+
+        system = TopKLogSystem.__new__(TopKLogSystem)
+        system.log_index = Mock()
+        system.embedding = object()
+        system.default_top_k = 2
+        system.retrieval_mode = "hybrid"
+        system.retrieval_candidate_multiplier = 3
+        system.hybrid_vector_weight = 0.7
+        system.hybrid_lexical_weight = 0.3
+        system.retrieval_min_score = 0.0
+        system.log_index.as_retriever.return_value.retrieve.return_value = [
+            SimpleNamespace(
+                text="database timeout",
+                score=0.8,
+                node=SimpleNamespace(node_id="a", metadata={}),
+            ),
+            SimpleNamespace(
+                text="unrelated event",
+                score=0.4,
+                node=SimpleNamespace(node_id="b", metadata={}),
+            ),
+        ]
+
+        result = system.retrieve_logs("database timeout")
+
+        self.assertEqual(system.last_retrieval_status, "ok")
+        self.assertEqual(result[0]["document_id"], "a")
+        self.assertIn("lexical_score", result[0])
+        self.assertEqual(system.log_index.as_retriever.call_args.kwargs["similarity_top_k"], 6)
+
+        system.log_index.as_retriever.return_value.retrieve.return_value = []
+        self.assertEqual(system.retrieve_logs("missing"), [])
+        self.assertEqual(system.last_retrieval_status, "no_evidence")
+
     @patch("topklogsystem.VectorStoreIndex")
     @patch("topklogsystem.StorageContext")
     @patch("topklogsystem.ChromaVectorStore")

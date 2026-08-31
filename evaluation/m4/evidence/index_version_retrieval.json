@@ -1,0 +1,45 @@
+{
+  "milestone": "M4",
+  "scope": "index_version_and_retrieval",
+  "date": "2026-08-31",
+  "implementation": {
+    "index_identity": [
+      "logical_version",
+      "data_content_hash",
+      "embedding_provider",
+      "embedding_model",
+      "embedding_dimensions",
+      "embedding_parameters",
+      "parser_version",
+      "chunker_version",
+      "chunk_size",
+      "retrieval_parameters"
+    ],
+    "publish_protocol": "versioned Chroma collection plus atomic JSON state pointer",
+    "failure_semantics": "failed build does not change current_version",
+    "retrieval": [
+      "metadata exact-match filter",
+      "minimum similarity threshold",
+      "no_evidence status",
+      "candidate-set BM25 hybrid experiment",
+      "deterministic lexical reranker experiment"
+    ]
+  },
+  "tests": {
+    "index_version_tests": "3/3 passed",
+    "retrieval_tests": "5/5 passed",
+    "configuration_tests": "14/14 passed",
+    "command": "DJANGO_DB_CONFIG=config/db_config.yaml.example uv run --project . python manage.py test data_pipeline.tests.test_log_documents data_pipeline.tests.test_index_version deepseek_api.tests.test_topklogsystem deepseek_project.tests.test_configuration --noinput",
+    "total": "28/28 passed",
+    "real_comparison": "evaluation/m4/retrieval_benchmark_report.md",
+    "real_comparison_evidence": [
+      "evaluation/m4/evidence/retrieval_legacy_baseline.json",
+      "evaluation/m4/evidence/retrieval_comparison.json"
+    ]
+  },
+  "limitations": [
+    "No claim of fixed-set Recall/MRR improvement yet",
+    "No claim of real full-corpus rebuild resource measurements yet",
+    "BM25 currently scores the vector candidate set rather than an independent full-corpus index"
+  ]
+}

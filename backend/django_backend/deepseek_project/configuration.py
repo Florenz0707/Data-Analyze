@@ -47,6 +47,9 @@ def redacted_config_summary(config: dict[str, Any]) -> dict[str, Any]:
         "LLM_PROVIDER",
         "EMBEDDING_PROVIDER",
         "RESPONSE_TOP_K",
+        "RETRIEVAL_MIN_SCORE",
+        "RETRIEVAL_MODE",
+        "RERANKER_ENABLED",
         "HISTORY_MODE",
         "HISTORY_MAX_TURNS",
         "HISTORY_TOP_K",
@@ -218,6 +221,51 @@ def load_llm_config(
     if not 1 <= response_top_k <= 100:
         raise ConfigurationError("RESPONSE_TOP_K 必须在 1 到 100 之间")
     config["RESPONSE_TOP_K"] = response_top_k
+
+    try:
+        index_build_batch_size = int(config.get("INDEX_BUILD_BATCH_SIZE", 4))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("INDEX_BUILD_BATCH_SIZE 必须是正整数") from exc
+    if not 1 <= index_build_batch_size <= 32:
+        raise ConfigurationError("INDEX_BUILD_BATCH_SIZE 必须在 1 到 32 之间")
+    config["INDEX_BUILD_BATCH_SIZE"] = index_build_batch_size
+
+    try:
+        retrieval_min_score = float(config.get("RETRIEVAL_MIN_SCORE", 0.0))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("RETRIEVAL_MIN_SCORE 必须是 0 到 1 之间的数字") from exc
+    if not 0.0 <= retrieval_min_score <= 1.0:
+        raise ConfigurationError("RETRIEVAL_MIN_SCORE 必须在 0 到 1 之间")
+    config["RETRIEVAL_MIN_SCORE"] = retrieval_min_score
+
+    retrieval_mode = str(config.get("RETRIEVAL_MODE", "vector")).strip().lower()
+    if retrieval_mode not in {"vector", "hybrid"}:
+        raise ConfigurationError("RETRIEVAL_MODE 必须是 vector 或 hybrid")
+    config["RETRIEVAL_MODE"] = retrieval_mode
+    try:
+        candidate_multiplier = int(config.get("RETRIEVAL_CANDIDATE_MULTIPLIER", 3))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("RETRIEVAL_CANDIDATE_MULTIPLIER 必须是正整数") from exc
+    if not 1 <= candidate_multiplier <= 20:
+        raise ConfigurationError("RETRIEVAL_CANDIDATE_MULTIPLIER 必须在 1 到 20 之间")
+    config["RETRIEVAL_CANDIDATE_MULTIPLIER"] = candidate_multiplier
+    for key, default in {
+        "HYBRID_VECTOR_WEIGHT": 0.7,
+        "HYBRID_LEXICAL_WEIGHT": 0.3,
+    }.items():
+        try:
+            weight = float(config.get(key, default))
+        except (TypeError, ValueError) as exc:
+            raise ConfigurationError(f"{key} 必须是非负数字") from exc
+        if weight < 0:
+            raise ConfigurationError(f"{key} 必须是非负数字")
+        config[key] = weight
+    if config["HYBRID_VECTOR_WEIGHT"] + config["HYBRID_LEXICAL_WEIGHT"] <= 0:
+        raise ConfigurationError("HYBRID_VECTOR_WEIGHT 和 HYBRID_LEXICAL_WEIGHT 不能同时为 0")
+    reranker = config.get("RERANKER_ENABLED", False)
+    if isinstance(reranker, str):
+        reranker = reranker.strip().lower() in {"1", "true", "yes", "on"}
+    config["RERANKER_ENABLED"] = bool(reranker)
 
     try:
         reply_cache_ttl = int(config.get("REPLY_CACHE_TTL", 3600))

@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 CLEANER_VERSION = "m4-cleaner-v1"
-PARSER_VERSION = "m4-parser-v1"
+PARSER_VERSION = "m4-parser-v2"
 CHUNKER_VERSION = "m4-chunker-v1"
 DEFAULT_CHUNK_SIZE = 1200
 
@@ -432,7 +432,9 @@ def clean_data_sources(data_path: str | Path) -> CleaningResult:
             source_file,
             {"rows_read": 0, "empty_rows": 0, "quarantined": 0, "duplicates": 0, "accepted": 0},
         )
-        for source_row, raw_row in enumerate(_read_csv_rows(path), start=2):
+        # source_row follows the evaluation contract: the first data row is 1;
+        # the CSV header is not part of the source record numbering.
+        for source_row, raw_row in enumerate(_read_csv_rows(path), start=1):
             rows_read += 1
             source_stats["rows_read"] += 1
             row = _field_map(raw_row)

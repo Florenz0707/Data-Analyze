@@ -63,6 +63,7 @@ class LogDocumentPipelineTests(SimpleTestCase):
         computer = next(record for record in result.records if record.service == "MSSQLSERVER")
         self.assertEqual(computer.timestamp, "2020-06-28T22:57:55")
         self.assertEqual(computer.error_code, "17890")
+        self.assertEqual(computer.source_row, 1)
 
     def test_sensitive_rows_are_quarantined_and_not_emitted(self):
         from tempfile import TemporaryDirectory

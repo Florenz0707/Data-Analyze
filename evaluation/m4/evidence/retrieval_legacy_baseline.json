@@ -1,0 +1,2767 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T09:36:50.977484+00:00",
+  "dataset": {
+    "path": "evaluation/m0/gold_queries.jsonl",
+    "sha256": "7f64d6b4b7672fbe9bf2b5e88dd064739157456632786bedadb35e29b6c1e5e5",
+    "case_count": 50,
+    "positive_count": 40,
+    "negative_count": 10
+  },
+  "runtime": {
+    "llm_provider": "ollama",
+    "embedding_provider": "ollama",
+    "embedding_model": "bge-large:latest",
+    "collection": "log_collection_bge_large_latest",
+    "collection_count": 1708,
+    "source_row_count": 1708,
+    "embedding_dimensions": 1024,
+    "embedding_seconds": 3.089776178007014,
+    "repeat_count": 2
+  },
+  "metrics": {
+    "recall_at_1": 0.8,
+    "recall_at_5": 0.95,
+    "recall_at_10": 0.95,
+    "mrr_at_10": 0.8645833333333334,
+    "ndcg_at_10": 0.93367962082684
+  },
+  "metric_spread": {
+    "recall_at_1": 0.0,
+    "recall_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "mrr_at_10": 0.0,
+    "ndcg_at_10": 0.0
+  },
+  "negative_case_note": "Ranking metrics exclude negative cases because the current retriever has no abstention threshold and always returns top-k results.",
+  "runs": [
+    {
+      "run": 1,
+      "query_seconds": 0.09684085100889206,
+      "metrics": {
+        "recall_at_1": 0.8,
+        "recall_at_5": 0.95,
+        "recall_at_10": 0.95,
+        "mrr_at_10": 0.8645833333333334,
+        "ndcg_at_10": 0.93367962082684
+      },
+      "unmatched_documents": 0,
+      "per_case": [
+        {
+          "case_id": "P001",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000001"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000001", "python_error_doubao.csv:000011"],
+            ["python_error_doubao.csv:000001", "python_error_doubao.csv:000011"],
+            ["linuxcomand_error_deepseek.csv:000033"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_deepseek.csv:000015"],
+            ["linuxcomand_error_deepseek.csv:000049"],
+            ["python_error_deepseek.csv:000011"],
+            ["linuxcomand_error_deepseek.csv:000090"],
+            ["python_error_deepseek.csv:000009"]
+          ],
+          "distances": [
+            0.4929687976837158, 0.4929687976837158, 0.5070807337760925, 0.5144121050834656,
+            0.5144121050834656, 0.5175127983093262, 0.5285311341285706, 0.5359544157981873,
+            0.5445133447647095, 0.5468472838401794
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P002",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000002"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["linuxcomand_error_deepseek.csv:000090"],
+            ["python_error_deepseek.csv:000062"],
+            ["python_error_deepseek.csv:000011"],
+            ["python_error_doubao.csv:000005", "python_error_doubao.csv:000015"],
+            ["python_error_doubao.csv:000005", "python_error_doubao.csv:000015"],
+            ["linuxcomand_error_deepseek.csv:000084"],
+            ["python_error_deepseek.csv:000097"],
+            ["python_error_deepseek.csv:000166"]
+          ],
+          "distances": [
+            0.48702582716941833, 0.48702582716941833, 0.5656806230545044, 0.5764235258102417,
+            0.5907169580459595, 0.5967410802841187, 0.5967410802841187, 0.6101102828979492,
+            0.6149162650108337, 0.6169112920761108
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P003",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000003"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000003", "python_error_doubao.csv:000013"],
+            ["python_error_doubao.csv:000003", "python_error_doubao.csv:000013"],
+            ["linuxcomand_error_deepseek.csv:000025"],
+            ["python_error_doubao.csv:000047"],
+            ["python_error_deepseek.csv:000008"],
+            ["python_error_doubao.csv:000009", "python_error_doubao.csv:000019"],
+            ["python_error_doubao.csv:000009", "python_error_doubao.csv:000019"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_deepseek.csv:000062"]
+          ],
+          "distances": [
+            0.3862646818161011, 0.3862646818161011, 0.48660850524902344, 0.49685388803482056,
+            0.5013508200645447, 0.507810652256012, 0.507810652256012, 0.5106086134910583,
+            0.5106086134910583, 0.5254227519035339
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P004",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000024"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000024"],
+            ["python_error_deepseek.csv:000042"],
+            ["python_error_deepseek.csv:000064"],
+            ["python_error_deepseek.csv:000036"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000005"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_deepseek.csv:000004"],
+            ["python_error_doubao.csv:000031"],
+            ["python_error_doubao.csv:000048"]
+          ],
+          "distances": [
+            0.3617038428783417, 0.5856713652610779, 0.6059950590133667, 0.6217589974403381,
+            0.6254067420959473, 0.633420467376709, 0.6400175094604492, 0.6467626690864563,
+            0.6506520509719849, 0.656132698059082
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P005",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000037"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000037"],
+            ["python_error_deepseek.csv:000225"],
+            ["python_error_deepseek.csv:000120"],
+            ["linuxcomand_error_deepseek.csv:000025"],
+            ["python_error_deepseek.csv:000121"],
+            ["python_error_doubao.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000293"],
+            ["python_error_doubao.csv:000049"],
+            ["python_error_deepseek.csv:000118"],
+            ["python_error_deepseek.csv:000117"]
+          ],
+          "distances": [
+            0.28650224208831787, 0.4847664535045624, 0.5132524371147156, 0.5475969314575195,
+            0.54779052734375, 0.5487455129623413, 0.5633125305175781, 0.5635753870010376,
+            0.5648401975631714, 0.5650262236595154
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P006",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000003"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000048"],
+            ["python_error_doubao.csv:000008", "python_error_doubao.csv:000018"],
+            ["python_error_doubao.csv:000008", "python_error_doubao.csv:000018"],
+            ["python_error_deepseek.csv:000003"],
+            ["python_error_deepseek.csv:000097"],
+            ["python_error_deepseek.csv:000055"],
+            ["python_error_doubao.csv:000027"],
+            ["python_error_deepseek.csv:000090"],
+            ["python_error_doubao.csv:000026"],
+            ["python_error_deepseek.csv:000104"]
+          ],
+          "distances": [
+            0.45911771059036255, 0.47522443532943726, 0.47522443532943726, 0.5124226212501526,
+            0.5563733577728271, 0.5772190690040588, 0.5781627893447876, 0.5833485126495361,
+            0.5882292985916138, 0.5927999019622803
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.25,
+          "ndcg_at_10": 0.43067655807339306
+        },
+        {
+          "case_id": "P007",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000004"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000004"],
+            ["python_error_deepseek.csv:000171"],
+            ["java_error_deepseek.csv:000152"],
+            ["python_error_deepseek.csv:000233"],
+            ["20200.csv:000256"],
+            ["linuxcomand_error_deepseek.csv:000267"],
+            ["linuxcomand_error_deepseek.csv:000139"],
+            ["linuxcomand_error_deepseek.csv:000104"],
+            ["linuxcomand_error_deepseek.csv:000160"],
+            ["linuxcomand_error_deepseek.csv:000244"]
+          ],
+          "distances": [
+            0.27994680404663086, 0.43077677488327026, 0.4462503492832184, 0.44649696350097656,
+            0.4486214518547058, 0.4524255394935608, 0.4550955891609192, 0.4612101912498474,
+            0.47204166650772095, 0.48287513852119446
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P008",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000016"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000016"],
+            ["20200.csv:000309"],
+            ["java_error_deepseek.csv:000013"],
+            ["python_error_doubao.csv:000007", "python_error_doubao.csv:000017"],
+            ["python_error_doubao.csv:000007", "python_error_doubao.csv:000017"],
+            ["20200.csv:000468"],
+            ["linuxcomand_error_deepseek.csv:000114"],
+            ["linuxcomand_error_deepseek.csv:000082"],
+            ["python_error_deepseek.csv:000045"],
+            ["linuxcomand_error_deepseek.csv:000119"]
+          ],
+          "distances": [
+            0.46740683913230896, 0.4975958466529846, 0.5415711998939514, 0.5525433421134949,
+            0.5525433421134949, 0.5534491539001465, 0.5563968420028687, 0.560749888420105,
+            0.5623860359191895, 0.5627483129501343
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P009",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000021"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000021"],
+            ["python_error_deepseek.csv:000021"],
+            ["python_error_deepseek.csv:000036"],
+            ["python_error_deepseek.csv:000022"],
+            ["python_error_deepseek.csv:000099"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_doubao.csv:000022"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000031"],
+            ["python_error_deepseek.csv:000063"]
+          ],
+          "distances": [
+            0.3081686496734619, 0.30908578634262085, 0.39350634813308716, 0.41392964124679565,
+            0.42244046926498413, 0.4478153586387634, 0.45249485969543457, 0.4790782928466797,
+            0.5079190135002136, 0.5097653865814209
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "P010",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000042"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000042"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000063"],
+            ["python_error_deepseek.csv:000078"],
+            ["python_error_doubao.csv:000024"],
+            ["python_error_deepseek.csv:000031"],
+            ["python_error_deepseek.csv:000105"],
+            ["python_error_deepseek.csv:000022"],
+            ["python_error_deepseek.csv:000043"]
+          ],
+          "distances": [
+            0.29884952306747437, 0.44734832644462585, 0.4541449546813965, 0.46158772706985474,
+            0.4875514507293701, 0.48775649070739746, 0.48782646656036377, 0.5020238161087036,
+            0.5029131174087524, 0.5157911777496338
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J001",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000001"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000001"],
+            ["java_error_deepseek.csv:000011"],
+            ["java_error_deepseek.csv:000002"],
+            ["java_error_deepseek.csv:000015"],
+            ["java_error_deepseek.csv:000010"],
+            ["java_error_deepseek.csv:000012"],
+            ["java_error_deepseek.csv:000022"],
+            ["java_error_deepseek.csv:000023"],
+            ["java_error_deepseek.csv:000019"],
+            ["java_error_deepseek.csv:000152"]
+          ],
+          "distances": [
+            0.35350480675697327, 0.41144564747810364, 0.4205712378025055, 0.45953553915023804,
+            0.4972166419029236, 0.5085641145706177, 0.5339075922966003, 0.5346466302871704,
+            0.5415434241294861, 0.5417821407318115
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J002",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000002"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000002"],
+            ["java_error_deepseek.csv:000010"],
+            ["java_error_deepseek.csv:000011"],
+            ["java_error_deepseek.csv:000023"],
+            ["java_error_deepseek.csv:000012"],
+            ["linuxcomand_error_deepseek.csv:000179"],
+            ["linuxcomand_error_deepseek.csv:000184"],
+            ["java_error_deepseek.csv:000112"],
+            ["linuxcomand_error_deepseek.csv:000045"],
+            ["java_error_deepseek.csv:000076"]
+          ],
+          "distances": [
+            0.24893586337566376, 0.4028905928134918, 0.45386257767677307, 0.4880240261554718,
+            0.5110938549041748, 0.5227863788604736, 0.5438758134841919, 0.5491484999656677,
+            0.5593826770782471, 0.5607801079750061
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J003",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000006"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000006"],
+            ["java_error_deepseek.csv:000172"],
+            ["java_error_deepseek.csv:000012"],
+            ["java_error_deepseek.csv:000041"],
+            ["java_error_deepseek.csv:000020"],
+            ["java_error_deepseek.csv:000017"],
+            ["java_error_deepseek.csv:000151"],
+            ["java_error_deepseek.csv:000165"],
+            ["java_error_deepseek.csv:000110"],
+            ["java_error_deepseek.csv:000241"]
+          ],
+          "distances": [
+            0.2679883539676666, 0.42348575592041016, 0.4389548599720001, 0.4394358992576599,
+            0.4394485354423523, 0.4975050091743469, 0.4995211958885193, 0.5308313369750977,
+            0.5404209494590759, 0.540552020072937
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J004",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000007"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000007"],
+            ["java_error_deepseek.csv:000153"],
+            ["java_error_deepseek.csv:000042"],
+            ["java_error_deepseek.csv:000149"],
+            ["java_error_deepseek.csv:000193"],
+            ["java_error_deepseek.csv:000165"],
+            ["java_error_deepseek.csv:000187"],
+            ["java_error_deepseek.csv:000173"],
+            ["java_error_deepseek.csv:000022"],
+            ["java_error_deepseek.csv:000247"]
+          ],
+          "distances": [
+            0.28816473484039307, 0.4201582372188568, 0.46538591384887695, 0.5075920224189758,
+            0.5205767154693604, 0.5340880155563354, 0.5371552109718323, 0.5439068078994751,
+            0.54913330078125, 0.5512115359306335
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J005",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000008"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000008"],
+            ["java_error_deepseek.csv:000163"],
+            ["python_error_deepseek.csv:000191"],
+            ["java_error_deepseek.csv:000021"],
+            ["20200.csv:000020"],
+            ["20200.csv:000374"],
+            ["20200.csv:000313"],
+            ["java_error_deepseek.csv:000032"],
+            ["python_error_deepseek.csv:000041"],
+            ["java_error_deepseek.csv:000003"]
+          ],
+          "distances": [
+            0.4305417835712433, 0.48458409309387207, 0.4909305274486542, 0.5436849594116211,
+            0.5443384647369385, 0.5483355522155762, 0.5499300956726074, 0.5585712790489197,
+            0.5590516924858093, 0.5641422271728516
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J006",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000018"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000018"],
+            ["java_error_deepseek.csv:000149"],
+            ["java_error_deepseek.csv:000073"],
+            ["java_error_deepseek.csv:000207"],
+            ["java_error_deepseek.csv:000053"],
+            ["java_error_deepseek.csv:000127"],
+            ["java_error_deepseek.csv:000086"],
+            ["java_error_deepseek.csv:000204"],
+            ["java_error_deepseek.csv:000231"],
+            ["java_error_deepseek.csv:000190"]
+          ],
+          "distances": [
+            0.3896927535533905, 0.4910274147987366, 0.4924604296684265, 0.498471736907959,
+            0.5007842779159546, 0.5118257999420166, 0.5161151885986328, 0.5222876071929932,
+            0.5240033268928528, 0.5248298048973083
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J007",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000027"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000027"],
+            ["python_error_deepseek.csv:000135"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["java_error_deepseek.csv:000158"],
+            ["java_error_deepseek.csv:000075"],
+            ["python_error_deepseek.csv:000137"],
+            ["java_error_deepseek.csv:000176"],
+            ["python_error_doubao.csv:000067"],
+            ["linuxcomand_error_deepseek.csv:000343"],
+            ["linuxcomand_error_deepseek.csv:000019"]
+          ],
+          "distances": [
+            0.36349236965179443, 0.497136652469635, 0.4977406859397888, 0.6171849966049194,
+            0.6334850788116455, 0.6442155241966248, 0.6510977149009705, 0.665303111076355,
+            0.66829913854599, 0.6858101487159729
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J008",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000028"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000028"],
+            ["linuxcomand_error_deepseek.csv:000331"],
+            ["python_error_deepseek.csv:000346"],
+            ["python_error_deepseek.csv:000345"],
+            ["python_error_deepseek.csv:000344"],
+            ["20200.csv:000088"],
+            ["python_error_deepseek.csv:000279"],
+            ["python_error_deepseek.csv:000202"],
+            ["20200.csv:000242"],
+            ["linuxcomand_error_deepseek.csv:000305"]
+          ],
+          "distances": [
+            0.37135469913482666, 0.538375973701477, 0.5429760813713074, 0.5473138093948364,
+            0.5529233813285828, 0.5619551539421082, 0.5630849599838257, 0.5724079608917236,
+            0.5758335590362549, 0.5780337452888489
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J009",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000072"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000126"],
+            ["java_error_deepseek.csv:000072"],
+            ["java_error_deepseek.csv:000090"],
+            ["java_error_deepseek.csv:000144"],
+            ["java_error_deepseek.csv:000239"],
+            ["java_error_deepseek.csv:000221"],
+            ["java_error_deepseek.csv:000257"],
+            ["java_error_deepseek.csv:000203"],
+            ["java_error_deepseek.csv:000029"],
+            ["java_error_deepseek.csv:000160"]
+          ],
+          "distances": [
+            0.3164196014404297, 0.3184635043144226, 0.33828338980674744, 0.35394811630249023,
+            0.3558126986026764, 0.3605464994907379, 0.38156670331954956, 0.3845757246017456,
+            0.39357781410217285, 0.4138619899749756
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "J010",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000058"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000058"],
+            ["java_error_deepseek.csv:000225"],
+            ["java_error_deepseek.csv:000162"],
+            ["java_error_deepseek.csv:000094"],
+            ["java_error_deepseek.csv:000112"],
+            ["java_error_deepseek.csv:000076"],
+            ["java_error_deepseek.csv:000236"],
+            ["java_error_deepseek.csv:000097"],
+            ["java_error_deepseek.csv:000264"],
+            ["java_error_deepseek.csv:000031"]
+          ],
+          "distances": [
+            0.35714617371559143, 0.3975091576576233, 0.40263673663139343, 0.4034541845321655,
+            0.45953887701034546, 0.47216683626174927, 0.489246666431427, 0.4984248876571655,
+            0.5018815398216248, 0.5022975206375122
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L001",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000001"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000001"],
+            ["linuxcomand_error_deepseek.csv:000187"],
+            ["python_error_deepseek.csv:000186"],
+            ["linuxcomand_error_deepseek.csv:000095"],
+            ["java_error_deepseek.csv:000063"],
+            ["linuxcomand_error_deepseek.csv:000066"],
+            ["linuxcomand_error_deepseek.csv:000034"],
+            ["linuxcomand_error_deepseek.csv:000097"],
+            ["linuxcomand_error_deepseek.csv:000094"],
+            ["linuxcomand_error_deepseek.csv:000196"]
+          ],
+          "distances": [
+            0.33652034401893616, 0.45625191926956177, 0.5166681408882141, 0.5304954648017883,
+            0.5357210636138916, 0.5361788868904114, 0.5475820302963257, 0.556957483291626,
+            0.5604763031005859, 0.5628828406333923
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L002",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000002"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000002"],
+            ["linuxcomand_error_deepseek.csv:000016"],
+            ["linuxcomand_error_deepseek.csv:000017", "linuxcomand_error_deepseek.csv:000074"],
+            ["linuxcomand_error_deepseek.csv:000017", "linuxcomand_error_deepseek.csv:000074"],
+            ["linuxcomand_error_deepseek.csv:000071"],
+            ["linuxcomand_error_deepseek.csv:000105"],
+            ["linuxcomand_error_deepseek.csv:000093"],
+            ["linuxcomand_error_deepseek.csv:000094"],
+            ["linuxcomand_error_deepseek.csv:000031"],
+            ["linuxcomand_error_deepseek.csv:000011"]
+          ],
+          "distances": [
+            0.3422456681728363, 0.4355122447013855, 0.4418935179710388, 0.4418935179710388,
+            0.4788707494735718, 0.5010209679603577, 0.5249854326248169, 0.5263743996620178,
+            0.5560720562934875, 0.5652128458023071
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L003",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000005"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000005"],
+            ["linuxcomand_error_deepseek.csv:000352"],
+            ["linuxcomand_error_deepseek.csv:000028"],
+            ["linuxcomand_error_deepseek.csv:000126"],
+            ["linuxcomand_error_deepseek.csv:000124"],
+            ["linuxcomand_error_deepseek.csv:000128"],
+            ["linuxcomand_error_deepseek.csv:000227"],
+            ["linuxcomand_error_deepseek.csv:000226"],
+            ["linuxcomand_error_deepseek.csv:000080"],
+            ["linuxcomand_error_deepseek.csv:000197"]
+          ],
+          "distances": [
+            0.3010749816894531, 0.44357872009277344, 0.44651466608047485, 0.5062624216079712,
+            0.5069794654846191, 0.553041934967041, 0.5724982023239136, 0.5744994282722473,
+            0.5745923519134521, 0.5866169929504395
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L004",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000006"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["python_error_doubao.csv:000054"],
+            ["python_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000019"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["python_error_doubao.csv:000067"],
+            ["python_error_doubao.csv:000053"],
+            ["linuxcomand_error_deepseek.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000027"]
+          ],
+          "distances": [
+            0.40627628564834595, 0.509488582611084, 0.520835816860199, 0.5397642850875854,
+            0.5562355518341064, 0.5667385458946228, 0.5845068693161011, 0.584613025188446,
+            0.6127243638038635, 0.6140437126159668
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L005",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000009"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000009"],
+            ["linuxcomand_error_deepseek.csv:000052"],
+            ["python_error_deepseek.csv:000014"],
+            ["linuxcomand_error_deepseek.csv:000075"],
+            ["linuxcomand_error_deepseek.csv:000222"],
+            ["python_error_deepseek.csv:000111"],
+            ["python_error_deepseek.csv:000081"],
+            ["linuxcomand_error_deepseek.csv:000236"],
+            ["python_error_deepseek.csv:000110"],
+            ["python_error_deepseek.csv:000210"]
+          ],
+          "distances": [
+            0.35552436113357544, 0.4564090073108673, 0.5075865387916565, 0.5820760130882263,
+            0.6090798377990723, 0.6153203845024109, 0.6198346614837646, 0.6243361234664917,
+            0.6325119137763977, 0.63700932264328
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L006",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000027"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000249"],
+            ["python_error_deepseek.csv:000236"],
+            ["python_error_deepseek.csv:000238"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["python_error_doubao.csv:000053"],
+            ["linuxcomand_error_deepseek.csv:000208"],
+            ["python_error_deepseek.csv:000237"]
+          ],
+          "distances": [
+            0.32616883516311646, 0.5481050610542297, 0.5492987036705017, 0.552820086479187,
+            0.5714194178581238, 0.5734108686447144, 0.5744861364364624, 0.6057665944099426,
+            0.6059629321098328, 0.6088340878486633
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L007",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000038"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000038"],
+            ["linuxcomand_error_deepseek.csv:000020"],
+            ["python_error_deepseek.csv:000127"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["python_error_deepseek.csv:000184"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000147"],
+            ["python_error_deepseek.csv:000333"],
+            ["20200.csv:000148"],
+            ["linuxcomand_error_deepseek.csv:000122"]
+          ],
+          "distances": [
+            0.3144703507423401, 0.5306577682495117, 0.6125114560127258, 0.6125571131706238,
+            0.6265773773193359, 0.6331778764724731, 0.6378182768821716, 0.6554591059684753,
+            0.6554904580116272, 0.6564830541610718
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L008",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000052"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000052"],
+            ["python_error_deepseek.csv:000014"],
+            ["linuxcomand_error_deepseek.csv:000009"],
+            ["linuxcomand_error_deepseek.csv:000222"],
+            ["linuxcomand_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000269"],
+            ["linuxcomand_error_deepseek.csv:000235"],
+            ["linuxcomand_error_deepseek.csv:000054"],
+            ["python_error_deepseek.csv:000210"],
+            ["linuxcomand_error_deepseek.csv:000166"]
+          ],
+          "distances": [
+            0.33499038219451904, 0.49585115909576416, 0.5105382800102234, 0.5947908163070679,
+            0.6113611459732056, 0.6345346570014954, 0.6472481489181519, 0.64734947681427,
+            0.6569410562515259, 0.659312903881073
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L009",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000123"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["linuxcomand_error_deepseek.csv:000122"],
+            ["python_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000105"],
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["python_error_doubao.csv:000053"],
+            ["20200.csv:000423"],
+            ["linuxcomand_error_deepseek.csv:000100"],
+            ["linuxcomand_error_deepseek.csv:000006"]
+          ],
+          "distances": [
+            0.26977065205574036, 0.5088679194450378, 0.5745622515678406, 0.5966596603393555,
+            0.6068769097328186, 0.6072627305984497, 0.6191156506538391, 0.6198605298995972,
+            0.6278221607208252, 0.6328726410865784
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L010",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000019"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000019"],
+            ["linuxcomand_error_deepseek.csv:000039"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["python_error_doubao.csv:000067"],
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["java_error_deepseek.csv:000027"],
+            ["linuxcomand_error_deepseek.csv:000172"],
+            ["linuxcomand_error_deepseek.csv:000277"],
+            ["python_error_deepseek.csv:000135"],
+            ["linuxcomand_error_deepseek.csv:000036"]
+          ],
+          "distances": [
+            0.34398573637008667, 0.4360244870185852, 0.5031572580337524, 0.5059436559677124,
+            0.5078336000442505, 0.5141919851303101, 0.5341582894325256, 0.5417366027832031,
+            0.5469609498977661, 0.5635684728622437
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S001",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000001"],
+          "retrieved_log_ids": [
+            ["20200.csv:000001"],
+            ["20200.csv:000537"],
+            ["20200.csv:000185"],
+            ["20200.csv:000331"],
+            ["20200.csv:000492"],
+            ["20200.csv:000140"],
+            ["20200.csv:000354"],
+            ["20200.csv:000048"],
+            ["20200.csv:000400"],
+            ["20200.csv:000071"]
+          ],
+          "distances": [
+            0.27146339416503906, 0.42829856276512146, 0.4394090473651886, 0.44347143173217773,
+            0.4440596103668213, 0.4626185894012451, 0.46629929542541504, 0.4678839147090912,
+            0.47271981835365295, 0.47467488050460815
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S002",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000003"],
+          "retrieved_log_ids": [
+            ["20200.csv:000003"],
+            ["20200.csv:000002"],
+            ["20200.csv:000130"],
+            ["20200.csv:000401"],
+            ["20200.csv:000107"],
+            ["python_error_deepseek.csv:000174"],
+            ["20200.csv:000505"],
+            ["20200.csv:000143"],
+            ["20200.csv:000538"],
+            ["20200.csv:000560"]
+          ],
+          "distances": [
+            0.2540258467197418, 0.39658471941947937, 0.42293035984039307, 0.4397766590118408,
+            0.4432724118232727, 0.44365519285202026, 0.44672325253486633, 0.44974473118782043,
+            0.4536794424057007, 0.46157288551330566
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S003",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000004"],
+          "retrieved_log_ids": [
+            ["20200.csv:000004"],
+            ["20200.csv:000149"],
+            ["20200.csv:000432"],
+            ["20200.csv:000126"],
+            ["20200.csv:000046"],
+            ["20200.csv:000352"],
+            ["20200.csv:000034"],
+            ["20200.csv:000069"],
+            ["20200.csv:000115"],
+            ["20200.csv:000240"]
+          ],
+          "distances": [
+            0.2856570780277252, 0.3793148100376129, 0.3846009373664856, 0.3911890685558319,
+            0.3921509087085724, 0.3929097056388855, 0.4068426489830017, 0.40818917751312256,
+            0.40859416127204895, 0.41140568256378174
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S004",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000011"],
+          "retrieved_log_ids": [
+            ["20200.csv:000291"],
+            ["python_error_deepseek.csv:000210"],
+            ["linuxcomand_error_deepseek.csv:000092"],
+            ["python_error_deepseek.csv:000370"],
+            ["python_error_deepseek.csv:000265"],
+            ["python_error_deepseek.csv:000160"],
+            ["20200.csv:000305"],
+            ["20200.csv:000382"],
+            ["20200.csv:000043"],
+            ["python_error_deepseek.csv:000162"]
+          ],
+          "distances": [
+            0.8121305108070374, 0.8136571645736694, 0.8190030455589294, 0.8210466504096985,
+            0.8222816586494446, 0.8227816820144653, 0.8229434490203857, 0.8237383365631104,
+            0.8241085410118103, 0.8271152973175049
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr_at_10": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "case_id": "S005",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000012"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000128"],
+            ["20200.csv:000012"],
+            ["20200.csv:000366"],
+            ["python_error_deepseek.csv:000148"],
+            ["linuxcomand_error_deepseek.csv:000109"],
+            ["20200.csv:000303"],
+            ["python_error_deepseek.csv:000126"],
+            ["python_error_deepseek.csv:000219"],
+            ["python_error_deepseek.csv:000217"],
+            ["python_error_deepseek.csv:000117"]
+          ],
+          "distances": [
+            0.4171295166015625, 0.44426995515823364, 0.45435452461242676, 0.5052988529205322,
+            0.508827269077301, 0.5380882024765015, 0.5414032936096191, 0.546011745929718,
+            0.5482515692710876, 0.5514786839485168
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "S006",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000017"],
+          "retrieved_log_ids": [
+            ["20200.csv:000310"],
+            ["20200.csv:000371"],
+            ["20200.csv:000060"],
+            ["20200.csv:000504"],
+            ["20200.csv:000220"],
+            ["20200.csv:000291"],
+            ["20200.csv:000214"],
+            ["20200.csv:000526"],
+            ["20200.csv:000412"],
+            ["20200.csv:000437"]
+          ],
+          "distances": [
+            0.32278430461883545, 0.35601335763931274, 0.4550846815109253, 0.4572335183620453,
+            0.4625164270401001, 0.47056078910827637, 0.47243714332580566, 0.4725736975669861,
+            0.47497156262397766, 0.4749734699726105
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr_at_10": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "case_id": "S007",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000022"],
+          "retrieved_log_ids": [
+            ["20200.csv:000315"],
+            ["20200.csv:000022"],
+            ["20200.csv:000376"],
+            ["20200.csv:000543"],
+            ["20200.csv:000031"],
+            ["python_error_deepseek.csv:000345"],
+            ["linuxcomand_error_deepseek.csv:000159"],
+            ["python_error_deepseek.csv:000230"],
+            ["20200.csv:000348"],
+            ["20200.csv:000177"]
+          ],
+          "distances": [
+            0.5386818647384644, 0.5726253986358643, 0.5988820791244507, 0.5992140173912048,
+            0.6010173559188843, 0.6013590097427368, 0.6014735698699951, 0.606548547744751,
+            0.6069616079330444, 0.608418345451355
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "S008",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000033"],
+          "retrieved_log_ids": [
+            ["20200.csv:000154"],
+            ["20200.csv:000187"],
+            ["20200.csv:000033"],
+            ["20200.csv:000437"],
+            ["20200.csv:000039"],
+            ["20200.csv:000494"],
+            ["20200.csv:000414"],
+            ["20200.csv:000073"],
+            ["20200.csv:000108"],
+            ["20200.csv:000500"]
+          ],
+          "distances": [
+            0.3330734670162201, 0.3396816551685333, 0.3401973247528076, 0.34383681416511536,
+            0.3484790027141571, 0.3525879979133606, 0.35261648893356323, 0.35269737243652344,
+            0.35306859016418457, 0.3532368242740631
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.3333333333333333,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "case_id": "S009",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000056"],
+          "retrieved_log_ids": [
+            ["20200.csv:000056"],
+            ["20200.csv:000281"],
+            ["20200.csv:000236"],
+            ["20200.csv:000446"],
+            ["20200.csv:000257"],
+            ["20200.csv:000270"],
+            ["20200.csv:000300"],
+            ["20200.csv:000159"],
+            ["20200.csv:000487"],
+            ["20200.csv:000265"]
+          ],
+          "distances": [
+            0.3435712456703186, 0.37950801849365234, 0.43442317843437195, 0.4391379654407501,
+            0.44224196672439575, 0.44262152910232544, 0.45029544830322266, 0.4530107378959656,
+            0.45821452140808105, 0.4595521092414856
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S010",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000058"],
+          "retrieved_log_ids": [
+            ["20200.csv:000058"],
+            ["20200.csv:000093"],
+            ["20200.csv:000524"],
+            ["20200.csv:000184"],
+            ["20200.csv:000230"],
+            ["20200.csv:000546"],
+            ["20200.csv:000127"],
+            ["20200.csv:000466"],
+            ["20200.csv:000433"],
+            ["20200.csv:000070"]
+          ],
+          "distances": [
+            0.43971341848373413, 0.4406954348087311, 0.4533618986606598, 0.47469571232795715,
+            0.48333901166915894, 0.5054868459701538, 0.5213017463684082, 0.5284940600395203,
+            0.5339688062667847, 0.5357890725135803
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "W001",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000293"],
+            ["linuxcomand_error_deepseek.csv:000258"],
+            ["20200.csv:000023"],
+            ["20200.csv:000268"],
+            ["20200.csv:000316"],
+            ["20200.csv:000377"],
+            ["linuxcomand_error_deepseek.csv:000262"],
+            ["python_error_deepseek.csv:000318"],
+            ["linuxcomand_error_deepseek.csv:000257"],
+            ["linuxcomand_error_deepseek.csv:000167"]
+          ],
+          "distances": [
+            0.5785223245620728, 0.5823249816894531, 0.5832540988922119, 0.583418607711792,
+            0.586110532283783, 0.5867493152618408, 0.5907244086265564, 0.5940476655960083,
+            0.5942637324333191, 0.5982301235198975
+          ]
+        },
+        {
+          "case_id": "W002",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000247"],
+            ["20200.csv:000303"],
+            ["20200.csv:000065"],
+            ["20200.csv:000416"],
+            ["20200.csv:000434"],
+            ["20200.csv:000561"],
+            ["20200.csv:000166"],
+            ["20200.csv:000052"],
+            ["20200.csv:000128"],
+            ["20200.csv:000242"]
+          ],
+          "distances": [
+            0.52906334400177, 0.5345948934555054, 0.5431522727012634, 0.5468189716339111,
+            0.5505315661430359, 0.550715446472168, 0.5522499084472656, 0.5531414747238159,
+            0.555038571357727, 0.559731125831604
+          ]
+        },
+        {
+          "case_id": "W003",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000208"],
+            ["20200.csv:000269"],
+            ["20200.csv:000434"],
+            ["20200.csv:000537"],
+            ["python_error_deepseek.csv:000383"],
+            ["20200.csv:000163"],
+            ["20200.csv:000128"],
+            ["python_error_deepseek.csv:000385"],
+            ["python_error_deepseek.csv:000190"],
+            ["20200.csv:000048"]
+          ],
+          "distances": [
+            0.4660435914993286, 0.4702538251876831, 0.4704693555831909, 0.47468915581703186,
+            0.4757269322872162, 0.4766044020652771, 0.4785696864128113, 0.4818834364414215,
+            0.48590385913848877, 0.48632144927978516
+          ]
+        },
+        {
+          "case_id": "W004",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["linuxcomand_error_deepseek.csv:000191"],
+            ["linuxcomand_error_deepseek.csv:000190"],
+            ["20200.csv:000134"],
+            ["20200.csv:000520"],
+            ["java_error_deepseek.csv:000260"],
+            ["20200.csv:000042"],
+            ["linuxcomand_error_deepseek.csv:000165"],
+            ["linuxcomand_error_deepseek.csv:000359"],
+            ["linuxcomand_error_deepseek.csv:000167"]
+          ],
+          "distances": [
+            0.48983266949653625, 0.5109475255012512, 0.5128548741340637, 0.515085756778717,
+            0.5242411494255066, 0.5267794728279114, 0.5333271026611328, 0.5360230803489685,
+            0.5375767946243286, 0.5395644903182983
+          ]
+        },
+        {
+          "case_id": "W005",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000059"],
+            ["linuxcomand_error_deepseek.csv:000022"],
+            ["20200.csv:000397"],
+            ["20200.csv:000201"],
+            ["20200.csv:000231"],
+            ["20200.csv:000463"],
+            ["20200.csv:000247"],
+            ["20200.csv:000492"],
+            ["20200.csv:000243"],
+            ["20200.csv:000137"]
+          ],
+          "distances": [
+            0.5539416670799255, 0.572445809841156, 0.5820122957229614, 0.5883103013038635,
+            0.5893844962120056, 0.5965747833251953, 0.6026674509048462, 0.6028093695640564,
+            0.6029130816459656, 0.6030679941177368
+          ]
+        },
+        {
+          "case_id": "W006",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000053"],
+            ["20200.csv:000377"],
+            ["20200.csv:000316"],
+            ["linuxcomand_error_deepseek.csv:000223"],
+            ["20200.csv:000293"],
+            ["linuxcomand_error_deepseek.csv:000224"],
+            ["linuxcomand_error_deepseek.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000298"],
+            ["linuxcomand_error_deepseek.csv:000111"],
+            ["linuxcomand_error_deepseek.csv:000124"]
+          ],
+          "distances": [
+            0.49157464504241943, 0.49745678901672363, 0.5164069533348083, 0.5302563905715942,
+            0.5329375267028809, 0.5346324443817139, 0.5365735292434692, 0.5382621884346008,
+            0.5399295687675476, 0.5413377285003662
+          ]
+        },
+        {
+          "case_id": "W007",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000258"],
+            ["20200.csv:000190"],
+            ["20200.csv:000335"],
+            ["20200.csv:000247"],
+            ["20200.csv:000470"],
+            ["20200.csv:000134"],
+            ["20200.csv:000133"],
+            ["20200.csv:000370"],
+            ["20200.csv:000356"],
+            ["20200.csv:000062"]
+          ],
+          "distances": [
+            0.5405058860778809, 0.5467275977134705, 0.5503315925598145, 0.5511536598205566,
+            0.5517681837081909, 0.5539309978485107, 0.5547896027565002, 0.5556907057762146,
+            0.5571980476379395, 0.5603895783424377
+          ]
+        },
+        {
+          "case_id": "W008",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000247"],
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["20200.csv:000303"],
+            ["20200.csv:000416"],
+            ["20200.csv:000190"],
+            ["20200.csv:000065"],
+            ["python_error_deepseek.csv:000148"],
+            ["20200.csv:000052"],
+            ["20200.csv:000269"],
+            ["20200.csv:000133"]
+          ],
+          "distances": [
+            0.5993379354476929, 0.6005808115005493, 0.6150080561637878, 0.6229773759841919,
+            0.6375384330749512, 0.6395387053489685, 0.6402605772018433, 0.6402915120124817,
+            0.6420505046844482, 0.6435993313789368
+          ]
+        },
+        {
+          "case_id": "W009",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000534"],
+            ["20200.csv:000276"],
+            ["20200.csv:000284"],
+            ["20200.csv:000068"],
+            ["20200.csv:000331"],
+            ["20200.csv:000479"],
+            ["20200.csv:000262"],
+            ["python_error_deepseek.csv:000184"],
+            ["20200.csv:000376"],
+            ["20200.csv:000455"]
+          ],
+          "distances": [
+            0.4735572934150696, 0.4841997027397156, 0.5069671869277954, 0.5161319971084595,
+            0.5257799029350281, 0.5265401601791382, 0.5338696837425232, 0.541718065738678,
+            0.5426229238510132, 0.5455104112625122
+          ]
+        },
+        {
+          "case_id": "W010",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["20200.csv:000303"],
+            ["20200.csv:000324"],
+            ["20200.csv:000298"],
+            ["20200.csv:000269"],
+            ["20200.csv:000247"],
+            ["20200.csv:000065"],
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["20200.csv:000434"],
+            ["20200.csv:000290"]
+          ],
+          "distances": [
+            0.5197721123695374, 0.533746600151062, 0.5429030060768127, 0.5462763905525208,
+            0.554990828037262, 0.5609183311462402, 0.5630852580070496, 0.5638502836227417,
+            0.5678594708442688, 0.5708181858062744
+          ]
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "query_seconds": 0.022187324007973075,
+      "metrics": {
+        "recall_at_1": 0.8,
+        "recall_at_5": 0.95,
+        "recall_at_10": 0.95,
+        "mrr_at_10": 0.8645833333333334,
+        "ndcg_at_10": 0.93367962082684
+      },
+      "unmatched_documents": 0,
+      "per_case": [
+        {
+          "case_id": "P001",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000001"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000001", "python_error_doubao.csv:000011"],
+            ["python_error_doubao.csv:000001", "python_error_doubao.csv:000011"],
+            ["linuxcomand_error_deepseek.csv:000033"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_deepseek.csv:000015"],
+            ["linuxcomand_error_deepseek.csv:000049"],
+            ["python_error_deepseek.csv:000011"],
+            ["linuxcomand_error_deepseek.csv:000090"],
+            ["python_error_deepseek.csv:000009"]
+          ],
+          "distances": [
+            0.4929687976837158, 0.4929687976837158, 0.5070807337760925, 0.5144121050834656,
+            0.5144121050834656, 0.5175127983093262, 0.5285311341285706, 0.5359544157981873,
+            0.5445133447647095, 0.5468472838401794
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P002",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000002"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["linuxcomand_error_deepseek.csv:000090"],
+            ["python_error_deepseek.csv:000062"],
+            ["python_error_deepseek.csv:000011"],
+            ["python_error_doubao.csv:000005", "python_error_doubao.csv:000015"],
+            ["python_error_doubao.csv:000005", "python_error_doubao.csv:000015"],
+            ["linuxcomand_error_deepseek.csv:000084"],
+            ["python_error_deepseek.csv:000097"],
+            ["python_error_deepseek.csv:000166"]
+          ],
+          "distances": [
+            0.48702582716941833, 0.48702582716941833, 0.5656806230545044, 0.5764235258102417,
+            0.5907169580459595, 0.5967410802841187, 0.5967410802841187, 0.6101102828979492,
+            0.6149162650108337, 0.6169112920761108
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P003",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000003"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000003", "python_error_doubao.csv:000013"],
+            ["python_error_doubao.csv:000003", "python_error_doubao.csv:000013"],
+            ["linuxcomand_error_deepseek.csv:000025"],
+            ["python_error_doubao.csv:000047"],
+            ["python_error_deepseek.csv:000008"],
+            ["python_error_doubao.csv:000009", "python_error_doubao.csv:000019"],
+            ["python_error_doubao.csv:000009", "python_error_doubao.csv:000019"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_doubao.csv:000002", "python_error_doubao.csv:000012"],
+            ["python_error_deepseek.csv:000062"]
+          ],
+          "distances": [
+            0.3862646818161011, 0.3862646818161011, 0.48660850524902344, 0.49685388803482056,
+            0.5013508200645447, 0.507810652256012, 0.507810652256012, 0.5106086134910583,
+            0.5106086134910583, 0.5254227519035339
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.6309297535714575
+        },
+        {
+          "case_id": "P004",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000024"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000024"],
+            ["python_error_deepseek.csv:000042"],
+            ["python_error_deepseek.csv:000064"],
+            ["python_error_deepseek.csv:000036"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000005"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_deepseek.csv:000004"],
+            ["python_error_doubao.csv:000031"],
+            ["python_error_doubao.csv:000048"]
+          ],
+          "distances": [
+            0.3617038428783417, 0.5856713652610779, 0.6059950590133667, 0.6217589974403381,
+            0.6254067420959473, 0.633420467376709, 0.6400175094604492, 0.6467626690864563,
+            0.6506520509719849, 0.656132698059082
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P005",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_doubao.csv:000037"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000037"],
+            ["python_error_deepseek.csv:000225"],
+            ["python_error_deepseek.csv:000120"],
+            ["linuxcomand_error_deepseek.csv:000025"],
+            ["python_error_deepseek.csv:000121"],
+            ["python_error_doubao.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000293"],
+            ["python_error_doubao.csv:000049"],
+            ["python_error_deepseek.csv:000118"],
+            ["python_error_deepseek.csv:000117"]
+          ],
+          "distances": [
+            0.28650224208831787, 0.4847664535045624, 0.5132524371147156, 0.5475969314575195,
+            0.54779052734375, 0.5487455129623413, 0.5633125305175781, 0.5635753870010376,
+            0.5648401975631714, 0.5650262236595154
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P006",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000003"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000048"],
+            ["python_error_doubao.csv:000008", "python_error_doubao.csv:000018"],
+            ["python_error_doubao.csv:000008", "python_error_doubao.csv:000018"],
+            ["python_error_deepseek.csv:000003"],
+            ["python_error_deepseek.csv:000097"],
+            ["python_error_deepseek.csv:000055"],
+            ["python_error_doubao.csv:000027"],
+            ["python_error_deepseek.csv:000090"],
+            ["python_error_doubao.csv:000026"],
+            ["python_error_deepseek.csv:000104"]
+          ],
+          "distances": [
+            0.45911771059036255, 0.47522443532943726, 0.47522443532943726, 0.5124226212501526,
+            0.5563733577728271, 0.5772190690040588, 0.5781627893447876, 0.5833485126495361,
+            0.5882292985916138, 0.5927999019622803
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.25,
+          "ndcg_at_10": 0.43067655807339306
+        },
+        {
+          "case_id": "P007",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000004"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000004"],
+            ["python_error_deepseek.csv:000171"],
+            ["java_error_deepseek.csv:000152"],
+            ["python_error_deepseek.csv:000233"],
+            ["20200.csv:000256"],
+            ["linuxcomand_error_deepseek.csv:000267"],
+            ["linuxcomand_error_deepseek.csv:000139"],
+            ["linuxcomand_error_deepseek.csv:000104"],
+            ["linuxcomand_error_deepseek.csv:000160"],
+            ["linuxcomand_error_deepseek.csv:000244"]
+          ],
+          "distances": [
+            0.27994680404663086, 0.43077677488327026, 0.4462503492832184, 0.44649696350097656,
+            0.4486214518547058, 0.4524255394935608, 0.4550955891609192, 0.4612101912498474,
+            0.47204166650772095, 0.48287513852119446
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P008",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000016"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000016"],
+            ["20200.csv:000309"],
+            ["java_error_deepseek.csv:000013"],
+            ["python_error_doubao.csv:000007", "python_error_doubao.csv:000017"],
+            ["python_error_doubao.csv:000007", "python_error_doubao.csv:000017"],
+            ["20200.csv:000468"],
+            ["linuxcomand_error_deepseek.csv:000114"],
+            ["linuxcomand_error_deepseek.csv:000082"],
+            ["python_error_deepseek.csv:000045"],
+            ["linuxcomand_error_deepseek.csv:000119"]
+          ],
+          "distances": [
+            0.46740683913230896, 0.4975958466529846, 0.5415711998939514, 0.5525433421134949,
+            0.5525433421134949, 0.5534491539001465, 0.5563968420028687, 0.560749888420105,
+            0.5623860359191895, 0.5627483129501343
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "P009",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000021"],
+          "retrieved_log_ids": [
+            ["python_error_doubao.csv:000021"],
+            ["python_error_deepseek.csv:000021"],
+            ["python_error_deepseek.csv:000036"],
+            ["python_error_deepseek.csv:000022"],
+            ["python_error_deepseek.csv:000099"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_doubao.csv:000022"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000031"],
+            ["python_error_deepseek.csv:000063"]
+          ],
+          "distances": [
+            0.3081686496734619, 0.30908578634262085, 0.39350634813308716, 0.41392964124679565,
+            0.42244046926498413, 0.4478153586387634, 0.45249485969543457, 0.4790782928466797,
+            0.5079190135002136, 0.5097653865814209
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "P010",
+          "category": "python",
+          "is_negative": false,
+          "relevant_log_ids": ["python_error_deepseek.csv:000042"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000042"],
+            ["python_error_deepseek.csv:000056"],
+            ["python_error_deepseek.csv:000050"],
+            ["python_error_deepseek.csv:000063"],
+            ["python_error_deepseek.csv:000078"],
+            ["python_error_doubao.csv:000024"],
+            ["python_error_deepseek.csv:000031"],
+            ["python_error_deepseek.csv:000105"],
+            ["python_error_deepseek.csv:000022"],
+            ["python_error_deepseek.csv:000043"]
+          ],
+          "distances": [
+            0.29884952306747437, 0.44734832644462585, 0.4541449546813965, 0.46158772706985474,
+            0.4875514507293701, 0.48775649070739746, 0.48782646656036377, 0.5020238161087036,
+            0.5029131174087524, 0.5157911777496338
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J001",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000001"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000001"],
+            ["java_error_deepseek.csv:000011"],
+            ["java_error_deepseek.csv:000002"],
+            ["java_error_deepseek.csv:000015"],
+            ["java_error_deepseek.csv:000010"],
+            ["java_error_deepseek.csv:000012"],
+            ["java_error_deepseek.csv:000022"],
+            ["java_error_deepseek.csv:000023"],
+            ["java_error_deepseek.csv:000019"],
+            ["java_error_deepseek.csv:000152"]
+          ],
+          "distances": [
+            0.35350480675697327, 0.41144564747810364, 0.4205712378025055, 0.45953553915023804,
+            0.4972166419029236, 0.5085641145706177, 0.5339075922966003, 0.5346466302871704,
+            0.5415434241294861, 0.5417821407318115
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J002",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000002"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000002"],
+            ["java_error_deepseek.csv:000010"],
+            ["java_error_deepseek.csv:000011"],
+            ["java_error_deepseek.csv:000023"],
+            ["java_error_deepseek.csv:000012"],
+            ["linuxcomand_error_deepseek.csv:000179"],
+            ["linuxcomand_error_deepseek.csv:000184"],
+            ["java_error_deepseek.csv:000112"],
+            ["linuxcomand_error_deepseek.csv:000045"],
+            ["java_error_deepseek.csv:000076"]
+          ],
+          "distances": [
+            0.24893586337566376, 0.4028905928134918, 0.45386257767677307, 0.4880240261554718,
+            0.5110938549041748, 0.5227863788604736, 0.5438758134841919, 0.5491484999656677,
+            0.5593826770782471, 0.5607801079750061
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J003",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000006"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000006"],
+            ["java_error_deepseek.csv:000172"],
+            ["java_error_deepseek.csv:000012"],
+            ["java_error_deepseek.csv:000041"],
+            ["java_error_deepseek.csv:000020"],
+            ["java_error_deepseek.csv:000017"],
+            ["java_error_deepseek.csv:000151"],
+            ["java_error_deepseek.csv:000165"],
+            ["java_error_deepseek.csv:000110"],
+            ["java_error_deepseek.csv:000241"]
+          ],
+          "distances": [
+            0.2679883539676666, 0.42348575592041016, 0.4389548599720001, 0.4394358992576599,
+            0.4394485354423523, 0.4975050091743469, 0.4995211958885193, 0.5308313369750977,
+            0.5404209494590759, 0.540552020072937
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J004",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000007"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000007"],
+            ["java_error_deepseek.csv:000153"],
+            ["java_error_deepseek.csv:000042"],
+            ["java_error_deepseek.csv:000149"],
+            ["java_error_deepseek.csv:000193"],
+            ["java_error_deepseek.csv:000165"],
+            ["java_error_deepseek.csv:000187"],
+            ["java_error_deepseek.csv:000173"],
+            ["java_error_deepseek.csv:000022"],
+            ["java_error_deepseek.csv:000247"]
+          ],
+          "distances": [
+            0.28816473484039307, 0.4201582372188568, 0.46538591384887695, 0.5075920224189758,
+            0.5205767154693604, 0.5340880155563354, 0.5371552109718323, 0.5439068078994751,
+            0.54913330078125, 0.5512115359306335
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J005",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000008"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000008"],
+            ["java_error_deepseek.csv:000163"],
+            ["python_error_deepseek.csv:000191"],
+            ["java_error_deepseek.csv:000021"],
+            ["20200.csv:000020"],
+            ["20200.csv:000374"],
+            ["20200.csv:000313"],
+            ["java_error_deepseek.csv:000032"],
+            ["python_error_deepseek.csv:000041"],
+            ["java_error_deepseek.csv:000003"]
+          ],
+          "distances": [
+            0.4305417835712433, 0.48458409309387207, 0.4909305274486542, 0.5436849594116211,
+            0.5443384647369385, 0.5483355522155762, 0.5499300956726074, 0.5585712790489197,
+            0.5590516924858093, 0.5641422271728516
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J006",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000018"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000018"],
+            ["java_error_deepseek.csv:000149"],
+            ["java_error_deepseek.csv:000073"],
+            ["java_error_deepseek.csv:000207"],
+            ["java_error_deepseek.csv:000053"],
+            ["java_error_deepseek.csv:000127"],
+            ["java_error_deepseek.csv:000086"],
+            ["java_error_deepseek.csv:000204"],
+            ["java_error_deepseek.csv:000231"],
+            ["java_error_deepseek.csv:000190"]
+          ],
+          "distances": [
+            0.3896927535533905, 0.4910274147987366, 0.4924604296684265, 0.498471736907959,
+            0.5007842779159546, 0.5118257999420166, 0.5161151885986328, 0.5222876071929932,
+            0.5240033268928528, 0.5248298048973083
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J007",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000027"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000027"],
+            ["python_error_deepseek.csv:000135"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["java_error_deepseek.csv:000158"],
+            ["java_error_deepseek.csv:000075"],
+            ["python_error_deepseek.csv:000137"],
+            ["java_error_deepseek.csv:000176"],
+            ["python_error_doubao.csv:000067"],
+            ["linuxcomand_error_deepseek.csv:000343"],
+            ["linuxcomand_error_deepseek.csv:000019"]
+          ],
+          "distances": [
+            0.36349236965179443, 0.497136652469635, 0.4977406859397888, 0.6171849966049194,
+            0.6334850788116455, 0.6442155241966248, 0.6510977149009705, 0.665303111076355,
+            0.66829913854599, 0.6858101487159729
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J008",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000028"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000028"],
+            ["linuxcomand_error_deepseek.csv:000331"],
+            ["python_error_deepseek.csv:000346"],
+            ["python_error_deepseek.csv:000345"],
+            ["python_error_deepseek.csv:000344"],
+            ["20200.csv:000088"],
+            ["python_error_deepseek.csv:000279"],
+            ["python_error_deepseek.csv:000202"],
+            ["20200.csv:000242"],
+            ["linuxcomand_error_deepseek.csv:000305"]
+          ],
+          "distances": [
+            0.37135469913482666, 0.538375973701477, 0.5429760813713074, 0.5473138093948364,
+            0.5529233813285828, 0.5619551539421082, 0.5630849599838257, 0.5724079608917236,
+            0.5758335590362549, 0.5780337452888489
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "J009",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000072"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000126"],
+            ["java_error_deepseek.csv:000072"],
+            ["java_error_deepseek.csv:000090"],
+            ["java_error_deepseek.csv:000144"],
+            ["java_error_deepseek.csv:000239"],
+            ["java_error_deepseek.csv:000221"],
+            ["java_error_deepseek.csv:000257"],
+            ["java_error_deepseek.csv:000203"],
+            ["java_error_deepseek.csv:000029"],
+            ["java_error_deepseek.csv:000160"]
+          ],
+          "distances": [
+            0.3164196014404297, 0.3184635043144226, 0.33828338980674744, 0.35394811630249023,
+            0.3558126986026764, 0.3605464994907379, 0.38156670331954956, 0.3845757246017456,
+            0.39357781410217285, 0.4138619899749756
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "J010",
+          "category": "java",
+          "is_negative": false,
+          "relevant_log_ids": ["java_error_deepseek.csv:000058"],
+          "retrieved_log_ids": [
+            ["java_error_deepseek.csv:000058"],
+            ["java_error_deepseek.csv:000225"],
+            ["java_error_deepseek.csv:000162"],
+            ["java_error_deepseek.csv:000094"],
+            ["java_error_deepseek.csv:000112"],
+            ["java_error_deepseek.csv:000076"],
+            ["java_error_deepseek.csv:000236"],
+            ["java_error_deepseek.csv:000097"],
+            ["java_error_deepseek.csv:000264"],
+            ["java_error_deepseek.csv:000031"]
+          ],
+          "distances": [
+            0.35714617371559143, 0.3975091576576233, 0.40263673663139343, 0.4034541845321655,
+            0.45953887701034546, 0.47216683626174927, 0.489246666431427, 0.4984248876571655,
+            0.5018815398216248, 0.5022975206375122
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L001",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000001"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000001"],
+            ["linuxcomand_error_deepseek.csv:000187"],
+            ["python_error_deepseek.csv:000186"],
+            ["linuxcomand_error_deepseek.csv:000095"],
+            ["java_error_deepseek.csv:000063"],
+            ["linuxcomand_error_deepseek.csv:000066"],
+            ["linuxcomand_error_deepseek.csv:000034"],
+            ["linuxcomand_error_deepseek.csv:000097"],
+            ["linuxcomand_error_deepseek.csv:000094"],
+            ["linuxcomand_error_deepseek.csv:000196"]
+          ],
+          "distances": [
+            0.33652034401893616, 0.45625191926956177, 0.5166681408882141, 0.5304954648017883,
+            0.5357210636138916, 0.5361788868904114, 0.5475820302963257, 0.556957483291626,
+            0.5604763031005859, 0.5628828406333923
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L002",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000002"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000002"],
+            ["linuxcomand_error_deepseek.csv:000016"],
+            ["linuxcomand_error_deepseek.csv:000017", "linuxcomand_error_deepseek.csv:000074"],
+            ["linuxcomand_error_deepseek.csv:000017", "linuxcomand_error_deepseek.csv:000074"],
+            ["linuxcomand_error_deepseek.csv:000071"],
+            ["linuxcomand_error_deepseek.csv:000105"],
+            ["linuxcomand_error_deepseek.csv:000093"],
+            ["linuxcomand_error_deepseek.csv:000094"],
+            ["linuxcomand_error_deepseek.csv:000031"],
+            ["linuxcomand_error_deepseek.csv:000011"]
+          ],
+          "distances": [
+            0.3422456681728363, 0.4355122447013855, 0.4418935179710388, 0.4418935179710388,
+            0.4788707494735718, 0.5010209679603577, 0.5249854326248169, 0.5263743996620178,
+            0.5560720562934875, 0.5652128458023071
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L003",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000005"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000005"],
+            ["linuxcomand_error_deepseek.csv:000352"],
+            ["linuxcomand_error_deepseek.csv:000028"],
+            ["linuxcomand_error_deepseek.csv:000126"],
+            ["linuxcomand_error_deepseek.csv:000124"],
+            ["linuxcomand_error_deepseek.csv:000128"],
+            ["linuxcomand_error_deepseek.csv:000227"],
+            ["linuxcomand_error_deepseek.csv:000226"],
+            ["linuxcomand_error_deepseek.csv:000080"],
+            ["linuxcomand_error_deepseek.csv:000197"]
+          ],
+          "distances": [
+            0.3010749816894531, 0.44357872009277344, 0.44651466608047485, 0.5062624216079712,
+            0.5069794654846191, 0.553041934967041, 0.5724982023239136, 0.5744994282722473,
+            0.5745923519134521, 0.5866169929504395
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L004",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000006"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["python_error_doubao.csv:000054"],
+            ["python_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000019"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["python_error_doubao.csv:000067"],
+            ["python_error_doubao.csv:000053"],
+            ["linuxcomand_error_deepseek.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000027"]
+          ],
+          "distances": [
+            0.40627628564834595, 0.509488582611084, 0.520835816860199, 0.5397642850875854,
+            0.5562355518341064, 0.5667385458946228, 0.5845068693161011, 0.584613025188446,
+            0.6127243638038635, 0.6140437126159668
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L005",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000009"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000009"],
+            ["linuxcomand_error_deepseek.csv:000052"],
+            ["python_error_deepseek.csv:000014"],
+            ["linuxcomand_error_deepseek.csv:000075"],
+            ["linuxcomand_error_deepseek.csv:000222"],
+            ["python_error_deepseek.csv:000111"],
+            ["python_error_deepseek.csv:000081"],
+            ["linuxcomand_error_deepseek.csv:000236"],
+            ["python_error_deepseek.csv:000110"],
+            ["python_error_deepseek.csv:000210"]
+          ],
+          "distances": [
+            0.35552436113357544, 0.4564090073108673, 0.5075865387916565, 0.5820760130882263,
+            0.6090798377990723, 0.6153203845024109, 0.6198346614837646, 0.6243361234664917,
+            0.6325119137763977, 0.63700932264328
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L006",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000027"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000249"],
+            ["python_error_deepseek.csv:000236"],
+            ["python_error_deepseek.csv:000238"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["python_error_doubao.csv:000053"],
+            ["linuxcomand_error_deepseek.csv:000208"],
+            ["python_error_deepseek.csv:000237"]
+          ],
+          "distances": [
+            0.32616883516311646, 0.5481050610542297, 0.5492987036705017, 0.552820086479187,
+            0.5714194178581238, 0.5734108686447144, 0.5744861364364624, 0.6057665944099426,
+            0.6059629321098328, 0.6088340878486633
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L007",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000038"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000038"],
+            ["linuxcomand_error_deepseek.csv:000020"],
+            ["python_error_deepseek.csv:000127"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["python_error_deepseek.csv:000184"],
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000147"],
+            ["python_error_deepseek.csv:000333"],
+            ["20200.csv:000148"],
+            ["linuxcomand_error_deepseek.csv:000122"]
+          ],
+          "distances": [
+            0.3144703507423401, 0.5306577682495117, 0.6125114560127258, 0.6125571131706238,
+            0.6265773773193359, 0.6331778764724731, 0.6378182768821716, 0.6554591059684753,
+            0.6554904580116272, 0.6564830541610718
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L008",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000052"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000052"],
+            ["python_error_deepseek.csv:000014"],
+            ["linuxcomand_error_deepseek.csv:000009"],
+            ["linuxcomand_error_deepseek.csv:000222"],
+            ["linuxcomand_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000269"],
+            ["linuxcomand_error_deepseek.csv:000235"],
+            ["linuxcomand_error_deepseek.csv:000054"],
+            ["python_error_deepseek.csv:000210"],
+            ["linuxcomand_error_deepseek.csv:000166"]
+          ],
+          "distances": [
+            0.33499038219451904, 0.49585115909576416, 0.5105382800102234, 0.5947908163070679,
+            0.6113611459732056, 0.6345346570014954, 0.6472481489181519, 0.64734947681427,
+            0.6569410562515259, 0.659312903881073
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L009",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000123"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000123"],
+            ["linuxcomand_error_deepseek.csv:000018"],
+            ["linuxcomand_error_deepseek.csv:000122"],
+            ["python_error_deepseek.csv:000236"],
+            ["linuxcomand_error_deepseek.csv:000105"],
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["python_error_doubao.csv:000053"],
+            ["20200.csv:000423"],
+            ["linuxcomand_error_deepseek.csv:000100"],
+            ["linuxcomand_error_deepseek.csv:000006"]
+          ],
+          "distances": [
+            0.26977065205574036, 0.5088679194450378, 0.5745622515678406, 0.5966596603393555,
+            0.6068769097328186, 0.6072627305984497, 0.6191156506538391, 0.6198605298995972,
+            0.6278221607208252, 0.6328726410865784
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "L010",
+          "category": "linux_command",
+          "is_negative": false,
+          "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000019"],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000019"],
+            ["linuxcomand_error_deepseek.csv:000039"],
+            ["linuxcomand_error_deepseek.csv:000340"],
+            ["python_error_doubao.csv:000067"],
+            ["linuxcomand_error_deepseek.csv:000006"],
+            ["java_error_deepseek.csv:000027"],
+            ["linuxcomand_error_deepseek.csv:000172"],
+            ["linuxcomand_error_deepseek.csv:000277"],
+            ["python_error_deepseek.csv:000135"],
+            ["linuxcomand_error_deepseek.csv:000036"]
+          ],
+          "distances": [
+            0.34398573637008667, 0.4360244870185852, 0.5031572580337524, 0.5059436559677124,
+            0.5078336000442505, 0.5141919851303101, 0.5341582894325256, 0.5417366027832031,
+            0.5469609498977661, 0.5635684728622437
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S001",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000001"],
+          "retrieved_log_ids": [
+            ["20200.csv:000001"],
+            ["20200.csv:000537"],
+            ["20200.csv:000185"],
+            ["20200.csv:000331"],
+            ["20200.csv:000492"],
+            ["20200.csv:000140"],
+            ["20200.csv:000354"],
+            ["20200.csv:000048"],
+            ["20200.csv:000400"],
+            ["20200.csv:000071"]
+          ],
+          "distances": [
+            0.27146339416503906, 0.42829856276512146, 0.4394090473651886, 0.44347143173217773,
+            0.4440596103668213, 0.4626185894012451, 0.46629929542541504, 0.4678839147090912,
+            0.47271981835365295, 0.47467488050460815
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S002",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000003"],
+          "retrieved_log_ids": [
+            ["20200.csv:000003"],
+            ["20200.csv:000002"],
+            ["20200.csv:000130"],
+            ["20200.csv:000401"],
+            ["20200.csv:000107"],
+            ["python_error_deepseek.csv:000174"],
+            ["20200.csv:000505"],
+            ["20200.csv:000143"],
+            ["20200.csv:000538"],
+            ["20200.csv:000560"]
+          ],
+          "distances": [
+            0.2540258467197418, 0.39658471941947937, 0.42293035984039307, 0.4397766590118408,
+            0.4432724118232727, 0.44365519285202026, 0.44672325253486633, 0.44974473118782043,
+            0.4536794424057007, 0.46157288551330566
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S003",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000004"],
+          "retrieved_log_ids": [
+            ["20200.csv:000004"],
+            ["20200.csv:000149"],
+            ["20200.csv:000432"],
+            ["20200.csv:000126"],
+            ["20200.csv:000046"],
+            ["20200.csv:000352"],
+            ["20200.csv:000034"],
+            ["20200.csv:000069"],
+            ["20200.csv:000115"],
+            ["20200.csv:000240"]
+          ],
+          "distances": [
+            0.2856570780277252, 0.3793148100376129, 0.3846009373664856, 0.3911890685558319,
+            0.3921509087085724, 0.3929097056388855, 0.4068426489830017, 0.40818917751312256,
+            0.40859416127204895, 0.41140568256378174
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S004",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000011"],
+          "retrieved_log_ids": [
+            ["20200.csv:000291"],
+            ["python_error_deepseek.csv:000210"],
+            ["linuxcomand_error_deepseek.csv:000092"],
+            ["python_error_deepseek.csv:000370"],
+            ["python_error_deepseek.csv:000265"],
+            ["python_error_deepseek.csv:000160"],
+            ["20200.csv:000305"],
+            ["20200.csv:000382"],
+            ["20200.csv:000043"],
+            ["python_error_deepseek.csv:000162"]
+          ],
+          "distances": [
+            0.8121305108070374, 0.8136571645736694, 0.8190030455589294, 0.8210466504096985,
+            0.8222816586494446, 0.8227816820144653, 0.8229434490203857, 0.8237383365631104,
+            0.8241085410118103, 0.8271152973175049
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr_at_10": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "case_id": "S005",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000012"],
+          "retrieved_log_ids": [
+            ["python_error_deepseek.csv:000128"],
+            ["20200.csv:000012"],
+            ["20200.csv:000366"],
+            ["python_error_deepseek.csv:000148"],
+            ["linuxcomand_error_deepseek.csv:000109"],
+            ["20200.csv:000303"],
+            ["python_error_deepseek.csv:000126"],
+            ["python_error_deepseek.csv:000219"],
+            ["python_error_deepseek.csv:000217"],
+            ["python_error_deepseek.csv:000117"]
+          ],
+          "distances": [
+            0.4171295166015625, 0.44426995515823364, 0.45435452461242676, 0.5052988529205322,
+            0.508827269077301, 0.5380882024765015, 0.5414032936096191, 0.546011745929718,
+            0.5482515692710876, 0.5514786839485168
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "S006",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000017"],
+          "retrieved_log_ids": [
+            ["20200.csv:000310"],
+            ["20200.csv:000371"],
+            ["20200.csv:000060"],
+            ["20200.csv:000504"],
+            ["20200.csv:000220"],
+            ["20200.csv:000291"],
+            ["20200.csv:000214"],
+            ["20200.csv:000526"],
+            ["20200.csv:000412"],
+            ["20200.csv:000437"]
+          ],
+          "distances": [
+            0.32278430461883545, 0.35601335763931274, 0.4550846815109253, 0.4572335183620453,
+            0.4625164270401001, 0.47056078910827637, 0.47243714332580566, 0.4725736975669861,
+            0.47497156262397766, 0.4749734699726105
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr_at_10": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        {
+          "case_id": "S007",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000022"],
+          "retrieved_log_ids": [
+            ["20200.csv:000315"],
+            ["20200.csv:000022"],
+            ["20200.csv:000376"],
+            ["20200.csv:000543"],
+            ["20200.csv:000031"],
+            ["python_error_deepseek.csv:000345"],
+            ["linuxcomand_error_deepseek.csv:000159"],
+            ["python_error_deepseek.csv:000230"],
+            ["20200.csv:000348"],
+            ["20200.csv:000177"]
+          ],
+          "distances": [
+            0.5386818647384644, 0.5726253986358643, 0.5988820791244507, 0.5992140173912048,
+            0.6010173559188843, 0.6013590097427368, 0.6014735698699951, 0.606548547744751,
+            0.6069616079330444, 0.608418345451355
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.5,
+          "ndcg_at_10": 0.6309297535714575
+        },
+        {
+          "case_id": "S008",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000033"],
+          "retrieved_log_ids": [
+            ["20200.csv:000154"],
+            ["20200.csv:000187"],
+            ["20200.csv:000033"],
+            ["20200.csv:000437"],
+            ["20200.csv:000039"],
+            ["20200.csv:000494"],
+            ["20200.csv:000414"],
+            ["20200.csv:000073"],
+            ["20200.csv:000108"],
+            ["20200.csv:000500"]
+          ],
+          "distances": [
+            0.3330734670162201, 0.3396816551685333, 0.3401973247528076, 0.34383681416511536,
+            0.3484790027141571, 0.3525879979133606, 0.35261648893356323, 0.35269737243652344,
+            0.35306859016418457, 0.3532368242740631
+          ],
+          "recall_at_1": 0.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 0.3333333333333333,
+          "ndcg_at_10": 0.5
+        },
+        {
+          "case_id": "S009",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000056"],
+          "retrieved_log_ids": [
+            ["20200.csv:000056"],
+            ["20200.csv:000281"],
+            ["20200.csv:000236"],
+            ["20200.csv:000446"],
+            ["20200.csv:000257"],
+            ["20200.csv:000270"],
+            ["20200.csv:000300"],
+            ["20200.csv:000159"],
+            ["20200.csv:000487"],
+            ["20200.csv:000265"]
+          ],
+          "distances": [
+            0.3435712456703186, 0.37950801849365234, 0.43442317843437195, 0.4391379654407501,
+            0.44224196672439575, 0.44262152910232544, 0.45029544830322266, 0.4530107378959656,
+            0.45821452140808105, 0.4595521092414856
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "S010",
+          "category": "generic_service",
+          "is_negative": false,
+          "relevant_log_ids": ["20200.csv:000058"],
+          "retrieved_log_ids": [
+            ["20200.csv:000058"],
+            ["20200.csv:000093"],
+            ["20200.csv:000524"],
+            ["20200.csv:000184"],
+            ["20200.csv:000230"],
+            ["20200.csv:000546"],
+            ["20200.csv:000127"],
+            ["20200.csv:000466"],
+            ["20200.csv:000433"],
+            ["20200.csv:000070"]
+          ],
+          "distances": [
+            0.43971341848373413, 0.4406954348087311, 0.4533618986606598, 0.47469571232795715,
+            0.48333901166915894, 0.5054868459701538, 0.5213017463684082, 0.5284940600395203,
+            0.5339688062667847, 0.5357890725135803
+          ],
+          "recall_at_1": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr_at_10": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        {
+          "case_id": "W001",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000293"],
+            ["linuxcomand_error_deepseek.csv:000258"],
+            ["20200.csv:000023"],
+            ["20200.csv:000268"],
+            ["20200.csv:000316"],
+            ["20200.csv:000377"],
+            ["linuxcomand_error_deepseek.csv:000262"],
+            ["python_error_deepseek.csv:000318"],
+            ["linuxcomand_error_deepseek.csv:000257"],
+            ["linuxcomand_error_deepseek.csv:000167"]
+          ],
+          "distances": [
+            0.5785223245620728, 0.5823249816894531, 0.5832540988922119, 0.583418607711792,
+            0.586110532283783, 0.5867493152618408, 0.5907244086265564, 0.5940476655960083,
+            0.5942637324333191, 0.5982301235198975
+          ]
+        },
+        {
+          "case_id": "W002",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000247"],
+            ["20200.csv:000303"],
+            ["20200.csv:000065"],
+            ["20200.csv:000416"],
+            ["20200.csv:000434"],
+            ["20200.csv:000561"],
+            ["20200.csv:000166"],
+            ["20200.csv:000052"],
+            ["20200.csv:000128"],
+            ["20200.csv:000242"]
+          ],
+          "distances": [
+            0.52906334400177, 0.5345948934555054, 0.5431522727012634, 0.5468189716339111,
+            0.5505315661430359, 0.550715446472168, 0.5522499084472656, 0.5531414747238159,
+            0.555038571357727, 0.559731125831604
+          ]
+        },
+        {
+          "case_id": "W003",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000208"],
+            ["20200.csv:000269"],
+            ["20200.csv:000434"],
+            ["20200.csv:000537"],
+            ["python_error_deepseek.csv:000383"],
+            ["20200.csv:000163"],
+            ["20200.csv:000128"],
+            ["python_error_deepseek.csv:000385"],
+            ["python_error_deepseek.csv:000190"],
+            ["20200.csv:000048"]
+          ],
+          "distances": [
+            0.4660435914993286, 0.4702538251876831, 0.4704693555831909, 0.47468915581703186,
+            0.4757269322872162, 0.4766044020652771, 0.4785696864128113, 0.4818834364414215,
+            0.48590385913848877, 0.48632144927978516
+          ]
+        },
+        {
+          "case_id": "W004",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["linuxcomand_error_deepseek.csv:000191"],
+            ["linuxcomand_error_deepseek.csv:000190"],
+            ["20200.csv:000134"],
+            ["20200.csv:000520"],
+            ["java_error_deepseek.csv:000260"],
+            ["20200.csv:000042"],
+            ["linuxcomand_error_deepseek.csv:000165"],
+            ["linuxcomand_error_deepseek.csv:000359"],
+            ["linuxcomand_error_deepseek.csv:000167"]
+          ],
+          "distances": [
+            0.48983266949653625, 0.5109475255012512, 0.5128548741340637, 0.515085756778717,
+            0.5242411494255066, 0.5267794728279114, 0.5333271026611328, 0.5360230803489685,
+            0.5375767946243286, 0.5395644903182983
+          ]
+        },
+        {
+          "case_id": "W005",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000059"],
+            ["linuxcomand_error_deepseek.csv:000022"],
+            ["20200.csv:000397"],
+            ["20200.csv:000201"],
+            ["20200.csv:000231"],
+            ["20200.csv:000463"],
+            ["20200.csv:000247"],
+            ["20200.csv:000492"],
+            ["20200.csv:000243"],
+            ["20200.csv:000137"]
+          ],
+          "distances": [
+            0.5539416670799255, 0.572445809841156, 0.5820122957229614, 0.5883103013038635,
+            0.5893844962120056, 0.5965747833251953, 0.6026674509048462, 0.6028093695640564,
+            0.6029130816459656, 0.6030679941177368
+          ]
+        },
+        {
+          "case_id": "W006",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000053"],
+            ["20200.csv:000377"],
+            ["20200.csv:000316"],
+            ["linuxcomand_error_deepseek.csv:000223"],
+            ["20200.csv:000293"],
+            ["linuxcomand_error_deepseek.csv:000224"],
+            ["linuxcomand_error_deepseek.csv:000036"],
+            ["linuxcomand_error_deepseek.csv:000298"],
+            ["linuxcomand_error_deepseek.csv:000111"],
+            ["linuxcomand_error_deepseek.csv:000124"]
+          ],
+          "distances": [
+            0.49157464504241943, 0.49745678901672363, 0.5164069533348083, 0.5302563905715942,
+            0.5329375267028809, 0.5346324443817139, 0.5365735292434692, 0.5382621884346008,
+            0.5399295687675476, 0.5413377285003662
+          ]
+        },
+        {
+          "case_id": "W007",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000258"],
+            ["20200.csv:000190"],
+            ["20200.csv:000335"],
+            ["20200.csv:000247"],
+            ["20200.csv:000470"],
+            ["20200.csv:000134"],
+            ["20200.csv:000133"],
+            ["20200.csv:000370"],
+            ["20200.csv:000356"],
+            ["20200.csv:000062"]
+          ],
+          "distances": [
+            0.5405058860778809, 0.5467275977134705, 0.5503315925598145, 0.5511536598205566,
+            0.5517681837081909, 0.5539309978485107, 0.5547896027565002, 0.5556907057762146,
+            0.5571980476379395, 0.5603895783424377
+          ]
+        },
+        {
+          "case_id": "W008",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000247"],
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["20200.csv:000303"],
+            ["20200.csv:000416"],
+            ["20200.csv:000190"],
+            ["20200.csv:000065"],
+            ["python_error_deepseek.csv:000148"],
+            ["20200.csv:000052"],
+            ["20200.csv:000269"],
+            ["20200.csv:000133"]
+          ],
+          "distances": [
+            0.5993379354476929, 0.6005808115005493, 0.6150080561637878, 0.6229773759841919,
+            0.6375384330749512, 0.6395387053489685, 0.6402605772018433, 0.6402915120124817,
+            0.6420505046844482, 0.6435993313789368
+          ]
+        },
+        {
+          "case_id": "W009",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["20200.csv:000534"],
+            ["20200.csv:000276"],
+            ["20200.csv:000284"],
+            ["20200.csv:000068"],
+            ["20200.csv:000331"],
+            ["20200.csv:000479"],
+            ["20200.csv:000262"],
+            ["python_error_deepseek.csv:000184"],
+            ["20200.csv:000376"],
+            ["20200.csv:000455"]
+          ],
+          "distances": [
+            0.4735572934150696, 0.4841997027397156, 0.5069671869277954, 0.5161319971084595,
+            0.5257799029350281, 0.5265401601791382, 0.5338696837425232, 0.541718065738678,
+            0.5426229238510132, 0.5455104112625122
+          ]
+        },
+        {
+          "case_id": "W010",
+          "category": "windows_event",
+          "is_negative": true,
+          "relevant_log_ids": [],
+          "retrieved_log_ids": [
+            ["linuxcomand_error_deepseek.csv:000270"],
+            ["20200.csv:000303"],
+            ["20200.csv:000324"],
+            ["20200.csv:000298"],
+            ["20200.csv:000269"],
+            ["20200.csv:000247"],
+            ["20200.csv:000065"],
+            ["linuxcomand_error_deepseek.csv:000027"],
+            ["20200.csv:000434"],
+            ["20200.csv:000290"]
+          ],
+          "distances": [
+            0.5197721123695374, 0.533746600151062, 0.5429030060768127, 0.5462763905525208,
+            0.554990828037262, 0.5609183311462402, 0.5630852580070496, 0.5638502836227417,
+            0.5678594708442688, 0.5708181858062744
+          ]
+        }
+      ]
+    }
+  ]
+}

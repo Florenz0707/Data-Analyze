@@ -7,13 +7,19 @@ os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
 import json
 import logging
+import math
 import re
 import time
 import warnings
 from typing import Any
 
 import yaml
-from data_pipeline import iter_llama_documents
+from data_pipeline import (
+    IndexStateStore,
+    build_index_spec,
+    cleanup_old_index_collections,
+    iter_llama_documents,
+)
 from deepseek_project.configuration import (
     load_llm_config,
     redacted_config_summary,
@@ -37,6 +43,7 @@ except Exception:
 # llama-index & chroma
 import chromadb
 from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.vector_stores.chroma import ChromaVectorStore  # 注意导入路径
@@ -71,10 +78,54 @@ def _apply_proxies_from_cfg(cfg: dict[str, Any]):
         _set_env(key, val)
 
 
+def _lexical_tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9_]+|[\u4e00-\u9fff]", (text or "").casefold())
+
+
+def _bm25_scores(query: str, contents: list[str]) -> list[float]:
+    """Calculate a dependency-free BM25 score over the retrieved candidate set."""
+    query_terms = set(_lexical_tokens(query))
+    documents = [_lexical_tokens(content) for content in contents]
+    if not query_terms or not documents:
+        return [0.0] * len(documents)
+    document_frequency = {
+        term: sum(term in set(tokens) for tokens in documents) for term in query_terms
+    }
+    average_length = sum(len(tokens) for tokens in documents) / len(documents) or 1.0
+    k1, b = 1.2, 0.75
+    scores: list[float] = []
+    for tokens in documents:
+        frequencies = {term: tokens.count(term) for term in query_terms}
+        length_factor = 1 - b + b * len(tokens) / average_length
+        score = 0.0
+        for term, term_frequency in frequencies.items():
+            if not term_frequency:
+                continue
+            idf = math.log(
+                1
+                + (len(documents) - document_frequency[term] + 0.5)
+                / (document_frequency[term] + 0.5)
+            )
+            score += idf * (term_frequency * (k1 + 1)) / (term_frequency + k1 * length_factor)
+        scores.append(score)
+    return scores
+
+
+def _min_max_normalize(values: list[float]) -> list[float]:
+    if not values:
+        return []
+    low, high = min(values), max(values)
+    if math.isclose(low, high):
+        return [1.0 if high > 0 else 0.0 for _ in values]
+    return [(value - low) / (high - low) for value in values]
+
+
 class TopKLogSystem:
     def __init__(
         self,
         config_path: str | os.PathLike[str] | None = None,
+        *,
+        force_versioned_index: bool = False,
     ) -> None:
         """
         通过配置文件初始化系统。
@@ -107,12 +158,21 @@ class TopKLogSystem:
             self.default_top_k: int = int(env_cfg.get("RESPONSE_TOP_K", 10))
         except Exception:
             self.default_top_k = 10
+        self.index_build_batch_size = int(env_cfg.get("INDEX_BUILD_BATCH_SIZE", 4))
 
         # 从配置读取路径
         self.log_path = env_cfg["LOG_PATH"]
         self.system_prompt_path = env_cfg["SYSTEM_PROMPT_PATH"]
         self.response_template_path = env_cfg["RESPONSE_TEMPLATE_PATH"]
         self.vector_store_path = env_cfg["VECTOR_STORE_PATH"]
+        self.force_versioned_index = force_versioned_index
+        self.retrieval_min_score = float(env_cfg.get("RETRIEVAL_MIN_SCORE", 0.0))
+        self.retrieval_mode = str(env_cfg.get("RETRIEVAL_MODE", "vector")).lower()
+        self.retrieval_candidate_multiplier = int(env_cfg.get("RETRIEVAL_CANDIDATE_MULTIPLIER", 3))
+        self.hybrid_vector_weight = float(env_cfg.get("HYBRID_VECTOR_WEIGHT", 0.7))
+        self.hybrid_lexical_weight = float(env_cfg.get("HYBRID_LEXICAL_WEIGHT", 0.3))
+        self.reranker_enabled = bool(env_cfg.get("RERANKER_ENABLED", False))
+        self.last_retrieval_status = "not_run"
 
         # 默认格式控制（可被 @llm_config.yaml 覆盖；兼容旧 system_prompt.yaml 中的同名键）
         self.max_parts_num: int = 3
@@ -135,6 +195,46 @@ class TopKLogSystem:
         self.llm_key = prov["llm_key"]
         self.embedding_key = prov["embedding_key"]
         self.collection_name = prov.get("collection_name", "log_collection_default")
+        embedding_config_name = {
+            "transformers": "TRANSFORMERS_CONFIG",
+            "ollama": "OLLAMA_CONFIG",
+            "openai_compat": "OPENAI_COMPAT_CONFIG",
+            "dashscope": "DASHSCOPE_CONFIG",
+        }.get(self.embedding_key.provider)
+        embedding_config = (
+            dict(env_cfg.get(embedding_config_name, {})) if embedding_config_name else {}
+        )
+        dimensions = embedding_config.get("embedding_dimensions")
+        try:
+            dimensions = int(dimensions) if dimensions is not None else None
+        except (TypeError, ValueError):
+            dimensions = None
+        embedding_parameters = {
+            key: value
+            for key, value in embedding_config.items()
+            if "key" not in key.casefold() and "token" not in key.casefold()
+        }
+        self.index_spec = build_index_spec(
+            self.log_path,
+            logical_version=env_cfg.get("INDEX_VERSION", "v1"),
+            embedding_provider=self.embedding_key.provider,
+            embedding_model=self.embedding_key.model,
+            embedding_dimensions=dimensions,
+            embedding_parameters=embedding_parameters,
+            retrieval_parameters={
+                "min_score": self.retrieval_min_score,
+                "mode": self.retrieval_mode,
+                "candidate_multiplier": self.retrieval_candidate_multiplier,
+                "hybrid_vector_weight": self.hybrid_vector_weight,
+                "hybrid_lexical_weight": self.hybrid_lexical_weight,
+                "reranker_enabled": self.reranker_enabled,
+            },
+        )
+        self.index_state_store = IndexStateStore(
+            os.path.join(self.vector_store_path, ".index_state.json")
+        )
+        self.index_version = self.index_spec.version
+        self.index_source_version = "legacy"
 
         self.log_index = None
         self.vector_store = None
@@ -294,8 +394,36 @@ class TopKLogSystem:
 
         chroma_client = chromadb.PersistentClient(path=vector_store_path)  # chromadb 持久化
 
-        # 选择集合名称，避免不同嵌入维度冲突
-        collection_name = getattr(self, "collection_name", None) or "log_collection_default"
+        # Versioned collections are selected only after a completed state
+        # pointer exists. The legacy collection remains a safe fallback.
+        base_collection_name = getattr(self, "collection_name", None) or "log_collection_default"
+        versioned_collection_name = self.index_spec.collection_name(base_collection_name)
+        state = self.index_state_store.load()
+        collection_names = self._collection_names(chroma_client)
+        current_version = state.get("current_version")
+        current_record = (state.get("versions") or {}).get(current_version, {})
+        version_record = (state.get("versions") or {}).get(self.index_spec.version, {})
+        if (
+            version_record.get("status") != "ready"
+            and versioned_collection_name in collection_names
+        ):
+            chroma_client.delete_collection(versioned_collection_name)
+            collection_names.discard(versioned_collection_name)
+        if self.force_versioned_index or versioned_collection_name in collection_names:
+            collection_name = versioned_collection_name
+            self.index_source_version = self.index_spec.version
+        elif (
+            current_record.get("status") == "ready"
+            and current_record.get("collection_name") in collection_names
+        ):
+            collection_name = current_record["collection_name"]
+            self.index_source_version = current_version
+        else:
+            collection_name = base_collection_name
+            self.index_source_version = "legacy"
+
+        if self.force_versioned_index and versioned_collection_name in collection_names:
+            chroma_client.delete_collection(versioned_collection_name)
 
         # ChromaVectorStore 将 collection 与 store 绑定
         # 也是将 Chroma 包装为 llama-index 的接口
@@ -324,18 +452,54 @@ class TopKLogSystem:
             logger.info(f"复用已存在的向量集合 '{collection_name}', 向量数: {existing_count}")
         else:
             document_count = 0
-            for batch in self._document_batches(self.log_path):
-                if self.log_index is None:
-                    self.log_index = VectorStoreIndex.from_documents(
-                        batch,
-                        storage_context=log_storage_context,
-                        show_progress=True,
-                        embed_model=self.embedding,
+            is_versioned_build = collection_name == versioned_collection_name
+            if is_versioned_build:
+                self.index_state_store.mark_building(self.index_spec, collection_name)
+            try:
+                for batch in self._document_batches(
+                    self.log_path, batch_size=self.index_build_batch_size
+                ):
+                    if self.log_index is None:
+                        self.log_index = VectorStoreIndex.from_documents(
+                            batch,
+                            storage_context=log_storage_context,
+                            show_progress=True,
+                            embed_model=self.embedding,
+                        )
+                    else:
+                        for document in batch:
+                            self.log_index.insert(document)
+                    document_count += len(batch)
+                if is_versioned_build:
+                    self.index_state_store.mark_ready(
+                        self.index_spec, collection_name, document_count
                     )
+                    cleanup_old_index_collections(
+                        chroma_client,
+                        base_name=base_collection_name,
+                        state=self.index_state_store.load(),
+                    )
+            except Exception as exc:
+                if is_versioned_build:
+                    self.index_state_store.mark_failed(
+                        self.index_spec, collection_name, type(exc).__name__
+                    )
+                    fallback = chroma_client.get_or_create_collection(base_collection_name)
+                    if int(fallback.count()) > 0:
+                        fallback_store = ChromaVectorStore(chroma_collection=fallback)
+                        self.log_index = VectorStoreIndex.from_vector_store(
+                            vector_store=fallback_store,
+                            storage_context=StorageContext.from_defaults(
+                                vector_store=fallback_store
+                            ),
+                            embed_model=self.embedding,
+                        )
+                        self.index_source_version = "legacy"
+                        logger.warning("版本化索引构建失败，继续使用旧索引")
+                    else:
+                        raise
                 else:
-                    for document in batch:
-                        self.log_index.insert(document)
-                document_count += len(batch)
+                    raise
             if self.log_index is None:
                 # 即便没有文档，也创建空索引包装，便于后续增量写入
                 self.log_index = VectorStoreIndex.from_vector_store(
@@ -348,6 +512,16 @@ class TopKLogSystem:
                 logger.info(
                     f"新建向量集合 '{collection_name}' 并完成索引构建，共 {document_count} 个文档块"
                 )
+
+    @staticmethod
+    def _collection_names(client) -> set[str]:
+        try:
+            collections = client.list_collections()
+        except Exception:
+            return set()
+        return {
+            item if isinstance(item, str) else getattr(item, "name", "") for item in collections
+        } - {""}
 
     @staticmethod
     def _document_batches(data_path: str, batch_size: int = 256):
@@ -363,34 +537,114 @@ class TopKLogSystem:
 
     # 检索相关日志
     def retrieve_logs(
-        self, query: str, top_k: int | None = None, *, embedding: Any | None = None
+        self,
+        query: str,
+        top_k: int | None = None,
+        *,
+        embedding: Any | None = None,
+        metadata_filter: dict[str, Any] | None = None,
     ) -> list[dict]:
         if not self.log_index:
+            self.last_retrieval_status = "index_unavailable"
             logger.info("retrieve_logs: log_index is None, returning empty context")
             return []
 
         top_k = int(top_k) if top_k is not None else int(getattr(self, "default_top_k", 10))
+        if top_k < 1:
+            raise ValueError("top_k must be positive")
+        retrieval_mode = str(getattr(self, "retrieval_mode", "vector"))
+        reranker_enabled = bool(getattr(self, "reranker_enabled", False))
+        candidate_multiplier = max(1, int(getattr(self, "retrieval_candidate_multiplier", 3)))
+        min_score = float(getattr(self, "retrieval_min_score", 0.0))
+        vector_weight = float(getattr(self, "hybrid_vector_weight", 0.7))
+        lexical_weight = float(getattr(self, "hybrid_lexical_weight", 0.3))
+        metadata_filter = metadata_filter or {}
+        filters = [ExactMatchFilter(key=key, value=value) for key, value in metadata_filter.items()]
+        candidate_k = top_k
+        if retrieval_mode == "hybrid" or reranker_enabled:
+            candidate_k = top_k * candidate_multiplier
         try:
-            retriever = self.log_index.as_retriever(
-                similarity_top_k=top_k, embed_model=embedding or self.embedding
-            )
+            retriever_kwargs = {
+                "similarity_top_k": candidate_k,
+                "embed_model": embedding or self.embedding,
+            }
+            if filters:
+                retriever_kwargs["filters"] = MetadataFilters(filters=filters)
+            retriever = self.log_index.as_retriever(**retriever_kwargs)
             results = retriever.retrieve(query)
-            formatted_results = []
+            candidates = []
             for result in results:
                 node = getattr(result, "node", None)
                 metadata = dict(getattr(node, "metadata", {}) or {})
                 document_id = getattr(node, "node_id", None) or getattr(node, "id_", None)
-                formatted_results.append(
+                if metadata_filter and any(
+                    str(metadata.get(key, "")) != str(value)
+                    for key, value in metadata_filter.items()
+                ):
+                    continue
+                score = getattr(result, "score", None)
+                if score is None and min_score > 0:
+                    continue
+                if score is not None and score < min_score:
+                    continue
+                candidates.append(
                     {
                         "document_id": document_id,
                         "content": result.text,
-                        "score": result.score,
+                        "score": score,
                         "metadata": metadata,
                     }
                 )
-            logger.info(f"retrieve_logs: top_k={top_k}, hits={len(formatted_results)}")
+            if retrieval_mode == "hybrid" or reranker_enabled:
+                vector_scores = [float(item["score"] or 0.0) for item in candidates]
+                lexical_scores = _bm25_scores(query, [item["content"] for item in candidates])
+                vector_normalized = _min_max_normalize(vector_scores)
+                lexical_normalized = _min_max_normalize(lexical_scores)
+                total_weight = vector_weight + lexical_weight
+                if total_weight <= 0:
+                    raise ValueError("hybrid retrieval weights must have a positive sum")
+                for item, vector_score, lexical_score in zip(
+                    candidates, vector_normalized, lexical_normalized, strict=True
+                ):
+                    item["vector_score"] = item["score"]
+                    item["lexical_score"] = lexical_score
+                    item["score"] = (
+                        vector_weight * vector_score + lexical_weight * lexical_score
+                    ) / total_weight
+                if reranker_enabled:
+                    candidates.sort(
+                        key=lambda item: (
+                            -float(item["lexical_score"]),
+                            -float(item["score"]),
+                            str(item["document_id"] or ""),
+                        )
+                    )
+                else:
+                    candidates.sort(
+                        key=lambda item: (-float(item["score"]), str(item["document_id"] or ""))
+                    )
+            formatted_results = candidates[:top_k]
+            self.last_retrieval_status = "ok" if formatted_results else "no_evidence"
+            logger.info(
+                "retrieve_logs: top_k=%s, candidates=%s, hits=%s, mode=%s, threshold=%s, "
+                "candidate_multiplier=%s, vector_weight=%s, lexical_weight=%s, reranker=%s, "
+                "metadata_filters=%s, status=%s, index_version=%s",
+                top_k,
+                len(results),
+                len(formatted_results),
+                retrieval_mode,
+                min_score,
+                candidate_multiplier,
+                vector_weight,
+                lexical_weight,
+                reranker_enabled,
+                len(filters),
+                self.last_retrieval_status,
+                getattr(self, "index_source_version", getattr(self, "index_version", "unknown")),
+            )
             return formatted_results
         except Exception as e:
+            self.last_retrieval_status = "retrieval_error"
             logger.error(f"日志检索失败: {e}")
             return []
 
@@ -600,7 +854,12 @@ class TopKLogSystem:
         log_results = self.retrieve_logs(query, embedding=embedding)
         response = self.generate_response(query, log_results, llm=llm)
 
-        return {"response": response, "retrieval_stats": len(log_results)}
+        return {
+            "response": response,
+            "retrieval_stats": len(log_results),
+            "retrieval_status": getattr(self, "last_retrieval_status", "not_run"),
+            "index_version": getattr(self, "index_source_version", "unknown"),
+        }
 
 
 # 示例使用
