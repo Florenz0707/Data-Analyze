@@ -75,6 +75,11 @@
 - 外部 API Key 使用 Fernet 加密保存于 `ExternalLLMAPI.api_key_encrypted`，不出现在 API 响应和日志中。优先设置不入库的 `EXTERNAL_API_ENCRYPTION_KEY`；未设置时由稳定的 `DJANGO_SECRET_KEY` 派生。
 - 更新相同模型名会重新加密 API Key；删除当前使用的外部模型时，用户偏好自动回退到 `llm_config.yaml` 的默认模型。Base URL 默认只允许 HTTPS，并会校验公网地址、DNS、重定向、超时和响应大小，详见 `doc/m3_ssrf_input_security.md`。
 
+### 3.5 数据清洗与文档构建
+
+- 多源 CSV 可通过 `uv run python manage.py build_log_documents --input data/log` 规范化为统一日志 Schema，并输出清洗统计；使用 `--quality-report`、`--documents` 和 `--manifest` 可分别保存质量报告、JSONL 文档块和稳定文档清单。
+- 构建器默认保留来源 Metadata、按 1200 字符分块，并由 `TopKLogSystem` 以有限批次写入新索引；原始 CSV 不会被命令修改。实现与当前真实数据证据见 `../../doc/m4_data_cleaning_and_document_building.md`。
+
 ## 4. 环境准备
 
 - Python：建议 3.13（与 pyproject.toml 对齐）

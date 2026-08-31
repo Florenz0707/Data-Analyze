@@ -1,0 +1,87 @@
+{
+  "cleaner_version": "m4-cleaner-v1",
+  "parser_version": "m4-parser-v1",
+  "files_discovered": 9,
+  "rows_read": 174026,
+  "empty_rows": 62,
+  "accepted_records": 164386,
+  "duplicate_rows": 9439,
+  "quarantined_records": 139,
+  "redacted_rows": 161522,
+  "duplicate_rate": 0.05423902175536989,
+  "post_clean_duplicate_rate": 0.0,
+  "quarantine_rate": 0.0007987312240699666,
+  "required_field_pass_rate": 1.0,
+  "document_chunks": 189129,
+  "quarantine_reasons": {
+    "email": 5,
+    "pii_field": 2,
+    "pii_value": 132,
+    "secret_value": 2
+  },
+  "by_source": {
+    "20200.csv": {
+      "rows_read": 570,
+      "empty_rows": 0,
+      "quarantined": 135,
+      "duplicates": 0,
+      "accepted": 435
+    },
+    "from_kaggle/Computer_events.csv": {
+      "rows_read": 6567,
+      "empty_rows": 22,
+      "quarantined": 0,
+      "duplicates": 2901,
+      "accepted": 3644
+    },
+    "from_kaggle/Computer_events_column_reduced.csv": {
+      "rows_read": 6567,
+      "empty_rows": 40,
+      "quarantined": 0,
+      "duplicates": 6527,
+      "accepted": 0
+    },
+    "from_kaggle/python_bug_fix_pairs.csv": {
+      "rows_read": 1000,
+      "empty_rows": 0,
+      "quarantined": 0,
+      "duplicates": 0,
+      "accepted": 1000
+    },
+    "from_kaggle/windows_event_log.csv": {
+      "rows_read": 158184,
+      "empty_rows": 0,
+      "quarantined": 2,
+      "duplicates": 0,
+      "accepted": 158182
+    },
+    "java_error_deepseek.csv": {
+      "rows_read": 274,
+      "empty_rows": 0,
+      "quarantined": 0,
+      "duplicates": 0,
+      "accepted": 274
+    },
+    "linuxcomand_error_deepseek.csv": {
+      "rows_read": 365,
+      "empty_rows": 0,
+      "quarantined": 1,
+      "duplicates": 1,
+      "accepted": 363
+    },
+    "python_error_deepseek.csv": {
+      "rows_read": 409,
+      "empty_rows": 0,
+      "quarantined": 0,
+      "duplicates": 0,
+      "accepted": 409
+    },
+    "python_error_doubao.csv": {
+      "rows_read": 90,
+      "empty_rows": 0,
+      "quarantined": 1,
+      "duplicates": 10,
+      "accepted": 79
+    }
+  }
+}

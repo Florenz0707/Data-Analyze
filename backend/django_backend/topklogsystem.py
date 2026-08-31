@@ -12,8 +12,8 @@ import time
 import warnings
 from typing import Any
 
-import pandas as pd
 import yaml
+from data_pipeline import iter_llama_documents
 from deepseek_project.configuration import (
     load_llm_config,
     redacted_config_summary,
@@ -36,11 +36,7 @@ except Exception:
 
 # llama-index & chroma
 import chromadb
-from llama_index.core import (
-    Document,
-    StorageContext,
-    VectorStoreIndex,
-)
+from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.vector_stores.chroma import ChromaVectorStore  # 注意导入路径
@@ -327,17 +323,20 @@ class TopKLogSystem:
             )
             logger.info(f"复用已存在的向量集合 '{collection_name}', 向量数: {existing_count}")
         else:
-            if log_documents := self._load_documents(self.log_path):
-                self.log_index = VectorStoreIndex.from_documents(
-                    log_documents,
-                    storage_context=log_storage_context,
-                    show_progress=True,
-                    embed_model=self.embedding,
-                )
-                logger.info(
-                    f"新建向量集合 '{collection_name}' 并完成索引构建，共 {len(log_documents)} 条日志"
-                )
-            else:
+            document_count = 0
+            for batch in self._document_batches(self.log_path):
+                if self.log_index is None:
+                    self.log_index = VectorStoreIndex.from_documents(
+                        batch,
+                        storage_context=log_storage_context,
+                        show_progress=True,
+                        embed_model=self.embedding,
+                    )
+                else:
+                    for document in batch:
+                        self.log_index.insert(document)
+                document_count += len(batch)
+            if self.log_index is None:
                 # 即便没有文档，也创建空索引包装，便于后续增量写入
                 self.log_index = VectorStoreIndex.from_vector_store(
                     vector_store=log_vector_store,
@@ -345,40 +344,22 @@ class TopKLogSystem:
                     embed_model=self.embedding,
                 )
                 logger.info(f"已创建空集合 '{collection_name}'，当前无可写入的日志文档")
+            else:
+                logger.info(
+                    f"新建向量集合 '{collection_name}' 并完成索引构建，共 {document_count} 个文档块"
+                )
 
     @staticmethod
-    # 加载文档数据
-    def _load_documents(data_path: str) -> list[Document]:
-        if not os.path.exists(data_path):
-            logger.warning(f"数据路径不存在: {data_path}")
-            return []
-
-        documents = []
-        for file in os.listdir(data_path):
-            ext = os.path.splitext(file)[1]
-            if ext not in [".txt", ".md", ".json", ".jsonl", ".csv"]:
-                continue
-
-            file_path = f"{data_path}/{file}"
-            try:
-                logger.info(f"正在读取{file}...")
-                if ext == ".csv":  # utf-8 的 csv
-                    # 大型 csv 分块进行读取
-                    chunk_size = 1000  # 每次读取1000行
-                    for chunk in pd.read_csv(file_path, chunksize=chunk_size):
-                        for row in chunk.itertuples(index=False):  # 无行号
-                            content = str(row).replace("Pandas", " ")
-                            documents.append(Document(text=content))
-                else:  # .txt or .md, .json
-                    with open(file_path, encoding="utf-8") as f:
-                        content = f.read()
-                        doc = Document(
-                            text=content,
-                        )
-                        documents.append(doc)
-            except Exception as e:
-                logger.error(f"加载文档失败 {file_path}: {e}")
-        return documents
+    def _document_batches(data_path: str, batch_size: int = 256):
+        """Yield bounded batches so the complete Document list is never retained."""
+        batch = []
+        for document in iter_llama_documents(data_path):
+            batch.append(document)
+            if len(batch) >= batch_size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
 
     # 检索相关日志
     def retrieve_logs(
@@ -396,7 +377,17 @@ class TopKLogSystem:
             results = retriever.retrieve(query)
             formatted_results = []
             for result in results:
-                formatted_results.append({"content": result.text, "score": result.score})
+                node = getattr(result, "node", None)
+                metadata = dict(getattr(node, "metadata", {}) or {})
+                document_id = getattr(node, "node_id", None) or getattr(node, "id_", None)
+                formatted_results.append(
+                    {
+                        "document_id": document_id,
+                        "content": result.text,
+                        "score": result.score,
+                        "metadata": metadata,
+                    }
+                )
             logger.info(f"retrieve_logs: top_k={top_k}, hits={len(formatted_results)}")
             return formatted_results
         except Exception as e:

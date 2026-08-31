@@ -3,13 +3,54 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import yaml
 from django.test import SimpleTestCase
 
 
 class TopKLogSystemIsolationTests(SimpleTestCase):
+    @patch("topklogsystem.iter_llama_documents")
+    def test_document_batches_bound_index_input(self, documents):
+        from topklogsystem import TopKLogSystem
+
+        documents.return_value = iter(["doc-1", "doc-2", "doc-3"])
+
+        self.assertEqual(
+            list(TopKLogSystem._document_batches("data/log", batch_size=2)),
+            [["doc-1", "doc-2"], ["doc-3"]],
+        )
+
+    def test_retrieval_keeps_document_id_score_and_metadata(self):
+        from topklogsystem import TopKLogSystem
+
+        system = TopKLogSystem.__new__(TopKLogSystem)
+        system.log_index = Mock()
+        system.embedding = object()
+        system.default_top_k = 5
+        system.log_index.as_retriever.return_value.retrieve.return_value = [
+            SimpleNamespace(
+                text="service failed",
+                score=0.91,
+                node=SimpleNamespace(
+                    node_id="log-123",
+                    metadata={"source_file": "sample.csv", "source_row": 2},
+                ),
+            )
+        ]
+
+        self.assertEqual(
+            system.retrieve_logs("failure"),
+            [
+                {
+                    "document_id": "log-123",
+                    "content": "service failed",
+                    "score": 0.91,
+                    "metadata": {"source_file": "sample.csv", "source_row": 2},
+                }
+            ],
+        )
+
     @patch("topklogsystem.VectorStoreIndex")
     @patch("topklogsystem.StorageContext")
     @patch("topklogsystem.ChromaVectorStore")
