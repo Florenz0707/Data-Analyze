@@ -1,6 +1,6 @@
 # M2：模型实例隔离
 
-更新时间：2026-08-29
+更新时间：2026-08-31
 
 本文记录 M2 中“模型实例隔离”子任务的实现、验证结果和后续改进方向。Session/History 外键、迁移和删除一致性属于 M2 的其他子任务，未包含在本次变更中。
 
@@ -66,7 +66,7 @@ cd backend/django_backend
 DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 ```
 
-当前结果：57/57 通过。其中包括：
+当前结果：62/62 通过。其中包括：
 
 - 50 个并发访问同一模型 key 只构造一个实例；
 - 不同模型和 endpoint 不共享缓存实例；
@@ -74,6 +74,31 @@ DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 - Fake LLM 请求调用不修改全局模型状态；
 - Fake Provider 使用临时 Chroma 目录，测试后自动清理；
 - 全部回归测试不访问真实模型、密钥或外部网络。
+
+### 4.1 当前 PostgreSQL 并发集成验证
+
+为验证 SQLite 无法覆盖的真实多连接语义，新增
+`evaluation/postgres_model_isolation.py`。脚本使用当前 `db_config.yaml` 配置，创建带随机后缀的两个临时用户和 API key，使用 Fake Provider 替换模型构造和查询系统，仅保留真实 Django API、事务和 PostgreSQL 写入路径。
+
+执行命令：
+
+```bash
+cd backend/django_backend
+uv run --project . python ../../evaluation/postgres_model_isolation.py
+```
+
+2026-08-31 实测结果：
+
+| 项目                   | 结果                                         |
+| ---------------------- | -------------------------------------------- |
+| 数据库 / schema        | `dbb` / `data-analyze`                       |
+| 并发请求 / worker      | 50 / 20                                      |
+| 模型串台               | 0 次                                         |
+| History / Session 写入 | 50 / 50                                      |
+| 外部模型或网络调用     | 0                                            |
+| 临时数据清理           | 已确认用户、API key、Session、History 均为 0 |
+
+该结果证明当前单实例 PostgreSQL 配置下，请求级用户模型选择没有发生串台，并且并发请求的结构化写入数量与请求数一致。它不等价于多进程部署、共享缓存后端或生产流量压测；MySQL、多 worker 和故障恢复仍需单独验证。
 
 ## 5. 进一步改进
 
@@ -87,4 +112,4 @@ DJANGO_TESTING=true uv run --project . python manage.py test --noinput
 
 ## 6. 本次变更边界
 
-本次仅完成模型实例和缓存隔离。M2 仍需继续处理实际限流接入和更完整的真实部署压测；这些事项不能因为本次模型隔离测试通过而提前标记完成。
+本次已完成模型实例和缓存隔离，并补充当前 PostgreSQL 的单实例多连接验证。M2 仍需继续处理实际限流接入、共享缓存一致性、多进程部署和更完整的生产级压测；这些事项不能因为本次验证通过而提前标记完成。
