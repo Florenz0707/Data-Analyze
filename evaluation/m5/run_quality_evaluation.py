@@ -9,8 +9,10 @@ outside the normal test command because it depends on deployment state.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -57,14 +59,24 @@ def fixture_payload(case: dict[str, Any], evidence_id: str | None) -> dict[str, 
     }
 
 
-def evaluate(cases: list[dict[str, Any]], payloads: list[dict[str, Any]]) -> dict[str, Any]:
+def evaluate(
+    cases: list[dict[str, Any]],
+    payloads: list[dict[str, Any]],
+    generation_results: list[dict[str, Any]] | None = None,
+    evidence_ids: list[list[str]] | None = None,
+) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     positive = negative = 0
     valid_citations = 0
     cause_hits = step_hits = 0
-    for case, payload in zip(cases, payloads, strict=True):
+    for index, (case, payload) in enumerate(zip(cases, payloads, strict=True)):
         evidence_id = (case.get("relevant_log_ids") or [None])[0]
-        evidence = [{"document_id": evidence_id}] if evidence_id else []
+        observed_ids = evidence_ids[index] if evidence_ids and index < len(evidence_ids) else []
+        evidence = (
+            [{"document_id": item} for item in observed_ids]
+            if evidence_ids is not None
+            else ([{"document_id": evidence_id}] if evidence_id else [])
+        )
         answer, diagnostics = parse_answer(payload, evidence)
         is_negative = bool(case.get("is_negative"))
         if is_negative:
@@ -93,12 +105,25 @@ def evaluate(cases: list[dict[str, Any]], payloads: list[dict[str, Any]]) -> dic
                 "diagnostics": diagnostics,
             }
         )
+    generation_results = generation_results or []
+    if generation_results:
+        schema_first_pass_rate = sum(
+            int(item.get("schema_valid") is True and int(item.get("repair_attempts", 0)) == 0)
+            for item in generation_results
+        ) / len(generation_results)
+        schema_after_repair_rate = sum(
+            int(item.get("schema_valid") is True) for item in generation_results
+        ) / len(generation_results)
+    else:
+        # Fixture payloads are deliberately constructed as valid contracts.
+        schema_first_pass_rate = 1.0
+        schema_after_repair_rate = 1.0
     return {
         "case_count": len(cases),
         "positive_count": positive,
         "negative_count": negative,
-        "schema_first_pass_rate": 1.0,
-        "schema_after_repair_rate": 1.0,
+        "schema_first_pass_rate": schema_first_pass_rate,
+        "schema_after_repair_rate": schema_after_repair_rate,
         "valid_citation_rate_positive": valid_citations / positive if positive else 0.0,
         "cause_match_rate": cause_hits / positive if positive else 0.0,
         "step_match_rate": step_hits / positive if positive else 0.0,
@@ -142,21 +167,68 @@ def main() -> int:
         if args.limit < 1:
             parser.error("--limit must be positive")
         cases = cases[: args.limit]
+    evidence_ids: list[list[str]] | None = None
     if args.live:
         from topklogsystem import TopKLogSystem
 
         system = TopKLogSystem()
         payloads = []
+        generation_results = []
+        evidence_ids = []
+        started = time.perf_counter()
         for case in cases:
             result = system.query(case["query"])
             payloads.append(result.get("structured_response") or {})
+            generation_results.append(dict(system.last_generation_result))
+            evidence_ids.append(list(result.get("retrieved_evidence_ids") or []))
+        elapsed_seconds = time.perf_counter() - started
     elif args.results:
         payloads = read_jsonl(args.results)
+        generation_results = []
     else:
         payloads = [
             fixture_payload(case, (case.get("relevant_log_ids") or [None])[0]) for case in cases
         ]
-    report = evaluate(cases, payloads)
+        generation_results = []
+        evidence_ids = None
+    report = evaluate(cases, payloads, generation_results, evidence_ids)
+    report["evaluation_kind"] = (
+        "live_model"
+        if args.live
+        else ("result_replay" if args.results else "deterministic_contract_fixture")
+    )
+    if args.live:
+        report["runtime"] = {
+            "elapsed_seconds": elapsed_seconds,
+            "cases_per_second": len(cases) / elapsed_seconds if elapsed_seconds else 0.0,
+            "config_path": str(Path(system.config_path).relative_to(ROOT)),
+            "config_sha256": hashlib.sha256(Path(system.config_path).read_bytes()).hexdigest(),
+            "model": getattr(system.llm_key, "model", "unknown"),
+            "embedding_model": getattr(system.embedding_key, "model", "unknown"),
+            "index_version": system.index_version,
+            "index_source_version": system.index_source_version,
+        }
+        report["generation_summary"] = {
+            "model_calls": sum(
+                1 + int(item.get("repair_attempts", 0)) for item in generation_results
+            ),
+            "first_pass_successes": sum(
+                int(item.get("schema_valid") is True and int(item.get("repair_attempts", 0)) == 0)
+                for item in generation_results
+            ),
+            "after_repair_successes": sum(
+                int(item.get("schema_valid") is True) for item in generation_results
+            ),
+            "repair_attempts": sum(
+                int(item.get("repair_attempts", 0)) for item in generation_results
+            ),
+            "output_modes": {
+                mode: sum(int(item.get("output_mode") == mode) for item in generation_results)
+                for mode in sorted(
+                    {item.get("output_mode", "unknown") for item in generation_results}
+                )
+            },
+        }
     if not args.results and not args.live:
         no_rag_payloads = [fixture_payload(case, None) for case in cases]
         with_rag = dict(report)

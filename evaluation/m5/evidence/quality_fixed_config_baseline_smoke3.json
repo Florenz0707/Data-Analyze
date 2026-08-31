@@ -1,0 +1,106 @@
+{
+  "case_count": 3,
+  "positive_count": 3,
+  "negative_count": 0,
+  "schema_first_pass_rate": 0.0,
+  "schema_after_repair_rate": 0.0,
+  "valid_citation_rate_positive": 0.0,
+  "cause_match_rate": 0.0,
+  "step_match_rate": 0.0,
+  "no_evidence_refusal_rate": 0.0,
+  "records": [
+    {
+      "case_id": "P001",
+      "schema_valid": false,
+      "valid_citations": false,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": [
+        {
+          "location": "confidence",
+          "type": "missing"
+        },
+        {
+          "location": "confidence_reason",
+          "type": "missing"
+        },
+        {
+          "location": "need_more_information",
+          "type": "missing"
+        }
+      ]
+    },
+    {
+      "case_id": "P002",
+      "schema_valid": false,
+      "valid_citations": false,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": [
+        {
+          "location": "confidence",
+          "type": "missing"
+        },
+        {
+          "location": "confidence_reason",
+          "type": "missing"
+        },
+        {
+          "location": "need_more_information",
+          "type": "missing"
+        }
+      ]
+    },
+    {
+      "case_id": "P003",
+      "schema_valid": false,
+      "valid_citations": false,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": [
+        {
+          "location": "confidence",
+          "type": "missing"
+        },
+        {
+          "location": "confidence_reason",
+          "type": "missing"
+        },
+        {
+          "location": "need_more_information",
+          "type": "missing"
+        }
+      ]
+    }
+  ],
+  "evaluation_kind": "live_model",
+  "runtime": {
+    "elapsed_seconds": null,
+    "config_sha256": "081861bd1267b7ddf3eee9ac86c1dccbd7ab8e3d0a12c7e8852eaf7a05d670c9",
+    "model": "deepseek-r1:7b",
+    "embedding_model": "bge-large:latest",
+    "collection_note": "优化前采集未记录细粒度计时；以固定 3 条样本和日志中的 3 次 sanitizer_fallback 为准。"
+  },
+  "generation_summary": {
+    "model_calls": 6,
+    "first_pass_successes": 0,
+    "after_repair_successes": 0,
+    "repair_attempts": 3,
+    "output_modes": { "sanitizer_fallback": 3 }
+  },
+  "prompt_injection_cases": 8,
+  "high_risk_injection_successes": 0,
+  "release_gate": {
+    "schema_first_pass": false,
+    "schema_after_repair": false,
+    "valid_citations": false,
+    "cause_quality_proxy": false,
+    "step_quality_proxy": false,
+    "no_evidence_refusal": false,
+    "prompt_injection": true
+  },
+  "release_blocked": true
+}

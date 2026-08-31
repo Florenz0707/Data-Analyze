@@ -105,18 +105,18 @@
 
 > 更新要求：每个开发周期至少更新一次状态、负责人和预计验收时间。
 
-| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                      | 负责人 | 预计验收   | 实际验收   |
-| ------ | ------------------------------ | -----: | ---------- | --------------------------------------------------------- | ------ | ---------- | ---------- |
-| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                           | Codex  | 2026-08-29 | 2026-08-29 |
-| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                                    | Codex  | TODO       | -          |
-| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，多进程/共享缓存压测待完成）       | Codex  | TODO       | -          |
-| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token、限流、外部模型和 SSRF 已完成）             | Codex  | TODO       | -          |
-| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 进行中（已完成实测；结构化/Hybrid 未超过 legacy，待优化） | Codex  | TODO       | -          |
-| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 进行中（契约和评测工具完成，真实质量复核待完成）          | Codex  | TODO       | -          |
-| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                                    | TODO   | TODO       | -          |
-| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                                    | TODO   | TODO       | -          |
-| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                                    | TODO   | TODO       | -          |
-| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                                    | TODO   | TODO       | -          |
+| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                              | 负责人 | 预计验收   | 实际验收   |
+| ------ | ------------------------------ | -----: | ---------- | ----------------------------------------------------------------- | ------ | ---------- | ---------- |
+| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                                   | Codex  | 2026-08-29 | 2026-08-29 |
+| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                                            | Codex  | TODO       | -          |
+| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，多进程/共享缓存压测待完成）               | Codex  | TODO       | -          |
+| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token、限流、外部模型和 SSRF 已完成）                     | Codex  | TODO       | -          |
+| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 进行中（固定配置复测无质量回归；仍需多轮性能与检索质量优化）      | Codex  | TODO       | -          |
+| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 进行中（固定配置 3 条 smoke 改善；50 条真实质量和人工复核待完成） | Codex  | TODO       | -          |
+| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                                            | TODO   | TODO       | -          |
+| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                                            | TODO   | TODO       | -          |
+| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                                            | TODO   | TODO       | -          |
+| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                                            | TODO   | TODO       | -          |
 
 ### 3.1 推荐推进顺序
 
@@ -587,11 +587,11 @@ flowchart LR
 ### 8.6 状态记录
 
 ```text
-状态：进行中（已完成实现和真实对照；结构化/Hybrid 未超过 legacy，待优化）
+状态：进行中（固定配置复测无质量回归；结构化/Hybrid 未超过 legacy，待多轮调优）
 负责人：Codex
 更新时间：2026-08-31
 已完成：统一日志 Schema、确定性 CSV 解析、编码/空值/级别归一化、重复记录处理、敏感信息隔离、领域文档模板、稳定 ID、Metadata、分块、Manifest 差异、批量流式构建、版本化索引身份、状态查询、失败回滚、旧版本清理、Metadata 过滤、相似度阈值、无证据状态、向量/BM25/Reranker 实验开关和固定集真实 Ollama 对照
-剩余工作：完整 164386 条记录全量向量化、结构化模板/Hybrid/Reranker 达到不低于 legacy 的质量、独立 BM25 倒排索引和生产级 Reranker 评测
+剩余工作：完整 164386 条记录全量向量化、结构化模板/Hybrid/Reranker 达到不低于 legacy 的质量、独立 BM25 倒排索引、生产级 Reranker 评测和至少 3 次独立性能重复
 验收证据：E-024、E-025、`doc/m4_data_cleaning_and_document_building.md`、`doc/m4_index_version_and_retrieval.md`、`evaluation/m4/evidence/data_quality_report.json`、`evaluation/m4/evidence/index_version_retrieval.json`
 ```
 
@@ -675,11 +675,11 @@ flowchart LR
 ### 9.6 状态记录
 
 ```text
-状态：进行中
+状态：进行中（固定配置 smoke 已完成一轮优化，完整质量仍未达标）
 负责人：Codex
 更新时间：2026-08-31
 已完成：结构化契约、证据 ID 校验、一次修复、无证据拒答、Prompt 版本、注入测试集和固定集评测 gate
-剩余工作：真实模型 50 条固定集质量运行、人工/非实现者复核、与 M4 检索策略联合调优
+剩余工作：真实模型 50 条固定集质量运行、人工/非实现者复核、与 M4 检索策略联合调优；当前 3 条 smoke Schema 首轮/修复后通过率为 2/3
 验收证据：E-026、`doc/m5_prompt_structured_output_and_quality.md`
 ```
 
@@ -1144,27 +1144,27 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | M4 结构化向量 MRR@10                      |   0.8646 |  ≥0.6500 |   0.8458 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005  | 2026-08-31 |
 | M4 Hybrid Recall@1                        |   0.8000 | 记录趋势 |   0.8250 | 40 条正样本，候选集 BM25，权重 0.7/0.3                    | E-005  | 2026-08-31 |
 | M4 负样本无证据率（阈值 0.7）             |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本，结构化向量，阈值扫描                         | E-005  | 2026-08-31 |
-| M5 Schema 首次通过率（契约夹具）          |     TODO |  ≥0.9500 |   1.0000 | 固定 50 条夹具，真实模型结果待采集                        | E-026  | 2026-08-31 |
-| M5 Schema 一次修复后通过率（契约夹具）    |     TODO |  ≥0.9900 |   1.0000 | 固定 50 条夹具，真实模型结果待采集                        | E-026  | 2026-08-31 |
-| M5 有证据样本有效引用率（契约夹具）       |     TODO |  ≥0.9500 |   1.0000 | 40 条正样本，真实模型支持率待人工复核                     | E-026  | 2026-08-31 |
+| M5 Schema 首次通过率（契约夹具）          |     TODO |  ≥0.9500 |   1.0000 | 固定 50 条夹具；真实模型 3 条 smoke 优化后 0.667          | E-026  | 2026-08-31 |
+| M5 Schema 一次修复后通过率（契约夹具）    |     TODO |  ≥0.9900 |   1.0000 | 固定 50 条夹具；真实模型 3 条 smoke 优化后 0.667          | E-026  | 2026-08-31 |
+| M5 有证据样本有效引用率（契约夹具）       |     TODO |  ≥0.9500 |   1.0000 | 40 条正样本；真实模型 3 条 smoke 优化后 0.667             | E-026  | 2026-08-31 |
 | M5 无证据拒答/追问率（契约夹具）          |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本，真实检索阈值矩阵待运行                       | E-026  | 2026-08-31 |
 | M5 高危 Prompt Injection 成功数（契约集） |     TODO |        0 |        0 | 8 条固定安全样本；真实模型需复核                          | E-026  | 2026-08-31 |
 | M5 原因/步骤人工评分                      |     TODO |   ≥4.0/5 |     TODO | 真实模型固定参数，需非实现者复核                          | 待补充 | -          |
 
 ### 17.2 性能指标
 
-| 指标                     |     当前基线 |         目标 |                              最新实测 | 测试条件                                                      | 证据  | 更新时间   |
-| ------------------------ | -----------: | -----------: | ------------------------------------: | ------------------------------------------------------------- | ----- | ---------- |
-| 冷启动时间               |   未完整测量 |   基线后确定 |                            未完整测量 | 未停止 Ollama，避免干扰本地服务                               | E-001 | 2026-08-28 |
-| 索引复用启动时间         |        4.88s | 不退化 > 10% |                                 4.88s | 独立 Django 进程，触发预加载，Ollama 已启动                   | E-001 | 2026-08-28 |
-| 索引构建总耗时           |       28.06s |     记录趋势 | 203.40s（资源竞争，不作代码回归结论） | 1708 条，batch=4；Ollama 同时被 live 评测占用，需空闲条件复测 | E-027 | 2026-08-31 |
-| 索引峰值内存             |   177876 KiB |   下降 ≥ 30% |                            177876 KiB | 进程峰值 RSS，增量 63652 KiB                                  | E-001 | 2026-08-28 |
-| 首个流式事件 P95         |         TODO |         ≤ 3s |                                  TODO | TODO                                                          | TODO  | -          |
-| 缓存命中 P95             | 单次 19.82ms |      ≤ 300ms |                          单次 19.82ms | 同会话同问题复测，非 P95                                      | E-001 | 2026-08-28 |
-| 非模型 API P95           |      13.63ms |      ≤ 500ms |                               13.63ms | OpenAPI 20 次热请求                                           | E-001 | 2026-08-28 |
-| 20 并发错误率            |         TODO |         < 1% |                                  TODO | TODO                                                          | TODO  | -          |
-| 索引失败影响当前在线索引 |       未测试 |         0 次 |                      0 次（状态单测） | 失败构建不改变 `current_version`；尚未进行真实全量重建演练    | E-025 | 2026-08-31 |
-| M4/M5 Prompt 组装 P50    |         TODO |     记录趋势 |                                0.84ms | 10 条合成证据；未调用模型；单次仅 1 个 evidence 容器          | E-027 | 2026-08-31 |
+| 指标                     |     当前基线 |         目标 |                                        最新实测 | 测试条件                                                   | 证据  | 更新时间   |
+| ------------------------ | -----------: | -----------: | ----------------------------------------------: | ---------------------------------------------------------- | ----- | ---------- |
+| 冷启动时间               |   未完整测量 |   基线后确定 |                                      未完整测量 | 未停止 Ollama，避免干扰本地服务                            | E-001 | 2026-08-28 |
+| 索引复用启动时间         |        4.88s | 不退化 > 10% |                                           4.88s | 独立 Django 进程，触发预加载，Ollama 已启动                | E-001 | 2026-08-28 |
+| 索引构建总耗时           |       28.06s |     记录趋势 | 47.69s（固定配置单次复测；基线 50.77s，非归因） | 1708 条公平子集，batch=4；查询质量无回归，仍需 3 次重复    | E-028 | 2026-08-31 |
+| 索引峰值内存             |   177876 KiB |   下降 ≥ 30% |                                      177876 KiB | 进程峰值 RSS，增量 63652 KiB                               | E-001 | 2026-08-28 |
+| 首个流式事件 P95         |         TODO |         ≤ 3s |                                            TODO | TODO                                                       | TODO  | -          |
+| 缓存命中 P95             | 单次 19.82ms |      ≤ 300ms |                                    单次 19.82ms | 同会话同问题复测，非 P95                                   | E-001 | 2026-08-28 |
+| 非模型 API P95           |      13.63ms |      ≤ 500ms |                                         13.63ms | OpenAPI 20 次热请求                                        | E-001 | 2026-08-28 |
+| 20 并发错误率            |         TODO |         < 1% |                                            TODO | TODO                                                       | TODO  | -          |
+| 索引失败影响当前在线索引 |       未测试 |         0 次 |                                0 次（状态单测） | 失败构建不改变 `current_version`；尚未进行真实全量重建演练 | E-025 | 2026-08-31 |
+| M4/M5 Prompt 组装 P50    |         TODO |     记录趋势 |                                          0.84ms | 10 条合成证据；未调用模型；单次仅 1 个 evidence 容器       | E-027 | 2026-08-31 |
 
 ### 17.3 安全与可靠性指标
 
@@ -1235,33 +1235,34 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-025 | M4     | 索引版本和检索报告               | `doc/m4_index_version_and_retrieval.md`、`backend/django_backend/data_pipeline/index_version.py`、`backend/django_backend/topklogsystem.py`、`backend/django_backend/deepseek_api/management/commands/rebuild_log_index.py`、`backend/django_backend/deepseek_api/management/commands/index_status.py`、`evaluation/m4/evidence/index_version_retrieval.json`                                                         | 索引身份、原子状态指针、失败回滚、旧版本清理、Metadata/阈值/无证据、BM25/Reranker 实验和配置校验由定向测试验收；固定 Recall/MRR 与真实全量重建资源测量仍待 M5                                          | Codex  | 2026-08-31 |
 | E-026 | M5     | Prompt 与结构化输出质量契约报告  | `doc/m5_prompt_structured_output_and_quality.md`、`backend/django_backend/deepseek_project/response_contract.py`、`backend/django_backend/deepseek_project/tests/test_response_contract.py`、`backend/django_backend/deepseek_project/tests/test_topk_generation_contract.py`、`evaluation/m5/run_quality_evaluation.py`、`evaluation/m5/evidence/quality_contract.json`                                              | 结构化 Schema、Evidence ID 校验、一次修复、无证据拒答、Prompt Injection 集和发布 gate 已实现；固定夹具通过；真实模型质量和非实现者复核待补充                                                           | Codex  | 2026-08-31 |
 | E-027 | M4/M5  | 联合性能调优报告                 | `doc/m4_m5_joint_performance_tuning.md`、`evaluation/m4/evidence/retrieval_joint_tuning.json`、`evaluation/m5/evidence/prompt_performance.json`、`evaluation/m5/evidence/quality_live_attempt.json`                                                                                                                                                                                                                   | 检索质量无回归；Prompt 证据重复已消除，组装 P50 0.84ms；构建耗时受 Ollama 资源竞争升至 203.4s，真实生成评测超时，需空闲资源下复测                                                                      | Codex  | 2026-08-31 |
+| E-028 | M4/M5  | 固定配置基准与优化对照           | `doc/m4_m5_joint_performance_tuning.md`、`doc/m5_prompt_structured_output_and_quality.md`、`evaluation/m4/evidence/retrieval_fixed_config_baseline.json`、`evaluation/m4/evidence/retrieval_fixed_config_optimized.json`、`evaluation/m5/evidence/quality_fixed_config_baseline_smoke3.json`、`evaluation/m5/evidence/quality_fixed_config_optimized_v3_smoke3.json`                                                  | 配置哈希固定为 `081861...670c9`；M4 Recall/MRR 无回归，构建复测 50.77s→47.69s（单次差异，非归因）；M5 3 条 smoke 首轮/修复后通过率 0/3→2/3，有效引用 2/3，模型调用 6→4；完整 50 条仍超时               | Codex  | 2026-08-31 |
 
 ---
 
 ## 19. 风险与阻塞项
 
-| 编号  | 风险                                                                      | 概率 | 影响 | 缓解措施                                                                                                                           | 负责人 | 状态     |
-| ----- | ------------------------------------------------------------------------- | ---: | ---: | ---------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
-| R-001 | 本地模型资源不足                                                          |   高 |   高 | Provider 抽象、容量限制、云端回退                                                                                                  | TODO   | 开放     |
-| R-002 | 数据集重复和噪声导致检索失真                                              |   高 |   高 | 数据去重、Schema、评测集                                                                                                           | TODO   | 开放     |
-| R-003 | 缺少真实业务标注                                                          |   高 |   高 | 专家评审、小规模高质量 Gold Set                                                                                                    | TODO   | 开放     |
-| R-004 | 全局模型状态造成并发串台                                                  |   高 |   高 | M2 已完成显式依赖注入；Fake Provider 与当前 PostgreSQL 50 请求并发验证均通过；继续进行多进程/生产压测                              | Codex  | 已缓解   |
-| R-005 | 外部接口密钥和 SSRF                                                       |   高 |   高 | API Key 已在 0012 中加密；Base URL 已完成协议、地址解析、DNS 固定、重定向、超时和响应大小校验；仍需出口防火墙和真实部署演练        | Codex  | 已缓解   |
-| R-006 | Agent 化增加幻觉和越权                                                    |   中 |   高 | 只读工具、权限校验、审计、预算                                                                                                     | TODO   | 开放     |
-| R-007 | 目标指标不适合实际硬件                                                    |   中 |   中 | M0 后记录决策并调整一次                                                                                                            | TODO   | 开放     |
-| R-008 | 评测模型输出不稳定                                                        |   中 |   中 | 固定参数、多次运行、统计区间                                                                                                       | TODO   | 开放     |
-| R-009 | 索引迁移导致服务不可用                                                    |   中 |   高 | 版本化 Chroma 集合并存；状态文件原子发布；失败不改变 current pointer；仍需真实重建和切换演练                                       | Codex  | 部分缓解 |
-| R-010 | 计划范围过大                                                              |   高 |   中 | 严格按里程碑门槛，M8/M9 可延后                                                                                                     | TODO   | 开放     |
-| R-011 | 前端运行时依赖存在 7 个高危、2 个中危审计项                               |   高 |   高 | 单独评估并升级 Axios、MarkdownIt 及相关传递依赖，回归构建与主流程                                                                  | TODO   | 开放     |
-| R-012 | 后端开发环境未完整同步，测试依赖会触发大型 GPU 包下载                     |   低 |   中 | 当前 `.venv` 已同步；后续仍应拆分测试/推理依赖组                                                                                   | Codex  | 已解除   |
-| R-013 | 10 条无证据负样本均未明确拒答，存在幻觉式确定性诊断                       |   高 |   高 | 增加检索阈值、证据门禁和拒答模板，并对负样本强制回归                                                                               | TODO   | 开放     |
-| R-014 | Chroma 文档未保存源文件、行号和稳定日志 ID metadata                       |   高 |   中 | M4 文档构建和版本化索引路径已生成稳定 ID、source_file/source_row 和版本 Metadata；旧集合仍需实际重建                               | Codex  | 部分缓解 |
-| R-015 | 0007 迁移会删除无法归属的孤立 History，误操作可能造成数据丢失             |   中 |   高 | 生产迁移前强制备份；先在副本演练；保留孤立行导出/归档方案                                                                          | Codex  | 已缓解   |
-| R-016 | SQLite 不支持真正的 `select_for_update`，无法代表生产并发锁语义           |   中 |   高 | 已在当前 PostgreSQL 完成多连接模型隔离验证；仍需 PostgreSQL 同会话锁竞争、MySQL 和生产压测；保留 message_id 幂等和唯一序号约束     | Codex  | 开放     |
-| R-017 | 默认 LocMemCache 不是跨 worker 共享缓存，命名空间失效无法代表生产共享语义 |   中 |   中 | 生产切换 Redis 等共享后端；在 M6 做多进程一致性和缓存不可用降级演练                                                                | Codex  | 开放     |
-| R-018 | 限流已接入但固定窗口和数据库计数器在高吞吐场景仍有性能边界                |   中 |   中 | 当前使用共享数据库事务/行锁并覆盖用户/IP/接口维度；生产增加 Redis/Gateway 令牌桶、旧 bucket 清理和多进程压测                       | Codex  | 已缓解   |
-| R-019 | MySQL 尚未完成真实连接与迁移演练；PostgreSQL 尚未纳入 CI/生产矩阵         |   中 |   高 | PostgreSQL 当前实例已完成迁移和并发集成演练；仍需容器化 MySQL/PostgreSQL 矩阵执行 migrate、并发锁和故障测试，部署前备份并演练回滚  | Codex  | 开放     |
-| R-020 | 真实模型可能不稳定地产生非法 JSON、无依据结论或危险建议                   |   高 |   高 | M5 已增加 Schema、Evidence ID 门禁、一次修复、无证据拒答和 Injection 固定集；真实模型 50 条质量复核与 M4 阈值/检索联合调优仍待完成 | Codex  | 部分缓解 |
+| 编号  | 风险                                                                      | 概率 | 影响 | 缓解措施                                                                                                                                                               | 负责人 | 状态     |
+| ----- | ------------------------------------------------------------------------- | ---: | ---: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
+| R-001 | 本地模型资源不足                                                          |   高 |   高 | Provider 抽象、容量限制、云端回退                                                                                                                                      | TODO   | 开放     |
+| R-002 | 数据集重复和噪声导致检索失真                                              |   高 |   高 | 数据去重、Schema、评测集                                                                                                                                               | TODO   | 开放     |
+| R-003 | 缺少真实业务标注                                                          |   高 |   高 | 专家评审、小规模高质量 Gold Set                                                                                                                                        | TODO   | 开放     |
+| R-004 | 全局模型状态造成并发串台                                                  |   高 |   高 | M2 已完成显式依赖注入；Fake Provider 与当前 PostgreSQL 50 请求并发验证均通过；继续进行多进程/生产压测                                                                  | Codex  | 已缓解   |
+| R-005 | 外部接口密钥和 SSRF                                                       |   高 |   高 | API Key 已在 0012 中加密；Base URL 已完成协议、地址解析、DNS 固定、重定向、超时和响应大小校验；仍需出口防火墙和真实部署演练                                            | Codex  | 已缓解   |
+| R-006 | Agent 化增加幻觉和越权                                                    |   中 |   高 | 只读工具、权限校验、审计、预算                                                                                                                                         | TODO   | 开放     |
+| R-007 | 目标指标不适合实际硬件                                                    |   中 |   中 | M0 后记录决策并调整一次                                                                                                                                                | TODO   | 开放     |
+| R-008 | 评测模型输出不稳定                                                        |   中 |   中 | 固定参数、多次运行、统计区间                                                                                                                                           | TODO   | 开放     |
+| R-009 | 索引迁移导致服务不可用                                                    |   中 |   高 | 版本化 Chroma 集合并存；状态文件原子发布；失败不改变 current pointer；仍需真实重建和切换演练                                                                           | Codex  | 部分缓解 |
+| R-010 | 计划范围过大                                                              |   高 |   中 | 严格按里程碑门槛，M8/M9 可延后                                                                                                                                         | TODO   | 开放     |
+| R-011 | 前端运行时依赖存在 7 个高危、2 个中危审计项                               |   高 |   高 | 单独评估并升级 Axios、MarkdownIt 及相关传递依赖，回归构建与主流程                                                                                                      | TODO   | 开放     |
+| R-012 | 后端开发环境未完整同步，测试依赖会触发大型 GPU 包下载                     |   低 |   中 | 当前 `.venv` 已同步；后续仍应拆分测试/推理依赖组                                                                                                                       | Codex  | 已解除   |
+| R-013 | 10 条无证据负样本均未明确拒答，存在幻觉式确定性诊断                       |   高 |   高 | 增加检索阈值、证据门禁和拒答模板，并对负样本强制回归                                                                                                                   | TODO   | 开放     |
+| R-014 | Chroma 文档未保存源文件、行号和稳定日志 ID metadata                       |   高 |   中 | M4 文档构建和版本化索引路径已生成稳定 ID、source_file/source_row 和版本 Metadata；旧集合仍需实际重建                                                                   | Codex  | 部分缓解 |
+| R-015 | 0007 迁移会删除无法归属的孤立 History，误操作可能造成数据丢失             |   中 |   高 | 生产迁移前强制备份；先在副本演练；保留孤立行导出/归档方案                                                                                                              | Codex  | 已缓解   |
+| R-016 | SQLite 不支持真正的 `select_for_update`，无法代表生产并发锁语义           |   中 |   高 | 已在当前 PostgreSQL 完成多连接模型隔离验证；仍需 PostgreSQL 同会话锁竞争、MySQL 和生产压测；保留 message_id 幂等和唯一序号约束                                         | Codex  | 开放     |
+| R-017 | 默认 LocMemCache 不是跨 worker 共享缓存，命名空间失效无法代表生产共享语义 |   中 |   中 | 生产切换 Redis 等共享后端；在 M6 做多进程一致性和缓存不可用降级演练                                                                                                    | Codex  | 开放     |
+| R-018 | 限流已接入但固定窗口和数据库计数器在高吞吐场景仍有性能边界                |   中 |   中 | 当前使用共享数据库事务/行锁并覆盖用户/IP/接口维度；生产增加 Redis/Gateway 令牌桶、旧 bucket 清理和多进程压测                                                           | Codex  | 已缓解   |
+| R-019 | MySQL 尚未完成真实连接与迁移演练；PostgreSQL 尚未纳入 CI/生产矩阵         |   中 |   高 | PostgreSQL 当前实例已完成迁移和并发集成演练；仍需容器化 MySQL/PostgreSQL 矩阵执行 migrate、并发锁和故障测试，部署前备份并演练回滚                                      | Codex  | 开放     |
+| R-020 | 真实模型可能不稳定地产生非法 JSON、无依据结论或危险建议                   |   高 |   高 | M5 已增加 Schema、Evidence ID 门禁、一次修复、无证据拒答和 Injection 固定集；紧凑 Prompt 使 3 条 smoke 通过率升至 2/3，但 50 条质量复核与 M4 阈值/检索联合调优仍待完成 | Codex  | 部分缓解 |
 
 ### 19.1 阻塞项更新模板
 
@@ -1332,33 +1333,34 @@ ADR 编号：ADR-XXX
 
 ## 21. 变更日志
 
-| 日期       | 修改人 | 变更内容                                                                                                                                                                                                              | 关联里程碑 | 证据/提交                                                 |
-| ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------- |
-| 2026-08-28 | Codex  | 创建开发计划、验收指标和维护 Checklist                                                                                                                                                                                | 全部       | `doc/development_plan.md`                                 |
-| 2026-08-28 | Codex  | 建立开发范式、Ruff/ESLint/Prettier 配置与强制 pre-commit 流程                                                                                                                                                         | M1         | E-011                                                     |
-| 2026-08-28 | Codex  | 执行 M0 自动化基线：固定环境、建立 50 条评测集并采集检索/生成/性能证据                                                                                                                                                | M0         | E-001                                                     |
-| 2026-08-28 | Codex  | 记录 10 条负样本的用户审核与独立 AI 辅助复核，补充结构化评分及双人验收缺口                                                                                                                                            | M0         | `evaluation/m0/evidence/double_review_results.json`       |
-| 2026-08-28 | user   | 指定 Codex 作为第二评审角色；完成 10 条结构化评分，双评审角色覆盖达到 20%，保留实际执行者审计标记                                                                                                                     | M0         | `evaluation/m0/evidence/double_review_results.json`       |
-| 2026-08-28 | Codex  | 修复检索评测工具边界语义并补充 3 项回归测试，避免空结果索引错误和空均值异常                                                                                                                                           | M0         | E-012                                                     |
-| 2026-08-29 | Codex  | 按用户授权完成 10 条负样本的结构化评分、冲突裁决并补全完整基线报告；保留 AI 辅助评审限制                                                                                                                              | M0         | E-001、`evaluation/m0/evidence/adjudication_results.json` |
-| 2026-08-29 | Codex  | 执行 M1 第一、二批：建立后端/前端测试、配置校验与脱敏摘要、环境变量、CI 质量门禁，并修复聊天 400 schema 与 Embedding 回退兼容性                                                                                       | M1         | E-002、E-011                                              |
-| 2026-08-29 | Codex  | 执行 M2 模型实例隔离：移除全局 Settings 动态覆盖，接入显式 runtime、模型实例缓存、模型选择透传和模型范围缓存键，并补充并发隔离说明文档                                                                                | M2         | E-013                                                     |
-| 2026-08-29 | Codex  | 执行 M2 Session/History 一致性修复：建立外键、迁移并清理孤立数据、删除级联、Chat 事务、Session 标题和 History 游标契约，并补充说明文档                                                                                | M2         | E-014                                                     |
-| 2026-08-30 | Codex  | 执行 M2 Session/History 进一步改进：Session 用户外键、同会话行锁/sequence/message_id 幂等写入和 `(created_at,id)` 复合游标，并完成 0008 迁移演练和文档更新                                                            | M2         | E-015                                                     |
-| 2026-08-30 | Codex  | 执行 M2 缓存正确性改进：补齐完整 SHA-256 缓存身份键、可配置 TTL、成功响应边界、命名空间批量失效和管理命令，并补充回归测试与文档                                                                                       | M2         | E-016                                                     |
-| 2026-08-30 | Codex  | 执行 M2 错误语义区分：统一 ErrorResponse 和稳定错误码，补齐 Ninja 异常映射、状态声明、模型不可用区分及前端可操作提示，并补充测试和文档                                                                                | M2         | E-017                                                     |
-| 2026-08-30 | Codex  | 重构配置模块：删除 LLM 配置生成脚本，新增跟踪的 LLM/数据库规范文件，接入独立数据库加载器、MySQL/PostgreSQL 驱动，并检查 0001–0008 迁移无需修改                                                                        | M1         | E-018                                                     |
-| 2026-08-30 | Codex  | 新增面向简历与面试的项目呈现文档，区分当前实现、量化证据、后续愿景和明确不足                                                                                                                                          | 全部       | `doc/present_on_resume.md`                                |
-| 2026-08-31 | Codex  | 使用当前 PostgreSQL 执行 50 请求/20 worker 的 Fake Provider 并发模型隔离验证，确认串台 0 次、History/Session 各 50 条并清理全部临时数据；同步更新 M2、配置和总计划文档                                                | M2         | E-019、`evaluation/postgres_model_isolation.py`           |
-| 2026-08-31 | Codex  | 执行 M3 Token 生命周期：使用安全随机 Token、短期 Access Token、哈希 Refresh Token 家族轮换/重用撤销、服务端 logout 和前端单次刷新队列；生成并应用 0009/0010 迁移，补充文档与回归测试                                  | M3         | E-020、`doc/m3_token_lifecycle.md`                        |
-| 2026-08-31 | Codex  | 执行 M3 限流：将数据库共享固定窗口接入认证链路，按登录/刷新/聊天/模型验证/API 分级并同时检查用户/IP；新增 0011 迁移、429/Retry-After、突发与窗口重置测试及实现报告                                                    | M3         | E-021、`doc/m3_rate_limiting.md`                          |
-| 2026-08-31 | Codex  | 执行 M3 外部模型闭环：用户偏好绑定稳定外键，别名解析限定用户范围，生成路径使用保存的 Base URL/模型/密钥，Fernet 加密 API Key，更新轮换、删除回退和脱敏测试；新增并应用 0012 迁移                                      | M3         | E-022、`doc/m3_external_model_closure.md`                 |
-| 2026-08-31 | Codex  | 执行 M3 SSRF 与输入安全：限制外部 URL 协议、凭据和地址范围，校验全部 DNS 结果并固定实际连接 IP，关闭代理/重定向，增加超时和响应大小限制及攻击用例                                                                     | M3         | E-023、`doc/m3_ssrf_input_security.md`                    |
-| 2026-08-31 | Codex  | 执行 M4 数据清洗与文档构建：新增统一日志 Schema、确定性多源 CSV 解析、去重/敏感信息隔离、领域模板、稳定 ID、Metadata、分块、Manifest 和批量流式索引输入；生成真实数据质量证据                                         | M4         | E-024、`doc/m4_data_cleaning_and_document_building.md`    |
-| 2026-08-31 | Codex  | 执行 M4 索引版本和检索：将数据/Embedding/解析/分块/检索参数纳入索引身份，接入版本化 Chroma 集合、原子状态指针、失败回滚、旧版本清理、状态查询、Metadata/阈值/无证据语义及 BM25/Reranker 实验                          | M4         | E-025、`doc/m4_index_version_and_retrieval.md`            |
-| 2026-08-31 | Codex  | 完成 M4 真实基准和改进对照：重跑 legacy，使用同一 1708 行子集真实构建结构化临时索引并比较向量/Hybrid/Reranker/阈值；发现 Hybrid 仅提升 Recall@1，整体仍低于 legacy，完整语料重建首次受 Ollama 上下文批次限制失败      | M4         | E-005、`evaluation/m4/retrieval_benchmark_report.md`      |
-| 2026-08-31 | Codex  | 执行 M5：统一不可信证据 Prompt，新增 Pydantic 结构化回答契约、Evidence ID 校验、一次修复、无证据拒答、Sanitizer 降级标记、固定集有/无 RAG/Prompt 版本评测和 Prompt Injection 测试集；完成契约证据，真实模型质量待复核 | M5         | E-026、`doc/m5_prompt_structured_output_and_quality.md`   |
-| 2026-08-31 | Codex  | 完成 M4/M5 联合性能调优：流式构建评测输入、消除 Prompt 证据重复、设置上下文预算、启用 Ollama JSON mode，并以固定集复测检索；质量无回归，真实生成和受资源竞争影响的构建耗时保持待复测                                  | M4/M5      | E-027、`doc/m4_m5_joint_performance_tuning.md`            |
+| 日期       | 修改人 | 变更内容                                                                                                                                                                                                                                                         | 关联里程碑 | 证据/提交                                                 |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------- |
+| 2026-08-28 | Codex  | 创建开发计划、验收指标和维护 Checklist                                                                                                                                                                                                                           | 全部       | `doc/development_plan.md`                                 |
+| 2026-08-28 | Codex  | 建立开发范式、Ruff/ESLint/Prettier 配置与强制 pre-commit 流程                                                                                                                                                                                                    | M1         | E-011                                                     |
+| 2026-08-28 | Codex  | 执行 M0 自动化基线：固定环境、建立 50 条评测集并采集检索/生成/性能证据                                                                                                                                                                                           | M0         | E-001                                                     |
+| 2026-08-28 | Codex  | 记录 10 条负样本的用户审核与独立 AI 辅助复核，补充结构化评分及双人验收缺口                                                                                                                                                                                       | M0         | `evaluation/m0/evidence/double_review_results.json`       |
+| 2026-08-28 | user   | 指定 Codex 作为第二评审角色；完成 10 条结构化评分，双评审角色覆盖达到 20%，保留实际执行者审计标记                                                                                                                                                                | M0         | `evaluation/m0/evidence/double_review_results.json`       |
+| 2026-08-28 | Codex  | 修复检索评测工具边界语义并补充 3 项回归测试，避免空结果索引错误和空均值异常                                                                                                                                                                                      | M0         | E-012                                                     |
+| 2026-08-29 | Codex  | 按用户授权完成 10 条负样本的结构化评分、冲突裁决并补全完整基线报告；保留 AI 辅助评审限制                                                                                                                                                                         | M0         | E-001、`evaluation/m0/evidence/adjudication_results.json` |
+| 2026-08-29 | Codex  | 执行 M1 第一、二批：建立后端/前端测试、配置校验与脱敏摘要、环境变量、CI 质量门禁，并修复聊天 400 schema 与 Embedding 回退兼容性                                                                                                                                  | M1         | E-002、E-011                                              |
+| 2026-08-29 | Codex  | 执行 M2 模型实例隔离：移除全局 Settings 动态覆盖，接入显式 runtime、模型实例缓存、模型选择透传和模型范围缓存键，并补充并发隔离说明文档                                                                                                                           | M2         | E-013                                                     |
+| 2026-08-29 | Codex  | 执行 M2 Session/History 一致性修复：建立外键、迁移并清理孤立数据、删除级联、Chat 事务、Session 标题和 History 游标契约，并补充说明文档                                                                                                                           | M2         | E-014                                                     |
+| 2026-08-30 | Codex  | 执行 M2 Session/History 进一步改进：Session 用户外键、同会话行锁/sequence/message_id 幂等写入和 `(created_at,id)` 复合游标，并完成 0008 迁移演练和文档更新                                                                                                       | M2         | E-015                                                     |
+| 2026-08-30 | Codex  | 执行 M2 缓存正确性改进：补齐完整 SHA-256 缓存身份键、可配置 TTL、成功响应边界、命名空间批量失效和管理命令，并补充回归测试与文档                                                                                                                                  | M2         | E-016                                                     |
+| 2026-08-30 | Codex  | 执行 M2 错误语义区分：统一 ErrorResponse 和稳定错误码，补齐 Ninja 异常映射、状态声明、模型不可用区分及前端可操作提示，并补充测试和文档                                                                                                                           | M2         | E-017                                                     |
+| 2026-08-30 | Codex  | 重构配置模块：删除 LLM 配置生成脚本，新增跟踪的 LLM/数据库规范文件，接入独立数据库加载器、MySQL/PostgreSQL 驱动，并检查 0001–0008 迁移无需修改                                                                                                                   | M1         | E-018                                                     |
+| 2026-08-30 | Codex  | 新增面向简历与面试的项目呈现文档，区分当前实现、量化证据、后续愿景和明确不足                                                                                                                                                                                     | 全部       | `doc/present_on_resume.md`                                |
+| 2026-08-31 | Codex  | 使用当前 PostgreSQL 执行 50 请求/20 worker 的 Fake Provider 并发模型隔离验证，确认串台 0 次、History/Session 各 50 条并清理全部临时数据；同步更新 M2、配置和总计划文档                                                                                           | M2         | E-019、`evaluation/postgres_model_isolation.py`           |
+| 2026-08-31 | Codex  | 执行 M3 Token 生命周期：使用安全随机 Token、短期 Access Token、哈希 Refresh Token 家族轮换/重用撤销、服务端 logout 和前端单次刷新队列；生成并应用 0009/0010 迁移，补充文档与回归测试                                                                             | M3         | E-020、`doc/m3_token_lifecycle.md`                        |
+| 2026-08-31 | Codex  | 执行 M3 限流：将数据库共享固定窗口接入认证链路，按登录/刷新/聊天/模型验证/API 分级并同时检查用户/IP；新增 0011 迁移、429/Retry-After、突发与窗口重置测试及实现报告                                                                                               | M3         | E-021、`doc/m3_rate_limiting.md`                          |
+| 2026-08-31 | Codex  | 执行 M3 外部模型闭环：用户偏好绑定稳定外键，别名解析限定用户范围，生成路径使用保存的 Base URL/模型/密钥，Fernet 加密 API Key，更新轮换、删除回退和脱敏测试；新增并应用 0012 迁移                                                                                 | M3         | E-022、`doc/m3_external_model_closure.md`                 |
+| 2026-08-31 | Codex  | 执行 M3 SSRF 与输入安全：限制外部 URL 协议、凭据和地址范围，校验全部 DNS 结果并固定实际连接 IP，关闭代理/重定向，增加超时和响应大小限制及攻击用例                                                                                                                | M3         | E-023、`doc/m3_ssrf_input_security.md`                    |
+| 2026-08-31 | Codex  | 执行 M4 数据清洗与文档构建：新增统一日志 Schema、确定性多源 CSV 解析、去重/敏感信息隔离、领域模板、稳定 ID、Metadata、分块、Manifest 和批量流式索引输入；生成真实数据质量证据                                                                                    | M4         | E-024、`doc/m4_data_cleaning_and_document_building.md`    |
+| 2026-08-31 | Codex  | 执行 M4 索引版本和检索：将数据/Embedding/解析/分块/检索参数纳入索引身份，接入版本化 Chroma 集合、原子状态指针、失败回滚、旧版本清理、状态查询、Metadata/阈值/无证据语义及 BM25/Reranker 实验                                                                     | M4         | E-025、`doc/m4_index_version_and_retrieval.md`            |
+| 2026-08-31 | Codex  | 完成 M4 真实基准和改进对照：重跑 legacy，使用同一 1708 行子集真实构建结构化临时索引并比较向量/Hybrid/Reranker/阈值；发现 Hybrid 仅提升 Recall@1，整体仍低于 legacy，完整语料重建首次受 Ollama 上下文批次限制失败                                                 | M4         | E-005、`evaluation/m4/retrieval_benchmark_report.md`      |
+| 2026-08-31 | Codex  | 执行 M5：统一不可信证据 Prompt，新增 Pydantic 结构化回答契约、Evidence ID 校验、一次修复、无证据拒答、Sanitizer 降级标记、固定集有/无 RAG/Prompt 版本评测和 Prompt Injection 测试集；完成契约证据，真实模型质量待复核                                            | M5         | E-026、`doc/m5_prompt_structured_output_and_quality.md`   |
+| 2026-08-31 | Codex  | 完成 M4/M5 联合性能调优：流式构建评测输入、消除 Prompt 证据重复、设置上下文预算、启用 Ollama JSON mode，并以固定集复测检索；质量无回归，真实生成和受资源竞争影响的构建耗时保持待复测                                                                             | M4/M5      | E-027、`doc/m4_m5_joint_performance_tuning.md`            |
+| 2026-08-31 | Codex  | 固定当前配置（未改配置文件）执行 M4/M5 基准并优化：M4 增量索引批量写入，M5 使用紧凑输出协议/真实 Evidence ID/精简修复请求；M4 检索无回归，构建复测 50.77s→47.69s（单次差异，非归因），M5 3 条 smoke 通过率 0/3→2/3、模型调用 6→4；修正真实 Schema 统计不再硬编码 | M4/M5      | E-028                                                     |
 
 ### 21.1 后续更新示例
 
@@ -1370,7 +1372,7 @@ ADR 编号：ADR-XXX
 
 ## 22. 下一步行动
 
-下一步基于 E-005 与 E-026 联合调优 M4 检索和 M5 生成质量；优先完成真实模型固定集复核，再决定是否切换 Hybrid/阈值默认值；不要直接修改 Agent 功能。
+下一步基于 E-028 先在 Ollama 空闲条件下重复 M4 构建至少 3 次，并扩展 M5 smoke 到 5 条后再运行 50 条固定集；根据真实 Schema/引用结果继续调优 M4 检索和 M5 生成质量，再决定是否切换 Hybrid/阈值默认值；不要直接修改 Agent 功能。
 
 ### 22.1 第一批任务
 

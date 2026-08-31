@@ -114,3 +114,15 @@ class TopKGenerationContractTests(SimpleTestCase):
         llm.complete.assert_not_called()
         self.assertEqual(system.last_generation_result["output_mode"], "no_evidence")
         self.assertIn("当前检索结果不足", result)
+
+    def test_prompt_uses_compact_contract_and_single_evidence_block(self):
+        system = self._system()
+        prompt = system._build_prompt_text(
+            "why",
+            [{"document_id": "log-1", "content": "timeout", "metadata": {}}],
+        )
+
+        self.assertEqual(prompt.count("<untrusted_evidence>"), 1)
+        self.assertIn('"diagnosis":["原因待确认"]', prompt)
+        self.assertIn("最多输出 1 个原因、1 个步骤和 1 条引用", prompt)
+        self.assertNotIn('"$defs":{"CauseItem"', prompt)
