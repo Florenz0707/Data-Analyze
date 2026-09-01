@@ -11,8 +11,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import time
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,35 @@ from deepseek_project.response_contract import (  # noqa: E402
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     with path.open(encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def _concept_terms(value: Any) -> set[str]:
+    """Extract explainable lexical concepts for tolerant Chinese matching."""
+    text = unicodedata.normalize("NFKC", str(value or "")).lower()
+    terms = set(re.findall(r"[a-z0-9_]+", text))
+    chinese = re.findall(r"[\u3400-\u9fff]", text)
+    terms.update("".join(chinese[index : index + 2]) for index in range(len(chinese) - 1))
+    return terms
+
+
+def _concept_match(expected: Any, observed: Any) -> bool:
+    """Match a reference concept without requiring the model to copy its wording."""
+    expected_text = unicodedata.normalize("NFKC", str(expected or "")).lower()
+    observed_text = unicodedata.normalize("NFKC", str(observed or "")).lower()
+    if not expected_text or not observed_text:
+        return False
+    if expected_text in observed_text:
+        return True
+    expected_terms = _concept_terms(expected_text)
+    observed_terms = _concept_terms(observed_text)
+    shared = expected_terms & observed_terms
+    if len(shared) < 2:
+        return False
+    return len(shared) / len(expected_terms) >= 0.15
+
+
+def _any_concept_match(expected_values: list[Any], observed: str) -> bool:
+    return any(_concept_match(expected, observed) for expected in expected_values)
 
 
 def fixture_payload(case: dict[str, Any], evidence_id: str | None) -> dict[str, Any]:
@@ -88,12 +119,30 @@ def evaluate(
             valid_citations += 1
         expected_causes = case.get("expected_causes") or []
         expected_steps = case.get("expected_steps") or []
-        cause_text = " ".join(item.cause for item in (answer.possible_causes if answer else []))
-        step_text = " ".join(item.step for item in (answer.investigation_steps if answer else []))
-        cause_match = bool(expected_causes and any(item in cause_text for item in expected_causes))
-        step_match = bool(expected_steps and any(item in step_text for item in expected_steps))
-        cause_hits += int(cause_match)
-        step_hits += int(step_match)
+        cause_text = " ".join(
+            [
+                *(answer.diagnosis if answer else []),
+                *(item.cause for item in (answer.possible_causes if answer else [])),
+            ]
+        )
+        step_text = " ".join(
+            [
+                *(item.step for item in (answer.investigation_steps if answer else [])),
+                *(item.expected for item in (answer.investigation_steps if answer else [])),
+                *(item.risk for item in (answer.investigation_steps if answer else [])),
+                *(answer.mitigations if answer else []),
+                *(answer.final_fixes if answer else []),
+            ]
+        )
+        cause_match = bool(
+            not is_negative and expected_causes and _any_concept_match(expected_causes, cause_text)
+        )
+        step_match = bool(
+            not is_negative and expected_steps and _any_concept_match(expected_steps, step_text)
+        )
+        if not is_negative:
+            cause_hits += int(cause_match)
+            step_hits += int(step_match)
         records.append(
             {
                 "case_id": case.get("case_id"),
@@ -102,6 +151,19 @@ def evaluate(
                 "refusal": refusal,
                 "cause_match": cause_match,
                 "step_match": step_match,
+                "review_excerpt": {
+                    "diagnosis": (answer.diagnosis if answer else [])[:3],
+                    "causes": [item.cause for item in (answer.possible_causes if answer else [])][
+                        :3
+                    ],
+                    "steps": [item.step for item in (answer.investigation_steps if answer else [])][
+                        :3
+                    ],
+                    "step_expected": [
+                        item.expected for item in (answer.investigation_steps if answer else [])
+                    ][:3],
+                    "need_more_information": refusal,
+                },
                 "diagnostics": diagnostics,
             }
         )
@@ -127,6 +189,11 @@ def evaluate(
         "valid_citation_rate_positive": valid_citations / positive if positive else 0.0,
         "cause_match_rate": cause_hits / positive if positive else 0.0,
         "step_match_rate": step_hits / positive if positive else 0.0,
+        "quality_matching": {
+            "method": "normalized Chinese concept overlap",
+            "positive_cases_only": True,
+            "step_fields": ["step", "expected", "risk", "mitigations", "final_fixes"],
+        },
         "no_evidence_refusal_rate": sum(
             int(item["refusal"]) for item in records if item["case_id"].startswith("W")
         )

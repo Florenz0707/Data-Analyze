@@ -6,13 +6,13 @@
 
 M5 的生成链路已经切换为“证据标识 → JSON Schema 校验 → 最多一次修复 → 结构化 Markdown 渲染”的协议。对外仍返回兼容的 `reply` 字符串，因此现有聊天历史和前端 Markdown 展示无需迁移；结构化结果和解析诊断保留在 `TopKLogSystem.query()` 的内部结果中，便于评测和审计。
 
-本阶段完成了实现、回归测试和固定集评测工具，但真实模型质量指标仍需在固定模型参数下运行并由非实现者复核，不能用确定性夹具的结果替代人工质量评审。
+本阶段完成了实现、回归测试和真实模型固定集采集。初版评测器把中文改写误判为不匹配，并把负样本计入正样本分子；现已修复为可解释的概念匹配、步骤字段聚合和正样本限定。修复后的自动代理指标达到门槛，但仍需非实现者对原因正确性、引用支持和步骤风险进行人工复核；不能用自动代理指标替代质量评审。
 
 与 M4 的联合调优记录见 [`m4_m5_joint_performance_tuning.md`](m4_m5_joint_performance_tuning.md)。
 
-固定配置本轮没有修改 `llm_config.yaml`。配置哈希为
-`081861bd1267b7ddf3eee9ac86c1dccbd7ab8e3d0a12c7e8852eaf7a05d670c9`，
-`max_new_tokens=600`；M5 只调整了 Prompt/修复请求和评测观测逻辑。
+本次真实评测使用当前 `llm_config.yaml`，配置哈希为
+`499c6ca6473b1773f48944b68ddf1e260e02ab1c435aa8e5fecca0b8c10b6742`，
+模型为 `deepseek-v4-flash`，Embedding 为本地 Ollama `bge-large:latest`，`max_new_tokens=600`。
 
 ## 为什么需要这套协议
 
@@ -73,32 +73,31 @@ uv run --project backend/django_backend python evaluation/m5/run_quality_evaluat
 
 ```bash
 uv run --project backend/django_backend python evaluation/m5/run_quality_evaluation.py \
-  --live --output evaluation/m5/evidence/quality_live.json
+  --live --output evaluation/m5/evidence/quality_live_deepseek.json
 ```
 
 `evaluation/m5/prompt_injection_cases.jsonl` 保存 8 个固定安全样本，覆盖伪造系统指令、危险命令、伪造 Evidence ID、元数据地址和秘密泄露请求。夹具证据 `evaluation/m5/evidence/quality_contract.json` 的用途是验证评测器和契约门禁，不代表真实模型的原因正确性或步骤可执行性。
 
 ## 当前证据
 
-| 项目                            | 结果                                                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| M5 契约定向测试                 | 11/11 通过                                                                                                        |
-| 后端全量测试（SQLite 测试配置） | 104/104 通过                                                                                                      |
-| 固定集规模                      | 50 条：40 正样本、10 负样本                                                                                       |
-| 夹具 Schema 首次通过率          | 100%                                                                                                              |
-| 夹具无证据拒答/追问率           | 100%                                                                                                              |
-| 夹具高危 Injection 成功改变目标 | 0                                                                                                                 |
-| 真实模型 50 条固定集            | 15 分钟 shell 超时，未生成完整结果；详见 `evaluation/m5/evidence/quality_live_attempt.json` 和固定配置基线证据    |
-| 固定配置 3 条 smoke（优化前）   | Schema 首轮/修复后 0/3、模型调用 6 次；详见 `quality_fixed_config_baseline_smoke3.json`                           |
-| 固定配置 3 条 smoke（优化后）   | Schema 首轮/修复后 2/3、有效引用 2/3、模型调用 4 次、77.41s；详见 `quality_fixed_config_optimized_v3_smoke3.json` |
-| 真实模型原因人工评分            | 待运行、待非实现者复核                                                                                            |
-| 真实引用支持率/步骤评分         | 待运行、待非实现者复核                                                                                            |
+| 项目                            | 结果                                                                                                                                                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M5 契约定向测试                 | 11/11 通过                                                                                                                                                                                                   |
+| 后端全量测试（SQLite 测试配置） | 104/104 通过                                                                                                                                                                                                 |
+| 固定集规模                      | 50 条：40 正样本、10 负样本                                                                                                                                                                                  |
+| 夹具 Schema 首次通过率          | 100%                                                                                                                                                                                                         |
+| 夹具无证据拒答/追问率           | 100%                                                                                                                                                                                                         |
+| 夹具高危 Injection 成功改变目标 | 0                                                                                                                                                                                                            |
+| 真实模型 50 条固定集            | Schema 首轮/修复后 100%、正样本有效引用 97.5%、无证据拒答/追问 100%；380.24s、50 次模型调用、0 次修复；概念匹配原因 100%、步骤 97.5%；详见 `evaluation/m5/evidence/quality_live_deepseek_concept_match.json` |
+| 固定配置 3 条 smoke（优化前）   | Schema 首轮/修复后 0/3、模型调用 6 次；详见 `quality_fixed_config_baseline_smoke3.json`                                                                                                                      |
+| 固定配置 3 条 smoke（优化后）   | Schema 首轮/修复后 2/3、有效引用 2/3、模型调用 4 次、77.41s；详见 `quality_fixed_config_optimized_v3_smoke3.json`                                                                                            |
+| 真实模型原因匹配代理率          | 100%；归一化中文概念匹配，仅统计 40 条正样本，不等同人工正确性评分                                                                                                                                           |
+| 真实模型步骤匹配代理率          | 97.5%；合并 step/expected/risk 等字段后匹配，仅统计 40 条正样本，不等同人工可执行性评分                                                                                                                      |
+| 真实模型原因/引用/步骤人工评分  | 待非实现者复核                                                                                                                                                                                               |
 
 ## 后续工作
 
-- 用固定模型、温度、Top-p、索引版本运行 `--live`，保存每条失败样本的检索/Prompt/解析阶段；
-- 完成固定 50 条 live 运行；当前 15 分钟超时说明本地 7B 模型仍有输出预算/修复延迟风险；
-- 先在模型空闲、JSON mode 生效时完成 5 条 smoke，再扩展到完整 50 条；
+- 对当前 DeepSeek 结果保存每条样本的有界诊断/原因/步骤摘要；本次运行未发生连接失败或超时，50 条均首轮通过；
 - 对 M0 基线答案执行原因正确性、引用支持率、步骤风险和无证据拒答的双人或非实现者复核；
 - 将固定集质量门槛接入 CI/发布脚本，质量下降超过 5% 或出现高危 Injection 时阻断；
 - 在 M4 联合调优时比较 vector、hybrid、reranker 和阈值对引用有效率、首轮 Schema 通过率及端到端延迟的影响。

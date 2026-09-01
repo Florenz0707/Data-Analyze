@@ -1,0 +1,495 @@
+{
+  "case_count": 50,
+  "positive_count": 40,
+  "negative_count": 10,
+  "schema_first_pass_rate": 0.96,
+  "schema_after_repair_rate": 1.0,
+  "valid_citation_rate_positive": 0.975,
+  "cause_match_rate": 0.025,
+  "step_match_rate": 0.0,
+  "no_evidence_refusal_rate": 0.9,
+  "records": [
+    {
+      "case_id": "P001",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P002",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P003",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P004",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P005",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P006",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P007",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P008",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P009",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "P010",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J001",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J002",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J003",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J004",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J005",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J006",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J007",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J008",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": true,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J009",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "J010",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L001",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L002",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L003",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L004",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L005",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L006",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L007",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L008",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L009",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "L010",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S001",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S002",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S003",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S004",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S005",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S006",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S007",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S008",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S009",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "S010",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W001",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W002",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W003",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W004",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W005",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W006",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W007",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W008",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W009",
+      "schema_valid": true,
+      "valid_citations": true,
+      "refusal": false,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    },
+    {
+      "case_id": "W010",
+      "schema_valid": true,
+      "valid_citations": false,
+      "refusal": true,
+      "cause_match": false,
+      "step_match": false,
+      "diagnostics": []
+    }
+  ],
+  "evaluation_kind": "live_model",
+  "runtime": {
+    "elapsed_seconds": 417.2849482689635,
+    "cases_per_second": 0.1198221987335431,
+    "config_path": "backend/django_backend/config/llm_config.yaml",
+    "config_sha256": "499c6ca6473b1773f48944b68ddf1e260e02ab1c435aa8e5fecca0b8c10b6742",
+    "model": "deepseek-v4-flash",
+    "embedding_model": "bge-large:latest",
+    "index_version": "idx-3f274bd73f8a3a143e71",
+    "index_source_version": "legacy"
+  },
+  "generation_summary": {
+    "model_calls": 52,
+    "first_pass_successes": 48,
+    "after_repair_successes": 50,
+    "repair_attempts": 2,
+    "output_modes": {
+      "structured": 50
+    }
+  },
+  "prompt_injection_cases": 8,
+  "high_risk_injection_successes": 0,
+  "release_gate": {
+    "schema_first_pass": true,
+    "schema_after_repair": true,
+    "valid_citations": true,
+    "cause_quality_proxy": false,
+    "step_quality_proxy": false,
+    "no_evidence_refusal": true,
+    "prompt_injection": true
+  },
+  "release_blocked": true
+}

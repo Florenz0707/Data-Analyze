@@ -105,18 +105,18 @@
 
 > 更新要求：每个开发周期至少更新一次状态、负责人和预计验收时间。
 
-| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                              | 负责人 | 预计验收   | 实际验收   |
-| ------ | ------------------------------ | -----: | ---------- | ----------------------------------------------------------------- | ------ | ---------- | ---------- |
-| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                                   | Codex  | 2026-08-29 | 2026-08-29 |
-| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                                            | Codex  | TODO       | -          |
-| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，多进程/共享缓存压测待完成）               | Codex  | TODO       | -          |
-| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token、限流、外部模型和 SSRF 已完成）                     | Codex  | TODO       | -          |
-| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 进行中（固定配置复测无质量回归；仍需多轮性能与检索质量优化）      | Codex  | TODO       | -          |
-| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 进行中（固定配置 3 条 smoke 改善；50 条真实质量和人工复核待完成） | Codex  | TODO       | -          |
-| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                                            | TODO   | TODO       | -          |
-| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                                            | TODO   | TODO       | -          |
-| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                                            | TODO   | TODO       | -          |
-| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                                            | TODO   | TODO       | -          |
+| 里程碑 | 目标                           | 优先级 | 依赖       | 状态                                                                    | 负责人 | 预计验收   | 实际验收   |
+| ------ | ------------------------------ | -----: | ---------- | ----------------------------------------------------------------------- | ------ | ---------- | ---------- |
+| M0     | 建立可复现基线与评测集         |     P0 | 无         | 完成（AI 辅助）                                                         | Codex  | 2026-08-29 | 2026-08-29 |
+| M1     | 测试基础设施与配置治理         |     P0 | M0         | 进行中                                                                  | Codex  | TODO       | -          |
+| M2     | 修复正确性、并发与数据一致性   |     P0 | M1         | 进行中（核心正确性完成，多进程/共享缓存压测待完成）                     | Codex  | TODO       | -          |
+| M3     | 完成认证、安全和自定义模型闭环 |     P0 | M1、M2     | 进行中（Token、限流、外部模型和 SSRF 已完成）                           | Codex  | TODO       | -          |
+| M4     | 重构数据摄取、索引版本与检索   |     P1 | M0、M1     | 进行中（固定配置复测无质量回归；仍需多轮性能与检索质量优化）            | Codex  | TODO       | -          |
+| M5     | Prompt、结构化输出与 RAG 评测  |     P1 | M4         | 进行中（DeepSeek 50 条真实采集完成；原因/步骤人工复核和质量优化待完成） | Codex  | TODO       | -          |
+| M6     | 流式体验、缓存和性能优化       |     P1 | M2、M5     | 未开始                                                                  | TODO   | TODO       | -          |
+| M7     | 可观测性、部署和可靠性         |     P1 | M2、M3、M6 | 未开始                                                                  | TODO   | TODO       | -          |
+| M8     | Agent Workflow 与只读工具      |     P2 | M5、M7     | 未开始                                                                  | TODO   | TODO       | -          |
+| M9     | Multi-Agent 可行性验证         |     P3 | M8         | 未开始                                                                  | TODO   | TODO       | -          |
 
 ### 3.1 推荐推进顺序
 
@@ -675,12 +675,12 @@ flowchart LR
 ### 9.6 状态记录
 
 ```text
-状态：进行中（固定配置 smoke 已完成一轮优化，完整质量仍未达标）
+状态：进行中（DeepSeek 50 条真实固定集已完成，质量门槛仍未完全达标）
 负责人：Codex
 更新时间：2026-08-31
 已完成：结构化契约、证据 ID 校验、一次修复、无证据拒答、Prompt 版本、注入测试集和固定集评测 gate
-剩余工作：真实模型 50 条固定集质量运行、人工/非实现者复核、与 M4 检索策略联合调优；当前 3 条 smoke Schema 首轮/修复后通过率为 2/3
-验收证据：E-026、`doc/m5_prompt_structured_output_and_quality.md`
+剩余工作：人工/非实现者复核原因正确性、引用支持和步骤风险；评测器已修复中文改写、步骤字段拆分和负样本计数偏差，仍需与 M4 检索策略联合调优
+验收证据：E-026、E-029、`doc/m5_prompt_structured_output_and_quality.md`
 ```
 
 ---
@@ -1121,35 +1121,37 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 ### 17.1 质量指标
 
-| 指标                                      | 当前基线 |     目标 | 最新实测 | 测试条件                                                  | 证据   | 更新时间   |
-| ----------------------------------------- | -------: | -------: | -------: | --------------------------------------------------------- | ------ | ---------- |
-| Recall@1                                  |     0.80 | 记录趋势 |     0.80 | 40 条正样本、运行 2 次                                    | E-001  | 2026-08-28 |
-| Recall@5                                  |     0.95 |   ≥ 0.75 |     0.95 | 40 条正样本、运行 2 次                                    | E-001  | 2026-08-28 |
-| Recall@10                                 |     0.95 |   ≥ 0.85 |     0.95 | 40 条正样本、运行 2 次                                    | E-001  | 2026-08-28 |
-| MRR@10                                    |   0.8646 |   ≥ 0.65 |   0.8646 | 40 条正样本、运行 2 次                                    | E-001  | 2026-08-28 |
-| Schema 首次通过率                         |     100% |    ≥ 95% |     100% | 50 条 API 回答                                            | E-001  | 2026-08-28 |
-| Schema 修复后通过率                       |     TODO |    ≥ 99% |     TODO | TODO                                                      | TODO   | -          |
-| 证据支持率                                |     TODO |    ≥ 90% |       0% | 10 条 Windows 负样本，Codex 裁决未发现有效知识库证据支持  | E-001  | 2026-08-29 |
-| 无证据正确拒答率                          |       0% |    ≥ 90% |       0% | 10 条 Windows 负样本，按明确拒答标记                      | E-001  | 2026-08-29 |
-| 原因评分（AI 替代）                       |     TODO |  ≥ 4.0/5 |    1.3/5 | 10 条 Windows 负样本，Codex 辅助裁决（非真人评分）        | E-001  | 2026-08-29 |
-| 步骤评分（AI 替代）                       |     TODO |  ≥ 4.0/5 |    1.2/5 | 10 条 Windows 负样本，Codex 辅助裁决（非真人评分）        | E-001  | 2026-08-29 |
-| 文档稳定 ID 覆盖率                        |   未测试 |     100% |     100% | 9 个 CSV，清洗后 164386 条规范记录                        | E-024  | 2026-08-31 |
-| 来源 Metadata 覆盖率                      |   未测试 |     100% |     100% | 9 个 CSV，所有文档块保留 source_file/source_row           | E-024  | 2026-08-31 |
-| Schema 必填字段合格率                     |   未测试 |   ≥99.5% |     100% | 9 个 CSV，清洗后 164386 条规范记录                        | E-024  | 2026-08-31 |
-| 清洗后重复记录率                          |   未测试 |      ≤1% |       0% | 严格键与完整/精简配对键去重后复核                         | E-024  | 2026-08-31 |
-| 检索结果来源 Metadata 覆盖率              |   未测试 |     100% |     100% | 定向检索测试验证 document_id、source metadata、score 保留 | E-025  | 2026-08-31 |
-| 无证据状态可识别率                        |   未测试 |     100% |     100% | 阈值过滤后返回 `retrieval_status=no_evidence`             | E-025  | 2026-08-31 |
-| M4 结构化向量 Recall@5                    |   0.9500 |  ≥0.7500 |   0.9000 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005  | 2026-08-31 |
-| M4 结构化向量 Recall@10                   |   0.9500 |  ≥0.8500 |   0.9000 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005  | 2026-08-31 |
-| M4 结构化向量 MRR@10                      |   0.8646 |  ≥0.6500 |   0.8458 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005  | 2026-08-31 |
-| M4 Hybrid Recall@1                        |   0.8000 | 记录趋势 |   0.8250 | 40 条正样本，候选集 BM25，权重 0.7/0.3                    | E-005  | 2026-08-31 |
-| M4 负样本无证据率（阈值 0.7）             |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本，结构化向量，阈值扫描                         | E-005  | 2026-08-31 |
-| M5 Schema 首次通过率（契约夹具）          |     TODO |  ≥0.9500 |   1.0000 | 固定 50 条夹具；真实模型 3 条 smoke 优化后 0.667          | E-026  | 2026-08-31 |
-| M5 Schema 一次修复后通过率（契约夹具）    |     TODO |  ≥0.9900 |   1.0000 | 固定 50 条夹具；真实模型 3 条 smoke 优化后 0.667          | E-026  | 2026-08-31 |
-| M5 有证据样本有效引用率（契约夹具）       |     TODO |  ≥0.9500 |   1.0000 | 40 条正样本；真实模型 3 条 smoke 优化后 0.667             | E-026  | 2026-08-31 |
-| M5 无证据拒答/追问率（契约夹具）          |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本，真实检索阈值矩阵待运行                       | E-026  | 2026-08-31 |
-| M5 高危 Prompt Injection 成功数（契约集） |     TODO |        0 |        0 | 8 条固定安全样本；真实模型需复核                          | E-026  | 2026-08-31 |
-| M5 原因/步骤人工评分                      |     TODO |   ≥4.0/5 |     TODO | 真实模型固定参数，需非实现者复核                          | 待补充 | -          |
+| 指标                                      | 当前基线 |     目标 | 最新实测 | 测试条件                                                  | 证据         | 更新时间   |
+| ----------------------------------------- | -------: | -------: | -------: | --------------------------------------------------------- | ------------ | ---------- |
+| Recall@1                                  |     0.80 | 记录趋势 |     0.80 | 40 条正样本、运行 2 次                                    | E-001        | 2026-08-28 |
+| Recall@5                                  |     0.95 |   ≥ 0.75 |     0.95 | 40 条正样本、运行 2 次                                    | E-001        | 2026-08-28 |
+| Recall@10                                 |     0.95 |   ≥ 0.85 |     0.95 | 40 条正样本、运行 2 次                                    | E-001        | 2026-08-28 |
+| MRR@10                                    |   0.8646 |   ≥ 0.65 |   0.8646 | 40 条正样本、运行 2 次                                    | E-001        | 2026-08-28 |
+| Schema 首次通过率                         |     100% |    ≥ 95% |     100% | 50 条 API 回答                                            | E-001        | 2026-08-28 |
+| Schema 修复后通过率                       |     TODO |    ≥ 99% |     TODO | TODO                                                      | TODO         | -          |
+| 证据支持率                                |     TODO |    ≥ 90% |       0% | 10 条 Windows 负样本，Codex 裁决未发现有效知识库证据支持  | E-001        | 2026-08-29 |
+| 无证据正确拒答率                          |       0% |    ≥ 90% |       0% | 10 条 Windows 负样本，按明确拒答标记                      | E-001        | 2026-08-29 |
+| 原因评分（AI 替代）                       |     TODO |  ≥ 4.0/5 |    1.3/5 | 10 条 Windows 负样本，Codex 辅助裁决（非真人评分）        | E-001        | 2026-08-29 |
+| 步骤评分（AI 替代）                       |     TODO |  ≥ 4.0/5 |    1.2/5 | 10 条 Windows 负样本，Codex 辅助裁决（非真人评分）        | E-001        | 2026-08-29 |
+| 文档稳定 ID 覆盖率                        |   未测试 |     100% |     100% | 9 个 CSV，清洗后 164386 条规范记录                        | E-024        | 2026-08-31 |
+| 来源 Metadata 覆盖率                      |   未测试 |     100% |     100% | 9 个 CSV，所有文档块保留 source_file/source_row           | E-024        | 2026-08-31 |
+| Schema 必填字段合格率                     |   未测试 |   ≥99.5% |     100% | 9 个 CSV，清洗后 164386 条规范记录                        | E-024        | 2026-08-31 |
+| 清洗后重复记录率                          |   未测试 |      ≤1% |       0% | 严格键与完整/精简配对键去重后复核                         | E-024        | 2026-08-31 |
+| 检索结果来源 Metadata 覆盖率              |   未测试 |     100% |     100% | 定向检索测试验证 document_id、source metadata、score 保留 | E-025        | 2026-08-31 |
+| 无证据状态可识别率                        |   未测试 |     100% |     100% | 阈值过滤后返回 `retrieval_status=no_evidence`             | E-025        | 2026-08-31 |
+| M4 结构化向量 Recall@5                    |   0.9500 |  ≥0.7500 |   0.9000 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005        | 2026-08-31 |
+| M4 结构化向量 Recall@10                   |   0.9500 |  ≥0.8500 |   0.9000 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005        | 2026-08-31 |
+| M4 结构化向量 MRR@10                      |   0.8646 |  ≥0.6500 |   0.8458 | 40 条正样本，Ollama bge-large，1708 行公平子集            | E-005        | 2026-08-31 |
+| M4 Hybrid Recall@1                        |   0.8000 | 记录趋势 |   0.8250 | 40 条正样本，候选集 BM25，权重 0.7/0.3                    | E-005        | 2026-08-31 |
+| M4 负样本无证据率（阈值 0.7）             |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本，结构化向量，阈值扫描                         | E-005        | 2026-08-31 |
+| M5 Schema 首次通过率（契约夹具）          |     TODO |  ≥0.9500 |   1.0000 | 固定 50 条夹具；真实模型 50 条首轮 1.000                  | E-026、E-029 | 2026-08-31 |
+| M5 Schema 一次修复后通过率（契约夹具）    |     TODO |  ≥0.9900 |   1.0000 | 固定 50 条夹具；真实模型 50 条修复后 1.000                | E-026、E-029 | 2026-08-31 |
+| M5 有证据样本有效引用率（契约夹具）       |     TODO |  ≥0.9500 |   1.0000 | 40 条正样本；真实模型 40 条有证据样本 0.975               | E-026、E-029 | 2026-08-31 |
+| M5 无证据拒答/追问率（契约夹具）          |   0.0000 |  ≥0.9000 |   1.0000 | 10 条负样本；真实模型 10 条负样本 1.000                   | E-026、E-029 | 2026-08-31 |
+| M5 高危 Prompt Injection 成功数（契约集） |     TODO |        0 |        0 | 8 条固定安全样本；真实模型需复核                          | E-026        | 2026-08-31 |
+| M5 原因匹配代理率                         |     TODO | 记录趋势 |   1.0000 | 40 条正样本；归一化中文概念匹配，不等同人工正确性         | E-029        | 2026-08-31 |
+| M5 步骤匹配代理率                         |     TODO | 记录趋势 |   0.9750 | 40 条正样本；合并步骤字段后匹配，不等同人工可执行性       | E-029        | 2026-08-31 |
+| M5 原因/步骤人工评分                      |     TODO |   ≥4.0/5 |     TODO | DeepSeek 50 条真实结果，需非实现者复核                    | 待补充       | -          |
 
 ### 17.2 性能指标
 
@@ -1219,7 +1221,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-003 | M2     | 并发与数据迁移报告               | `doc/m2_session_history_consistency.md`、`evaluation/postgres_model_isolation.py`                                                                                                                                                                                                                                                                                                                                     | 用户外键、基础并发写入、复合游标、缓存正确性和错误语义已验收；当前 PostgreSQL 50 请求/20 worker 单实例验证通过；多进程、共享缓存和 MySQL 仍待验收，M3 限流证据见 E-021                                           | Codex  | 2026-08-31 |
 | E-004 | M3     | 安全测试报告                     | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                           | TODO   | -          |
 | E-005 | M4     | 检索评测报告                     | `evaluation/m4/retrieval_benchmark_report.md`、`evaluation/m4/run_retrieval_comparison.py`、`evaluation/m4/evidence/retrieval_legacy_baseline.json`、`evaluation/m4/evidence/retrieval_comparison.json`                                                                                                                                                                                                               | 真实 Ollama 固定集对照：legacy Recall@5/10=0.95；结构化向量=0.90/0.90；Hybrid Recall@1=0.825、Recall@10=0.90；Reranker Recall@10=0.875；阈值 0.7 负样本无证据率 100%；完整 164386 条记录尚未全量向量化           | Codex  | 2026-08-31 |
-| E-006 | M5     | 生成质量报告                     | `doc/m5_prompt_structured_output_and_quality.md`、`evaluation/m5/evidence/quality_contract.json`、`evaluation/m5/evidence/quality_live_attempt.json`                                                                                                                                                                                                                                                                  | 契约夹具与安全边界已验证；真实模型 50 条固定集因本地生成超时未完成，原因/引用/步骤人工质量仍待验收，详见 E-026                                                                                                   | Codex  | 2026-08-31 |
+| E-006 | M5     | 生成质量报告                     | `doc/m5_prompt_structured_output_and_quality.md`、`evaluation/m5/evidence/quality_contract.json`、`evaluation/m5/evidence/quality_live_deepseek_concept_match.json`                                                                                                                                                                                                                                                   | 契约夹具与安全边界已验证；DeepSeek 50 条真实固定集已完成：Schema 首轮/修复后 100%、有效引用 97.5%、无证据拒答/追问 100%；原因概念匹配 100%、步骤匹配 97.5%；原因/引用支持/步骤风险仍待人工复核                   | Codex  | 2026-08-31 |
 | E-007 | M6     | 性能报告                         | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                           | TODO   | -          |
 | E-008 | M7     | 故障演练与部署报告               | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                           | TODO   | -          |
 | E-009 | M8     | Agent 评测和安全报告             | TODO                                                                                                                                                                                                                                                                                                                                                                                                                  | 待验收                                                                                                                                                                                                           | TODO   | -          |
@@ -1236,6 +1238,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-026 | M5     | Prompt 与结构化输出质量契约报告  | `doc/m5_prompt_structured_output_and_quality.md`、`backend/django_backend/deepseek_project/response_contract.py`、`backend/django_backend/deepseek_project/tests/test_response_contract.py`、`backend/django_backend/deepseek_project/tests/test_topk_generation_contract.py`、`evaluation/m5/run_quality_evaluation.py`、`evaluation/m5/evidence/quality_contract.json`                                              | 结构化 Schema、Evidence ID 校验、一次修复、无证据拒答、Prompt Injection 集和发布 gate 已实现；固定夹具通过；真实模型质量和非实现者复核待补充                                                                     | Codex  | 2026-08-31 |
 | E-027 | M4/M5  | 联合性能调优报告                 | `doc/m4_m5_joint_performance_tuning.md`、`evaluation/m4/evidence/retrieval_joint_tuning.json`、`evaluation/m5/evidence/prompt_performance.json`、`evaluation/m5/evidence/quality_live_attempt.json`                                                                                                                                                                                                                   | 检索质量无回归；Prompt 证据重复已消除，组装 P50 0.84ms；构建耗时受 Ollama 资源竞争升至 203.4s，真实生成评测超时，需空闲资源下复测                                                                                | Codex  | 2026-08-31 |
 | E-028 | M4/M5  | 固定配置基准与优化对照           | `doc/m4_m5_joint_performance_tuning.md`、`doc/m5_prompt_structured_output_and_quality.md`、`evaluation/m4/evidence/retrieval_fixed_config_baseline.json`、`evaluation/m4/evidence/retrieval_fixed_config_optimized.json`、`evaluation/m5/evidence/quality_fixed_config_baseline_smoke3.json`、`evaluation/m5/evidence/quality_fixed_config_optimized_v3_smoke3.json`                                                  | 配置哈希固定为 `081861...670c9`；M4 Recall/MRR 无回归，构建复测 50.77s→47.69s（单次差异，非归因）；M5 3 条 smoke 首轮/修复后通过率 0/3→2/3，有效引用 2/3，模型调用 6→4；完整 50 条仍超时                         | Codex  | 2026-08-31 |
+| E-029 | M5     | DeepSeek 真实固定集生成评测      | `evaluation/m5/evidence/quality_live_deepseek.json`、`evaluation/m5/evidence/quality_live_deepseek_concept_match.json`、`doc/m5_prompt_structured_output_and_quality.md`                                                                                                                                                                                                                                              | 50 条固定集、40 正样本/10 负样本；概念匹配修复后 Schema 首轮/修复后 100%、有效引用 97.5%、无证据拒答/追问 100%、原因 100%、步骤 97.5%；380.24s、50 次模型调用、0 次修复；人工复核仍待完成                        | Codex  | 2026-08-31 |
 
 ---
 
@@ -1364,6 +1367,7 @@ ADR 编号：ADR-XXX
 | 2026-08-31 | Codex  | 固定当前配置（未改配置文件）执行 M4/M5 基准并优化：M4 增量索引批量写入，M5 使用紧凑输出协议/真实 Evidence ID/精简修复请求；M4 检索无回归，构建复测 50.77s→47.69s（单次差异，非归因），M5 3 条 smoke 通过率 0/3→2/3、模型调用 6→4；修正真实 Schema 统计不再硬编码 | M4/M5      | E-028                                                     |
 
 | 2026-08-31 | Codex | 修复 CI 配置测试：测试显式读取 Git 跟踪的 `llm_config.yaml.example`，并同步 M5 `PROMPT_VERSION=m5-v1` 契约，避免被本地忽略配置覆盖 | M1/M5 | CI 配置测试 |
+| 2026-08-31 | Codex | 完成 DeepSeek 50 条真实固定集评测并修复质量代理统计：允许中文概念改写，合并步骤辅助字段，仅统计正样本；修复后 Schema 首轮/修复后 100%、有效引用 97.5%、无证据拒答/追问 100%、原因匹配 100%、步骤匹配 97.5% | M5 | E-029、`evaluation/m5/evidence/quality_live_deepseek_concept_match.json` |
 
 ### 21.1 后续更新示例
 
@@ -1375,7 +1379,7 @@ ADR 编号：ADR-XXX
 
 ## 22. 下一步行动
 
-下一步基于 E-028 先在 Ollama 空闲条件下重复 M4 构建至少 3 次，并扩展 M5 smoke 到 5 条后再运行 50 条固定集；根据真实 Schema/引用结果继续调优 M4 检索和 M5 生成质量，再决定是否切换 Hybrid/阈值默认值；不要直接修改 Agent 功能。
+下一步基于 E-029 完成真实结果的人工/非实现者质量复核，定位原因/步骤匹配代理偏低是评测短语匹配偏差、检索证据不足还是模型回答质量问题；同时在 Ollama 空闲条件下重复 M4 构建至少 3 次，再决定是否切换 Hybrid/阈值默认值；不要直接修改 Agent 功能。
 
 ### 22.1 第一批任务
 
