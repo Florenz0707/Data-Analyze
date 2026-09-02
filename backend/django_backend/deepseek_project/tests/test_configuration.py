@@ -31,7 +31,8 @@ class ConfigurationTests(SimpleTestCase):
         )
 
         self.assertEqual(config["RESPONSE_TOP_K"], 10)
-        self.assertEqual(config["INDEX_BUILD_BATCH_SIZE"], 4)
+        self.assertEqual(config["INDEX_BUILD_BATCH_SIZE"], 32)
+        self.assertEqual(config["INDEX_CHUNK_SIZE"], 200)
         self.assertEqual(config["REPLY_CACHE_TTL"], 3600)
         self.assertEqual(config["PROMPT_VERSION"], "m5-v1")
         self.assertEqual(config["INDEX_VERSION"], "v1")
@@ -39,6 +40,45 @@ class ConfigurationTests(SimpleTestCase):
         self.assertTrue(Path(config["LOG_PATH"]).is_absolute())
         self.assertTrue(Path(config["SYSTEM_PROMPT_PATH"]).is_file())
         self.assertTrue(Path(config["RESPONSE_TEMPLATE_PATH"]).is_file())
+
+    def test_prompt_and_cache_versions_default_to_m5_contract(self):
+        config = self._load_temp_config({})
+
+        self.assertEqual(config["PROMPT_VERSION"], "m5-v1")
+        self.assertEqual(config["CACHE_SCHEMA_VERSION"], "m5-v1")
+
+    def test_prompt_version_must_match_declared_prompt_file(self):
+        import yaml
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "data" / "log").mkdir(parents=True)
+            (root / "config").mkdir()
+            (root / "config" / "system_prompt.yaml").write_text(
+                "PromptVersion: m5-v1\ntext: '{query}'\n", encoding="utf-8"
+            )
+            (root / "config" / "response_template.md").write_text("# Answer\n", encoding="utf-8")
+            path = root / "config" / "llm_config.yaml"
+            path.write_text(
+                yaml.safe_dump(
+                    {
+                        "LLM_PROVIDER": "ollama",
+                        "EMBEDDING_PROVIDER": "ollama",
+                        "OLLAMA_CONFIG": {
+                            "model": "chat-model",
+                            "embedding_model": "embedding-model",
+                        },
+                        "PROMPT_VERSION": "v1",
+                        "LOG_PATH": "data/log",
+                        "SYSTEM_PROMPT_PATH": "config/system_prompt.yaml",
+                        "RESPONSE_TEMPLATE_PATH": "config/response_template.md",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ConfigurationError, "PROMPT_VERSION.*不一致"):
+                load_llm_config(path, project_root=root)
 
     def test_tracked_llm_example_is_used_when_local_config_is_absent(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -147,6 +187,10 @@ class ConfigurationTests(SimpleTestCase):
     def test_index_build_batch_size_is_bounded(self):
         with self.assertRaisesRegex(ConfigurationError, "INDEX_BUILD_BATCH_SIZE"):
             self._load_temp_config({"INDEX_BUILD_BATCH_SIZE": 33})
+
+    def test_index_chunk_size_is_bounded(self):
+        with self.assertRaisesRegex(ConfigurationError, "INDEX_CHUNK_SIZE"):
+            self._load_temp_config({"INDEX_CHUNK_SIZE": 99})
 
     def test_retrieval_configuration_is_normalized_and_validated(self):
         config = self._load_temp_config(

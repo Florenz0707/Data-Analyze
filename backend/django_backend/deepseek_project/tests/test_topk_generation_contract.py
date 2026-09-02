@@ -115,6 +115,39 @@ class TopKGenerationContractTests(SimpleTestCase):
         self.assertEqual(system.last_generation_result["output_mode"], "no_evidence")
         self.assertIn("当前检索结果不足", result)
 
+    def test_stream_response_emits_preview_then_validated_done(self):
+        system = self._system()
+        payload = json.dumps(self._payload(), ensure_ascii=False)
+
+        class StreamingLLM:
+            def stream(self, _prompt):
+                yield from (payload[:30], payload[30:])
+
+        events = list(
+            system.stream_response(
+                "why",
+                [{"document_id": "log-1", "content": "timeout", "metadata": {}}],
+                llm=StreamingLLM(),
+            )
+        )
+
+        self.assertTrue(any(event["type"] == "delta" for event in events))
+        done = events[-1]
+        self.assertEqual(done["type"], "done")
+        self.assertIn("[log-1]", done["reply"])
+        self.assertEqual(system.last_generation_result["output_mode"], "structured")
+
+    def test_stream_response_refuses_without_evidence(self):
+        system = self._system()
+        llm = Mock()
+
+        events = list(system.stream_response("unknown", [], llm=llm))
+
+        llm.stream.assert_not_called()
+        self.assertEqual(events[-1]["type"], "done")
+        self.assertEqual(events[-1]["retrieval_status"], "no_evidence")
+        self.assertIn("当前检索结果不足", events[-1]["reply"])
+
     def test_prompt_uses_compact_contract_and_single_evidence_block(self):
         system = self._system()
         prompt = system._build_prompt_text(

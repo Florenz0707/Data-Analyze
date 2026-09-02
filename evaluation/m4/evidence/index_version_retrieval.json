@@ -1,7 +1,7 @@
 {
   "milestone": "M4",
   "scope": "index_version_and_retrieval",
-  "date": "2026-08-31",
+  "date": "2026-09-02",
   "implementation": {
     "index_identity": [
       "logical_version",
@@ -37,9 +37,32 @@
       "evaluation/m4/evidence/retrieval_comparison.json"
     ]
   },
+  "published_index": {
+    "index_version": "idx-69c72b8c2a56c2fea290",
+    "collection_name": "log_collection_bge_large_latest__idx-69c72b8c2a56c2fea290",
+    "status": "ready",
+    "document_count": 246951,
+    "parser_version": "m4-parser-v3",
+    "chunk_size": 200,
+    "embedding_model": "bge-large:latest",
+    "embedding_dimensions": 1024,
+    "index_spec_embedding_dimensions": null,
+    "embedding_dimensions_note": "The persisted vectors were verified as 1024-dimensional; Ollama config does not currently declare this value, so IndexSpec preserves null until a deliberate config change and rebuild.",
+    "runtime_spec_matches_current": true,
+    "required_metadata_missing": {
+      "document_id": 0,
+      "source_file": 0,
+      "source_row": 0,
+      "parser_version": 0,
+      "cleaner_version": 0,
+      "chunker_version": 0
+    },
+    "health_retrieval_status": "ok",
+    "full_index_fixed_set_evidence": "evaluation/m4/evidence/retrieval_published_full_index.json"
+  },
   "limitations": [
-    "No claim of fixed-set Recall/MRR improvement yet",
-    "No claim of real full-corpus rebuild resource measurements yet",
+    "The published full-index fixed-set Recall/MRR is below the M4 target because the fixed set covers only the original root-level corpus and full-corpus distractors are not yet optimized",
+    "No claim of real full-corpus rebuild peak-memory measurements yet",
     "BM25 currently scores the vector candidate set rather than an independent full-corpus index"
   ]
 }

@@ -418,26 +418,40 @@ def build_llm_for_external_api(external_api: ExternalLLMAPI):
     return llm
 
 
-def generate_with_user_llm(user: APIKey, prompt: str) -> str:
-    """Generate with an explicit user-selected LLM without mutating global state."""
-    system = _get_system()
+def get_user_llm(user: APIKey):
+    """Resolve one user's LLM without mutating process-wide provider settings."""
     pref = get_or_create_user_pref(user)
     if pref.external_api_id:
         try:
-            llm = build_llm_for_external_api(pref.external_api)
+            return build_llm_for_external_api(pref.external_api)
         except Exception as exc:
             raise RuntimeError("自定义模型配置不可用") from exc
-    else:
-        try:
-            llm = build_llm_for_provider(pref.provider, pref.model or None)
-        except Exception:
-            # 内置模型配置失败时保持原有默认回退行为。
-            provider, model = _get_default_provider_model()
-            llm = build_llm_for_provider(provider, model)
+
+    try:
+        return build_llm_for_provider(pref.provider, pref.model or None)
+    except Exception:
+        # 内置模型配置失败时保持原有默认回退行为。
+        provider, model = _get_default_provider_model()
+        return build_llm_for_provider(provider, model)
+
+
+def generate_with_user_llm(user: APIKey, prompt: str) -> str:
+    """Generate with an explicit user-selected LLM without mutating global state."""
+    system = _get_system()
+    llm = get_user_llm(user)
     from llama_index.llms.langchain import LangChainLLM
 
     result = system.query(prompt, llm=LangChainLLM(llm=llm))
     return result.get("response", "")
+
+
+def stream_with_user_llm(user: APIKey, prompt: str):
+    """Return a provider-backed stream using the same retrieval pipeline as chat."""
+    system = _get_system()
+    llm = get_user_llm(user)
+    from llama_index.llms.langchain import LangChainLLM
+
+    return system.stream_query(prompt, llm=LangChainLLM(llm=llm))
 
 
 def create_api_key(user: str) -> APIKey:

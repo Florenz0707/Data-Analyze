@@ -13,11 +13,18 @@ const getUserKey = (key) => {
 // 用于表示一个尚未在后端创建的临时新对话
 const TEMP_NEW_CHAT_ID = 'temp:new_chat';
 
+const createMessageId = () => {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 export const useChatStore = defineStore('chat', {
   state: () => ({
     currentSession: null,
     sessions: [], // 只存储在后端真实创建的 session IDs
     messages: {}, // { [sessionId]: [message] }
+    isStreaming: false,
+    activeAbortController: null,
   }),
   getters: {
     // 获取当前会话的显示名称
@@ -123,8 +130,14 @@ export const useChatStore = defineStore('chat', {
       const appStore = useAppStore();
       let sessionId = this.currentSession;
       const isNewChat = sessionId === TEMP_NEW_CHAT_ID;
+      const messageId = createMessageId();
 
-      const userMessage = { isUser: true, content: text, timestamp: new Date().toLocaleString() };
+      const userMessage = {
+        id: messageId,
+        isUser: true,
+        content: text,
+        timestamp: new Date().toLocaleString(),
+      };
 
       // 1. 如果是新对话，先在后端创建
       if (isNewChat) {
@@ -160,19 +173,56 @@ export const useChatStore = defineStore('chat', {
 
       // 2. 发送消息到 (已存在的) chat API
       appStore.setLoading(true);
+      const botMessage = {
+        id: `${messageId}:assistant`,
+        isUser: false,
+        content: '',
+        timestamp: new Date().toLocaleString(),
+        streaming: true,
+      };
+      this.addMessage(sessionId, botMessage);
+      const botMessages = this.messages[sessionId];
+      const removeIncompleteBotMessage = () => {
+        const index = botMessages.indexOf(botMessage);
+        if (index >= 0) botMessages.splice(index, 1);
+      };
+      const controller = new AbortController();
+      this.activeAbortController = controller;
+      this.isStreaming = true;
+      let receivedDone = false;
       try {
-        const response = await api.chat(sessionId, text);
-        const botMessage = {
-          isUser: false,
-          content: response.data.reply,
-          timestamp: new Date().toLocaleString(),
-        };
-        this.addMessage(sessionId, botMessage);
+        await api.streamChat(sessionId, text, {
+          messageId,
+          signal: controller.signal,
+          onEvent: (event, data) => {
+            if (event === 'delta' || data?.type === 'delta') {
+              botMessage.content += data?.text || '';
+            } else if (event === 'done' || data?.type === 'done') {
+              botMessage.content = data?.reply || botMessage.content;
+              botMessage.streaming = false;
+              receivedDone = true;
+            } else if (event === 'error' || data?.type === 'error') {
+              const error = new Error(data?.error || 'Streaming generation failed');
+              error.response = { data, status: data?.status || 503 };
+              throw error;
+            }
+          },
+        });
+        if (!receivedDone) throw new Error('Streaming response ended before completion');
       } catch (error) {
-        appStore.setError(getApiErrorMessage(error, 'Failed to send message.'));
+        removeIncompleteBotMessage();
+        if (error?.name !== 'AbortError') {
+          appStore.setError(getApiErrorMessage(error, 'Failed to send message.'));
+        }
       } finally {
+        if (this.activeAbortController === controller) this.activeAbortController = null;
+        this.isStreaming = false;
         appStore.setLoading(false);
       }
+    },
+
+    cancelGeneration() {
+      if (this.activeAbortController) this.activeAbortController.abort();
     },
 
     async loadHistory(sessionId) {
@@ -196,6 +246,7 @@ export const useChatStore = defineStore('chat', {
         for (const turn of turns) {
           if (turn.user_input) {
             newMessages.push({
+              id: `${turn.message_id || turn.id}:user`,
               isUser: true,
               content: turn.user_input,
               timestamp: now,
@@ -203,6 +254,7 @@ export const useChatStore = defineStore('chat', {
           }
           if (turn.response) {
             newMessages.push({
+              id: `${turn.message_id || turn.id}:assistant`,
               isUser: false,
               content: turn.response,
               timestamp: now,

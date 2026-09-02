@@ -1,0 +1,1481 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-02T07:52:50.367877+00:00",
+  "dataset": {
+    "path": "evaluation/m0/gold_queries.jsonl",
+    "sha256": "7f64d6b4b7672fbe9bf2b5e88dd064739157456632786bedadb35e29b6c1e5e5",
+    "case_count": 50,
+    "positive_count": 40,
+    "negative_count": 10
+  },
+  "index": {
+    "collection_name": "log_collection_bge_large_latest__idx-69c72b8c2a56c2fea290",
+    "collection_count": 246951,
+    "index_version": "idx-69c72b8c2a56c2fea290",
+    "parser_version": "m4-parser-v3",
+    "chunk_size": 200,
+    "embedding_model": "bge-large:latest",
+    "embedding_dimensions": 1024
+  },
+  "runtime": {
+    "embedding_seconds": null,
+    "query_seconds": null,
+    "query_count": 50
+  },
+  "metrics": {
+    "recall_at_1": 0.1,
+    "recall_at_5": 0.1,
+    "recall_at_10": 0.1,
+    "mrr_at_10": 0.1,
+    "ndcg_at_10": 0.12544456402014997
+  },
+  "diagnostic_root_source_filter": {
+    "source_files": [
+      "20200.csv",
+      "java_error_deepseek.csv",
+      "linuxcomand_error_deepseek.csv",
+      "python_error_deepseek.csv",
+      "python_error_doubao.csv"
+    ],
+    "positive_metrics": {
+      "recall_at_1": 0.725,
+      "recall_at_5": 0.8,
+      "recall_at_10": 0.8,
+      "mrr_at_10": 0.7445833333333334,
+      "ndcg_at_10": 0.7958827981528483
+    },
+    "negative_candidates": 10,
+    "note": "Diagnostic only; filtering the published full collection to the five root-level source files isolates corpus-scope interference and is not the production retrieval result."
+  },
+  "threshold_sweep": [
+    {
+      "threshold": 0.3,
+      "positive_metrics": {
+        "recall_at_1": 0.1,
+        "recall_at_5": 0.1,
+        "recall_at_10": 0.1,
+        "mrr_at_10": 0.1,
+        "ndcg_at_10": 0.12544456402014997
+      },
+      "negative_no_evidence_rate": 0.0
+    },
+    {
+      "threshold": 0.4,
+      "positive_metrics": {
+        "recall_at_1": 0.1,
+        "recall_at_5": 0.1,
+        "recall_at_10": 0.1,
+        "mrr_at_10": 0.1,
+        "ndcg_at_10": 0.12544456402014997
+      },
+      "negative_no_evidence_rate": 0.0
+    },
+    {
+      "threshold": 0.5,
+      "positive_metrics": {
+        "recall_at_1": 0.1,
+        "recall_at_5": 0.1,
+        "recall_at_10": 0.1,
+        "mrr_at_10": 0.1,
+        "ndcg_at_10": 0.12544456402014997
+      },
+      "negative_no_evidence_rate": 0.0
+    },
+    {
+      "threshold": 0.6,
+      "positive_metrics": {
+        "recall_at_1": 0.1,
+        "recall_at_5": 0.1,
+        "recall_at_10": 0.1,
+        "mrr_at_10": 0.1,
+        "ndcg_at_10": 0.11577324383928644
+      },
+      "negative_no_evidence_rate": 0.0
+    },
+    {
+      "threshold": 0.7,
+      "positive_metrics": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr_at_10": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "negative_no_evidence_rate": 0.6
+    },
+    {
+      "threshold": 0.8,
+      "positive_metrics": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr_at_10": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "negative_no_evidence_rate": 1.0
+    },
+    {
+      "threshold": 0.9,
+      "positive_metrics": {
+        "recall_at_1": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr_at_10": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "negative_no_evidence_rate": 1.0
+    }
+  ],
+  "per_case": [
+    {
+      "case_id": "P001",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_doubao.csv:000001"],
+      "top_scores": [
+        0.563478549416587, 0.5624152549645572, 0.5620528396569354, 0.5615590797431408,
+        0.5614891852223116, 0.5612095933124294, 0.5611886248192434, 0.5611804593572701,
+        0.5611141871231687, 0.5610681192203404
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003576"],
+        ["from_kaggle/Computer_events.csv:003046"],
+        ["from_kaggle/Computer_events.csv:003356"],
+        ["from_kaggle/Computer_events.csv:002920"],
+        ["from_kaggle/Computer_events.csv:003548"],
+        ["from_kaggle/Computer_events.csv:003355"],
+        ["from_kaggle/Computer_events.csv:003301"],
+        ["from_kaggle/Computer_events.csv:002941"],
+        ["from_kaggle/Computer_events.csv:002952"],
+        ["from_kaggle/Computer_events.csv:003249"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P002",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_doubao.csv:000002"],
+      "top_scores": [
+        0.5651959655425238, 0.5646676482115695, 0.5641200210837017, 0.5635495080115238,
+        0.5634148362944498, 0.5633556964678452, 0.5632783566813129, 0.5629646760236542,
+        0.5629484118126846, 0.5629326585252247
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002942"],
+        ["from_kaggle/Computer_events.csv:003576"],
+        ["from_kaggle/Computer_events.csv:003356"],
+        ["from_kaggle/Computer_events.csv:003242"],
+        ["from_kaggle/Computer_events.csv:003301"],
+        ["from_kaggle/Computer_events.csv:003023"],
+        ["from_kaggle/Computer_events.csv:003513"],
+        ["from_kaggle/Computer_events.csv:003394"],
+        ["from_kaggle/Computer_events.csv:003046"],
+        ["from_kaggle/Computer_events.csv:003011"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P003",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_doubao.csv:000003"],
+      "top_scores": [
+        0.6574411350492573, 0.5989984355263444, 0.5874544222717327, 0.587226618674567,
+        0.5870399264587739, 0.5861924302731911, 0.5858517352906123, 0.5856692690685396,
+        0.5848842775843102, 0.5848828298886513
+      ],
+      "retrieved_log_ids": [
+        ["python_error_doubao.csv:000003"],
+        ["python_error_doubao.csv:000025"],
+        ["from_kaggle/python_bug_fix_pairs.csv:000417"],
+        ["python_error_doubao.csv:000009"],
+        ["python_error_doubao.csv:000037"],
+        ["from_kaggle/python_bug_fix_pairs.csv:000022"],
+        ["from_kaggle/python_bug_fix_pairs.csv:000312"],
+        ["python_error_doubao.csv:000045"],
+        ["from_kaggle/python_bug_fix_pairs.csv:000067"],
+        ["from_kaggle/python_bug_fix_pairs.csv:000597"]
+      ],
+      "recall_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 1.0,
+      "ndcg_at_10": 1.0
+    },
+    {
+      "case_id": "P004",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_doubao.csv:000024"],
+      "top_scores": [
+        0.5341783624601716, 0.5338754181776687, 0.5325861752668793, 0.53245387908143,
+        0.5322950482635037, 0.5322695650962818, 0.5320437682738048, 0.5316788005465475,
+        0.5316477324725506, 0.5313702185095304
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:079834"],
+        ["from_kaggle/windows_event_log.csv:081042"],
+        ["from_kaggle/windows_event_log.csv:083949"],
+        ["from_kaggle/windows_event_log.csv:081440"],
+        ["from_kaggle/windows_event_log.csv:084193"],
+        ["from_kaggle/windows_event_log.csv:080583"],
+        ["from_kaggle/windows_event_log.csv:083875"],
+        ["from_kaggle/windows_event_log.csv:080423"],
+        ["from_kaggle/windows_event_log.csv:081109"],
+        ["from_kaggle/windows_event_log.csv:082051"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P005",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_doubao.csv:000037"],
+      "top_scores": [
+        0.6953980305613076, 0.6702109049903884, 0.5941710575804088, 0.5915744549471623,
+        0.5909155988474036, 0.5904663628204903, 0.5884022798865634, 0.58475030434368,
+        0.5827405361109175, 0.5818049258895767
+      ],
+      "retrieved_log_ids": [
+        ["python_error_doubao.csv:000037"],
+        ["python_error_doubao.csv:000037"],
+        ["python_error_deepseek.csv:000225"],
+        ["python_error_deepseek.csv:000118"],
+        ["python_error_doubao.csv:000009"],
+        ["python_error_doubao.csv:000025"],
+        ["python_error_deepseek.csv:000120"],
+        ["linuxcomand_error_deepseek.csv:000025"],
+        ["python_error_doubao.csv:000040"],
+        ["python_error_doubao.csv:000036"]
+      ],
+      "recall_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 1.0,
+      "ndcg_at_10": 1.6309297535714575
+    },
+    {
+      "case_id": "P006",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_deepseek.csv:000003"],
+      "top_scores": [
+        0.5443751363191629, 0.5422690835970869, 0.5422017704047933, 0.5421491021710244,
+        0.5418763583070187, 0.541765595121053, 0.5412524938281976, 0.5412494730168497,
+        0.5410909015850982, 0.5410157679703311
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003489"],
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:002916"],
+        ["from_kaggle/Computer_events.csv:003576"],
+        ["from_kaggle/Computer_events.csv:003324"],
+        ["python_error_doubao.csv:000048"],
+        ["from_kaggle/Computer_events.csv:003012"],
+        ["from_kaggle/Computer_events.csv:003469"],
+        ["from_kaggle/Computer_events.csv:003544"],
+        ["from_kaggle/Computer_events.csv:003060"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P007",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_deepseek.csv:000004"],
+      "top_scores": [
+        0.5642667393137707, 0.5641627024689879, 0.5641123391201878, 0.5636276796788281,
+        0.5635714294831972, 0.5635144902004422, 0.563481937004088, 0.5634556511503136,
+        0.5633264716752372, 0.5630970536645694
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:081440"],
+        ["from_kaggle/windows_event_log.csv:081654"],
+        ["from_kaggle/windows_event_log.csv:079302"],
+        ["from_kaggle/windows_event_log.csv:003077"],
+        ["from_kaggle/windows_event_log.csv:116841"],
+        ["from_kaggle/windows_event_log.csv:109648"],
+        ["from_kaggle/windows_event_log.csv:117667"],
+        ["from_kaggle/windows_event_log.csv:080957"],
+        ["from_kaggle/windows_event_log.csv:116498"],
+        ["from_kaggle/windows_event_log.csv:118263"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P008",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_deepseek.csv:000016"],
+      "top_scores": [
+        0.5913538879475473, 0.5910125817092469, 0.5904469953860066, 0.5895112481634012,
+        0.5894091871678732, 0.5887726429508202, 0.5883420903777481, 0.5879895163488386,
+        0.5879435452500786, 0.5875716519467451
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:111170"],
+        ["from_kaggle/windows_event_log.csv:028976"],
+        ["from_kaggle/windows_event_log.csv:028055"],
+        ["from_kaggle/windows_event_log.csv:123284"],
+        ["from_kaggle/windows_event_log.csv:026881"],
+        ["from_kaggle/windows_event_log.csv:106732"],
+        ["from_kaggle/windows_event_log.csv:129362"],
+        ["from_kaggle/windows_event_log.csv:028689"],
+        ["from_kaggle/windows_event_log.csv:104621"],
+        ["from_kaggle/windows_event_log.csv:121365"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P009",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_deepseek.csv:000021"],
+      "top_scores": [
+        0.5354162930151365, 0.5351547008430596, 0.534681557841286, 0.534402928122123,
+        0.5341136889503529, 0.5334553976679616, 0.5332845435804868, 0.533227627834092,
+        0.5332243230939923, 0.533203478754338
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:000802"],
+        ["from_kaggle/windows_event_log.csv:004590"],
+        ["from_kaggle/windows_event_log.csv:085633"],
+        ["from_kaggle/windows_event_log.csv:001259"],
+        ["from_kaggle/windows_event_log.csv:001688"],
+        ["from_kaggle/windows_event_log.csv:021099"],
+        ["from_kaggle/windows_event_log.csv:001007"],
+        ["from_kaggle/windows_event_log.csv:057922"],
+        ["from_kaggle/windows_event_log.csv:070675"],
+        ["from_kaggle/windows_event_log.csv:029988"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "P010",
+      "category": "python",
+      "is_negative": false,
+      "relevant_log_ids": ["python_error_deepseek.csv:000042"],
+      "top_scores": [
+        0.5462591578711294, 0.5437073578275579, 0.5434092820378678, 0.5433279781710424,
+        0.5418959434295955, 0.5418930554539023, 0.5417428181655908, 0.5416646703323454,
+        0.5412034665608338, 0.5409176336555863
+      ],
+      "retrieved_log_ids": [
+        ["python_error_doubao.csv:000049"],
+        ["from_kaggle/windows_event_log.csv:121585"],
+        ["python_error_doubao.csv:000050"],
+        ["from_kaggle/windows_event_log.csv:123721"],
+        ["from_kaggle/windows_event_log.csv:028707"],
+        ["from_kaggle/windows_event_log.csv:111410"],
+        ["python_error_doubao.csv:000049"],
+        ["from_kaggle/windows_event_log.csv:115291"],
+        ["from_kaggle/windows_event_log.csv:001392"],
+        ["from_kaggle/windows_event_log.csv:127195"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J001",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000001"],
+      "top_scores": [
+        0.5418603272139249, 0.5383682476119342, 0.5365821363721758, 0.5364927747246053,
+        0.5364869075472635, 0.536262232915152, 0.5360818167204057, 0.5358027527777504,
+        0.5356939281565687, 0.5356682553451753
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:005077"],
+        ["from_kaggle/windows_event_log.csv:056463"],
+        ["from_kaggle/windows_event_log.csv:056354"],
+        ["from_kaggle/windows_event_log.csv:056397"],
+        ["from_kaggle/windows_event_log.csv:064725"],
+        ["from_kaggle/windows_event_log.csv:157710"],
+        ["from_kaggle/windows_event_log.csv:000272"],
+        ["from_kaggle/windows_event_log.csv:059810"],
+        ["from_kaggle/windows_event_log.csv:056416"],
+        ["from_kaggle/windows_event_log.csv:060293"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J002",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000002"],
+      "top_scores": [
+        0.5074401006386217, 0.5067180121421688, 0.5063354647014452, 0.5057963692506539,
+        0.5051362941159079, 0.5050718471031701, 0.5048222435953064, 0.5044779547295124,
+        0.5044427796607153, 0.504373960533133
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:129562"],
+        ["from_kaggle/windows_event_log.csv:121612"],
+        ["from_kaggle/windows_event_log.csv:129566"],
+        ["from_kaggle/windows_event_log.csv:125450"],
+        ["from_kaggle/windows_event_log.csv:117751"],
+        ["from_kaggle/windows_event_log.csv:129908"],
+        ["from_kaggle/windows_event_log.csv:114205"],
+        ["from_kaggle/windows_event_log.csv:108631"],
+        ["from_kaggle/windows_event_log.csv:117607"],
+        ["from_kaggle/windows_event_log.csv:117310"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J003",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000006"],
+      "top_scores": [
+        0.6220278134837818, 0.6108398668788917, 0.6095345496861266, 0.6022092903218026,
+        0.5844056646178188, 0.5810232096684452, 0.579498326774958, 0.5778272322607567,
+        0.5760430564409176, 0.5745500317835739
+      ],
+      "retrieved_log_ids": [
+        ["java_error_deepseek.csv:000172"],
+        ["java_error_deepseek.csv:000020"],
+        ["java_error_deepseek.csv:000012"],
+        ["java_error_deepseek.csv:000041"],
+        ["java_error_deepseek.csv:000151"],
+        ["java_error_deepseek.csv:000165"],
+        ["java_error_deepseek.csv:000241"],
+        ["java_error_deepseek.csv:000034"],
+        ["java_error_deepseek.csv:000110"],
+        ["java_error_deepseek.csv:000009"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J004",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000007"],
+      "top_scores": [
+        0.5092874939003613, 0.5085380058534618, 0.5083939065394517, 0.5083067253625067,
+        0.5082229148421779, 0.5077819448902818, 0.5076527277639046, 0.5075827075813946,
+        0.5074220214269248, 0.507394644156623
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:082775"],
+        ["from_kaggle/windows_event_log.csv:082529"],
+        ["from_kaggle/windows_event_log.csv:081461"],
+        ["from_kaggle/windows_event_log.csv:083262"],
+        ["from_kaggle/windows_event_log.csv:081079"],
+        ["from_kaggle/windows_event_log.csv:082648"],
+        ["from_kaggle/windows_event_log.csv:082863"],
+        ["from_kaggle/windows_event_log.csv:080681"],
+        ["from_kaggle/windows_event_log.csv:079686"],
+        ["from_kaggle/Computer_events.csv:001551"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J005",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000008"],
+      "top_scores": [
+        0.5466968831444836, 0.5446153952028626, 0.5437555533120386, 0.5434417575892266,
+        0.542592932113821, 0.5419954836337207, 0.5409668882354937, 0.5403278691903586,
+        0.5402331154611136, 0.5396566628662486
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002897"],
+        ["from_kaggle/Computer_events.csv:003131"],
+        ["from_kaggle/Computer_events.csv:003239"],
+        ["from_kaggle/Computer_events.csv:003542"],
+        ["from_kaggle/Computer_events.csv:003033"],
+        ["from_kaggle/Computer_events.csv:003467"],
+        ["from_kaggle/Computer_events.csv:003650"],
+        ["from_kaggle/Computer_events.csv:003632"],
+        ["from_kaggle/Computer_events.csv:002891"],
+        ["from_kaggle/Computer_events.csv:003056"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J006",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000018"],
+      "top_scores": [
+        0.519385777340571, 0.51817796924786, 0.5181421219878068, 0.5181282325078307,
+        0.5181012557609728, 0.5172079405024618, 0.5169583703655681, 0.5165449428801383,
+        0.5163293955093801, 0.5162886876102527
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002942"],
+        ["from_kaggle/Computer_events.csv:003457"],
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:003156"],
+        ["from_kaggle/Computer_events.csv:003158"],
+        ["from_kaggle/Computer_events.csv:003576"],
+        ["from_kaggle/Computer_events.csv:003404"],
+        ["from_kaggle/Computer_events.csv:002967"],
+        ["from_kaggle/Computer_events.csv:003355"],
+        ["from_kaggle/Computer_events.csv:003356"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J007",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000027"],
+      "top_scores": [
+        0.5017477055887521, 0.50102425395621, 0.5008703544066665, 0.500679042991652,
+        0.5004812188614645, 0.5003907901243928, 0.5003219530466253, 0.500183754120381,
+        0.5001738377599704, 0.5001208329079265
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:069263"],
+        ["from_kaggle/windows_event_log.csv:068762"],
+        ["from_kaggle/windows_event_log.csv:062812"],
+        ["from_kaggle/windows_event_log.csv:066584"],
+        ["from_kaggle/windows_event_log.csv:068626"],
+        ["from_kaggle/windows_event_log.csv:062233"],
+        ["from_kaggle/windows_event_log.csv:062267"],
+        ["from_kaggle/windows_event_log.csv:062099"],
+        ["from_kaggle/windows_event_log.csv:065992"],
+        ["from_kaggle/windows_event_log.csv:069404"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J008",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000028"],
+      "top_scores": [
+        0.5447252398666078, 0.5444626553468874, 0.5437808439401158, 0.543421321301712,
+        0.5433798549718827, 0.5431838028476361, 0.5429765749904526, 0.5428567545757346,
+        0.5426308736076403, 0.5425106267917058
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:070146"],
+        ["from_kaggle/windows_event_log.csv:066632"],
+        ["from_kaggle/windows_event_log.csv:066632"],
+        ["from_kaggle/windows_event_log.csv:070397"],
+        ["from_kaggle/windows_event_log.csv:070397"],
+        ["from_kaggle/windows_event_log.csv:066632"],
+        ["from_kaggle/windows_event_log.csv:070146"],
+        ["from_kaggle/windows_event_log.csv:070146"],
+        ["from_kaggle/windows_event_log.csv:070146"],
+        ["from_kaggle/windows_event_log.csv:070146"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J009",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000072"],
+      "top_scores": [
+        0.5569279272439812, 0.5327143084579667, 0.5102668554541523, 0.5087693117650107,
+        0.5076985992274559, 0.5075012234382023, 0.5073686507609131, 0.507295993861607,
+        0.5068979778001063, 0.506585068176891
+      ],
+      "retrieved_log_ids": [
+        ["java_error_deepseek.csv:000182"],
+        ["java_error_deepseek.csv:000175"],
+        ["from_kaggle/windows_event_log.csv:155409"],
+        ["from_kaggle/windows_event_log.csv:154811"],
+        ["from_kaggle/windows_event_log.csv:155409"],
+        ["from_kaggle/windows_event_log.csv:153411"],
+        ["python_error_doubao.csv:000036"],
+        ["from_kaggle/windows_event_log.csv:157523"],
+        ["from_kaggle/windows_event_log.csv:026781"],
+        ["from_kaggle/windows_event_log.csv:026781"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "J010",
+      "category": "java",
+      "is_negative": false,
+      "relevant_log_ids": ["java_error_deepseek.csv:000058"],
+      "top_scores": [
+        0.5377924042264547, 0.537374444751719, 0.5367689688374384, 0.5365834234797018,
+        0.5361551577321514, 0.5360010637457024, 0.5358385183567442, 0.535571128002597,
+        0.5355520999583937, 0.535427092153549
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:000657"],
+        ["from_kaggle/Computer_events.csv:003869"],
+        ["from_kaggle/Computer_events.csv:000508"],
+        ["from_kaggle/Computer_events.csv:002149"],
+        ["from_kaggle/Computer_events.csv:002295"],
+        ["from_kaggle/Computer_events.csv:000815"],
+        ["from_kaggle/Computer_events.csv:001840"],
+        ["from_kaggle/Computer_events.csv:003805"],
+        ["from_kaggle/Computer_events.csv:002316"],
+        ["from_kaggle/Computer_events.csv:002283"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L001",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000001"],
+      "top_scores": [
+        0.5265875915564648, 0.5241159261899827, 0.523859253941852, 0.5234634142566922,
+        0.5233536012094406, 0.5233372270926794, 0.5233109294343464, 0.5232981814897122,
+        0.5232716103059321, 0.5232468532223367
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:003332"],
+        ["from_kaggle/Computer_events.csv:003437"],
+        ["from_kaggle/Computer_events.csv:003625"],
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:003507"],
+        ["from_kaggle/Computer_events.csv:003260"],
+        ["from_kaggle/Computer_events.csv:003287"],
+        ["from_kaggle/Computer_events.csv:003252"],
+        ["from_kaggle/Computer_events.csv:003517"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L002",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000002"],
+      "top_scores": [
+        0.5320322615998474, 0.5317917983146376, 0.5308975080700002, 0.5307792813289806,
+        0.5303305531772419, 0.5302468813117514, 0.5302074011158704, 0.5301482588533651,
+        0.5301294634243818, 0.5300335638319382
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002272"],
+        ["from_kaggle/Computer_events.csv:002295"],
+        ["from_kaggle/Computer_events.csv:003930"],
+        ["from_kaggle/Computer_events.csv:002261"],
+        ["from_kaggle/Computer_events.csv:002217"],
+        ["from_kaggle/Computer_events.csv:002244"],
+        ["from_kaggle/Computer_events.csv:002269"],
+        ["from_kaggle/Computer_events.csv:003903"],
+        ["from_kaggle/Computer_events.csv:002149"],
+        ["from_kaggle/Computer_events.csv:003907"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L003",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000005"],
+      "top_scores": [
+        0.5565943539028632, 0.5534022137650736, 0.5479425604731927, 0.5477844612622081,
+        0.5460182642499104, 0.5453641249293923, 0.5440463700410684, 0.5436531987666681,
+        0.5431774366926544, 0.5429981904608709
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003310"],
+        ["from_kaggle/Computer_events.csv:002899"],
+        ["from_kaggle/Computer_events.csv:002898"],
+        ["from_kaggle/Computer_events.csv:003309"],
+        ["from_kaggle/Computer_events.csv:003632"],
+        ["from_kaggle/Computer_events.csv:003356"],
+        ["from_kaggle/Computer_events.csv:003371"],
+        ["from_kaggle/Computer_events.csv:003165"],
+        ["from_kaggle/Computer_events.csv:003416"],
+        ["from_kaggle/Computer_events.csv:003372"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L004",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000006"],
+      "top_scores": [
+        0.524201342965491, 0.5241844408114122, 0.524068562666526, 0.5237750114801625,
+        0.5235846294983476, 0.5231860067741066, 0.5231584355428586, 0.522782989458192,
+        0.52254742717928, 0.5223918481890358
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003012"],
+        ["from_kaggle/Computer_events.csv:003195"],
+        ["from_kaggle/Computer_events.csv:003006"],
+        ["from_kaggle/Computer_events.csv:003193"],
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:003242"],
+        ["from_kaggle/Computer_events.csv:003305"],
+        ["from_kaggle/Computer_events.csv:003319"],
+        ["from_kaggle/Computer_events.csv:003332"],
+        ["from_kaggle/Computer_events.csv:003121"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L005",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000009"],
+      "top_scores": [
+        0.5460545180425456, 0.5456479162791669, 0.5448275208104741, 0.5442032894406069,
+        0.5441726466936221, 0.5434928286239542, 0.5433833747880356, 0.5432051885934143,
+        0.5431080517637431, 0.542981741458577
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:080957"],
+        ["from_kaggle/windows_event_log.csv:081042"],
+        ["from_kaggle/windows_event_log.csv:081109"],
+        ["from_kaggle/windows_event_log.csv:081654"],
+        ["from_kaggle/windows_event_log.csv:083875"],
+        ["from_kaggle/windows_event_log.csv:080152"],
+        ["from_kaggle/windows_event_log.csv:154076"],
+        ["from_kaggle/windows_event_log.csv:080810"],
+        ["from_kaggle/windows_event_log.csv:106982"],
+        ["from_kaggle/windows_event_log.csv:082155"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L006",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000027"],
+      "top_scores": [
+        0.5606702799251612, 0.5597736244149846, 0.558742507511638, 0.5587237883256372,
+        0.5578997885614624, 0.5574570424355678, 0.5573280806023491, 0.5572215709892204,
+        0.5569485415651815, 0.5568846144092545
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003705"],
+        ["from_kaggle/Computer_events.csv:002852"],
+        ["from_kaggle/Computer_events.csv:002848"],
+        ["from_kaggle/Computer_events.csv:003200"],
+        ["from_kaggle/Computer_events.csv:002849"],
+        ["from_kaggle/Computer_events.csv:003702"],
+        ["from_kaggle/Computer_events.csv:003029"],
+        ["from_kaggle/Computer_events.csv:003657"],
+        ["from_kaggle/Computer_events.csv:003688"],
+        ["from_kaggle/Computer_events.csv:002854"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L007",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000038"],
+      "top_scores": [
+        0.6744926424884048, 0.5550807214017671, 0.5489144821747085, 0.5454875024104762,
+        0.5446242525715124, 0.5441691166449125, 0.5438664441738996, 0.5438555311132933,
+        0.543617439264, 0.54324085869871
+      ],
+      "retrieved_log_ids": [
+        ["linuxcomand_error_deepseek.csv:000038"],
+        ["20200.csv:000148"],
+        ["linuxcomand_error_deepseek.csv:000311"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["20200.csv:000556"],
+        ["from_kaggle/Computer_events.csv:003854"],
+        ["from_kaggle/Computer_events.csv:000141"]
+      ],
+      "recall_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 1.0,
+      "ndcg_at_10": 1.0
+    },
+    {
+      "case_id": "L008",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000052"],
+      "top_scores": [
+        0.5422201173322467, 0.540004284701966, 0.5399531199149732, 0.5398879266691227,
+        0.5393512026441467, 0.5392850972376981, 0.5391752348051082, 0.539059684066318,
+        0.5388286618856905, 0.538551347306384
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003419"],
+        ["from_kaggle/Computer_events.csv:003077"],
+        ["from_kaggle/Computer_events.csv:003486"],
+        ["from_kaggle/Computer_events.csv:003529"],
+        ["from_kaggle/Computer_events.csv:003453"],
+        ["from_kaggle/Computer_events.csv:003467"],
+        ["from_kaggle/Computer_events.csv:003530"],
+        ["from_kaggle/Computer_events.csv:003371"],
+        ["from_kaggle/Computer_events.csv:003488"],
+        ["from_kaggle/Computer_events.csv:003118"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L009",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000123"],
+      "top_scores": [
+        0.5746027485022145, 0.5727053320340756, 0.5725386206914438, 0.5724718851918099,
+        0.5723813795206442, 0.5722749733394313, 0.5721104633315571, 0.5720886918716167,
+        0.5719891417218584, 0.5719191808867391
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002149"],
+        ["from_kaggle/Computer_events.csv:003869"],
+        ["from_kaggle/Computer_events.csv:001210"],
+        ["from_kaggle/Computer_events.csv:000657"],
+        ["from_kaggle/Computer_events.csv:000687"],
+        ["from_kaggle/Computer_events.csv:000641"],
+        ["from_kaggle/Computer_events.csv:002439"],
+        ["from_kaggle/Computer_events.csv:002247"],
+        ["from_kaggle/Computer_events.csv:002254"],
+        ["from_kaggle/Computer_events.csv:002286"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "L010",
+      "category": "linux_command",
+      "is_negative": false,
+      "relevant_log_ids": ["linuxcomand_error_deepseek.csv:000019"],
+      "top_scores": [
+        0.645559349946996, 0.6167849671251999, 0.6050533802977869, 0.6038917237555427,
+        0.5986027762794367, 0.5967343044572708, 0.5893453134776483, 0.5878665994140331,
+        0.5857748860168044, 0.5832421735849173
+      ],
+      "retrieved_log_ids": [
+        ["linuxcomand_error_deepseek.csv:000019"],
+        ["python_error_doubao.csv:000067"],
+        ["python_error_doubao.csv:000067"],
+        ["linuxcomand_error_deepseek.csv:000006"],
+        ["linuxcomand_error_deepseek.csv:000019"],
+        ["linuxcomand_error_deepseek.csv:000340"],
+        ["python_error_deepseek.csv:000135"],
+        ["linuxcomand_error_deepseek.csv:000345"],
+        ["java_error_deepseek.csv:000027"],
+        ["linuxcomand_error_deepseek.csv:000036"]
+      ],
+      "recall_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 1.0,
+      "ndcg_at_10": 1.3868528072345416
+    },
+    {
+      "case_id": "S001",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000001"],
+      "top_scores": [
+        0.5695931547307027, 0.5693776185789899, 0.5682162861350949, 0.5680972836041792,
+        0.5673869042890441, 0.567313249591487, 0.5671929183645554, 0.5669547080763224,
+        0.5666236010805056, 0.5661961778858371
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S002",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000003"],
+      "top_scores": [
+        0.5681211378368005, 0.5679850032493592, 0.5676065237269802, 0.5674504825752971,
+        0.5672588889983623, 0.5670864580233149, 0.5669346682861567, 0.5668875822706256,
+        0.5667742094805912, 0.5664701272142427
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:001392"],
+        ["from_kaggle/windows_event_log.csv:099100"],
+        ["from_kaggle/windows_event_log.csv:155946"],
+        ["from_kaggle/windows_event_log.csv:028707"],
+        ["from_kaggle/windows_event_log.csv:029855"],
+        ["from_kaggle/windows_event_log.csv:116914"],
+        ["from_kaggle/windows_event_log.csv:002391"],
+        ["from_kaggle/windows_event_log.csv:157172"],
+        ["from_kaggle/windows_event_log.csv:110062"],
+        ["from_kaggle/windows_event_log.csv:028887"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S003",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000004"],
+      "top_scores": [
+        0.6466500282753981, 0.6464110949023453, 0.6462193036782952, 0.6460963910876585,
+        0.6456185492129362, 0.6453540873848267, 0.6453138745966311, 0.6452127690258785,
+        0.6451662720936897, 0.6449079318041611
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:155352"],
+        ["from_kaggle/windows_event_log.csv:155079"],
+        ["from_kaggle/windows_event_log.csv:153732"],
+        ["from_kaggle/windows_event_log.csv:154885"],
+        ["from_kaggle/windows_event_log.csv:155352"],
+        ["from_kaggle/windows_event_log.csv:153695"],
+        ["from_kaggle/windows_event_log.csv:155198"],
+        ["from_kaggle/windows_event_log.csv:155352"],
+        ["from_kaggle/windows_event_log.csv:154403"],
+        ["from_kaggle/windows_event_log.csv:155352"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S004",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000011"],
+      "top_scores": [
+        0.5092686953797991, 0.5087842006419871, 0.5085036494525177, 0.5084943868119162,
+        0.5084725955074841, 0.5084178480883271, 0.5083684114232551, 0.5082250701954689,
+        0.5082246545187684, 0.5079782625526196
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003058"],
+        ["from_kaggle/Computer_events.csv:003608"],
+        ["from_kaggle/Computer_events.csv:003012"],
+        ["from_kaggle/Computer_events.csv:003218"],
+        ["from_kaggle/Computer_events.csv:003242"],
+        ["from_kaggle/Computer_events.csv:002942"],
+        ["from_kaggle/Computer_events.csv:002977"],
+        ["from_kaggle/Computer_events.csv:003597"],
+        ["from_kaggle/Computer_events.csv:003120"],
+        ["from_kaggle/Computer_events.csv:003310"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S005",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000012"],
+      "top_scores": [
+        0.540171002472932, 0.5398190495272212, 0.5397933271631817, 0.5394484918369314,
+        0.539266497719887, 0.539245594294542, 0.5390772473579868, 0.5390119883564372,
+        0.5389471606649, 0.5387475810137226
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:085561"],
+        ["from_kaggle/windows_event_log.csv:080527"],
+        ["from_kaggle/windows_event_log.csv:079374"],
+        ["from_kaggle/windows_event_log.csv:004312"],
+        ["from_kaggle/windows_event_log.csv:084901"],
+        ["from_kaggle/windows_event_log.csv:151029"],
+        ["from_kaggle/windows_event_log.csv:084420"],
+        ["from_kaggle/windows_event_log.csv:084581"],
+        ["from_kaggle/windows_event_log.csv:084592"],
+        ["from_kaggle/windows_event_log.csv:084731"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S006",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000017"],
+      "top_scores": [
+        0.5680426957292759, 0.5596652819713308, 0.5589720031830042, 0.5582688477947849,
+        0.5570177354925923, 0.5565583672498827, 0.5553191655563957, 0.5548351239546294,
+        0.554649771130985, 0.5545330285165194
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:085251"],
+        ["from_kaggle/windows_event_log.csv:001711"],
+        ["from_kaggle/windows_event_log.csv:000059"],
+        ["from_kaggle/windows_event_log.csv:000073"],
+        ["from_kaggle/windows_event_log.csv:000160"],
+        ["from_kaggle/windows_event_log.csv:000267"],
+        ["from_kaggle/windows_event_log.csv:085100"],
+        ["from_kaggle/windows_event_log.csv:095066"],
+        ["from_kaggle/windows_event_log.csv:000275"],
+        ["from_kaggle/windows_event_log.csv:000128"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S007",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000022"],
+      "top_scores": [
+        0.5558771246735461, 0.5531979885838973, 0.552767078081916, 0.5518772763369899,
+        0.5516917897434527, 0.5514555253902935, 0.5512624970966021, 0.5511551606144738,
+        0.5508128398378227, 0.5507040695512199
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:154811"],
+        ["from_kaggle/windows_event_log.csv:154811"],
+        ["from_kaggle/windows_event_log.csv:154811"],
+        ["from_kaggle/windows_event_log.csv:154811"],
+        ["from_kaggle/windows_event_log.csv:154988"],
+        ["from_kaggle/windows_event_log.csv:155409"],
+        ["from_kaggle/windows_event_log.csv:153751"],
+        ["from_kaggle/windows_event_log.csv:157455"],
+        ["from_kaggle/windows_event_log.csv:157455"],
+        ["from_kaggle/windows_event_log.csv:154811"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S008",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000033"],
+      "top_scores": [
+        0.5911043273550485, 0.589041890426207, 0.5879536619838794, 0.5870221592851192,
+        0.5867400211065613, 0.5850088674235362, 0.5840986829626836, 0.5840663311452973,
+        0.5840108676071684, 0.583606351400385
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:003869"],
+        ["from_kaggle/Computer_events.csv:002762"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S009",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000056"],
+      "top_scores": [
+        0.5967978792871685, 0.5966126479043882, 0.5961886703721073, 0.595742130247289,
+        0.5956380697328869, 0.5955762851442106, 0.5952806282522999, 0.595195753272488,
+        0.5950028630841456, 0.5950017657958221
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:030800"],
+        ["from_kaggle/windows_event_log.csv:001303"],
+        ["from_kaggle/windows_event_log.csv:000802"],
+        ["from_kaggle/windows_event_log.csv:099100"],
+        ["from_kaggle/windows_event_log.csv:057656"],
+        ["from_kaggle/windows_event_log.csv:002533"],
+        ["from_kaggle/windows_event_log.csv:044610"],
+        ["from_kaggle/windows_event_log.csv:002142"],
+        ["from_kaggle/windows_event_log.csv:002808"],
+        ["from_kaggle/windows_event_log.csv:030271"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "S010",
+      "category": "generic_service",
+      "is_negative": false,
+      "relevant_log_ids": ["20200.csv:000058"],
+      "top_scores": [
+        0.5346280574813521, 0.5341125837017374, 0.5333862526732951, 0.5333489316627862,
+        0.533218764444069, 0.533106887365056, 0.5330932172840215, 0.5330668785223044,
+        0.5329092222093579, 0.5328315205056985
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:070284"],
+        ["from_kaggle/windows_event_log.csv:070284"],
+        ["from_kaggle/windows_event_log.csv:063515"],
+        ["from_kaggle/windows_event_log.csv:066632"],
+        ["from_kaggle/windows_event_log.csv:065303"],
+        ["from_kaggle/windows_event_log.csv:070284"],
+        ["from_kaggle/windows_event_log.csv:060563"],
+        ["from_kaggle/windows_event_log.csv:070284"],
+        ["from_kaggle/windows_event_log.csv:066713"],
+        ["from_kaggle/windows_event_log.csv:065303"]
+      ],
+      "recall_at_1": 0.0,
+      "recall_at_5": 0.0,
+      "recall_at_10": 0.0,
+      "mrr_at_10": 0.0,
+      "ndcg_at_10": 0.0
+    },
+    {
+      "case_id": "W001",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6670484476214773, 0.6597122713199592, 0.659419059170435, 0.6591671537900425,
+        0.6568216076767391, 0.6563263636572395, 0.6560730694173229, 0.6553193241247642,
+        0.6552916039388389, 0.6547725973644113
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:059532"],
+        ["from_kaggle/windows_event_log.csv:058847"],
+        ["from_kaggle/windows_event_log.csv:055913"],
+        ["from_kaggle/windows_event_log.csv:055729"],
+        ["from_kaggle/windows_event_log.csv:086405"],
+        ["from_kaggle/windows_event_log.csv:070693"],
+        ["from_kaggle/windows_event_log.csv:085477"],
+        ["from_kaggle/windows_event_log.csv:084330"],
+        ["from_kaggle/windows_event_log.csv:070578"],
+        ["from_kaggle/windows_event_log.csv:056112"]
+      ]
+    },
+    {
+      "case_id": "W002",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.7035265760273711, 0.7034982706711334, 0.7001132635724537, 0.6992652245463983,
+        0.6983764569450338, 0.6980728556572892, 0.6965281030753664, 0.695972149857132,
+        0.6959222929823754, 0.6958639432414271
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:002848"],
+        ["from_kaggle/Computer_events.csv:003705"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:003702"],
+        ["from_kaggle/Computer_events.csv:003543"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002849"],
+        ["from_kaggle/Computer_events.csv:003703"],
+        ["from_kaggle/Computer_events.csv:003012"],
+        ["from_kaggle/Computer_events.csv:000141"]
+      ]
+    },
+    {
+      "case_id": "W003",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.7246940564405734, 0.7245151399129246, 0.7235662520054748, 0.721938664145802,
+        0.7201629641228934, 0.7190852198237118, 0.7187194423936455, 0.7185667602329022,
+        0.7178098340991563, 0.7168757983269795
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002762"]
+      ]
+    },
+    {
+      "case_id": "W004",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6479963316858054, 0.6472477606449417, 0.6468861452629164, 0.6466542155437992,
+        0.6460217306482556, 0.6459468885026939, 0.6457096672388445, 0.6455727638523925,
+        0.6449376563166596, 0.644623765996709
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003084"],
+        ["from_kaggle/Computer_events.csv:003034"],
+        ["from_kaggle/Computer_events.csv:003155"],
+        ["from_kaggle/Computer_events.csv:003220"],
+        ["from_kaggle/Computer_events.csv:003054"],
+        ["from_kaggle/Computer_events.csv:003060"],
+        ["from_kaggle/Computer_events.csv:003242"],
+        ["from_kaggle/Computer_events.csv:003137"],
+        ["from_kaggle/Computer_events.csv:003052"],
+        ["from_kaggle/Computer_events.csv:003056"]
+      ]
+    },
+    {
+      "case_id": "W005",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6599944500913013, 0.6550968608976324, 0.6549774266616847, 0.6549646418511513,
+        0.6546261283102978, 0.653797704415149, 0.6537601263906982, 0.6535782843239687,
+        0.653027060825202, 0.6528785514431478
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:004050"],
+        ["from_kaggle/Computer_events.csv:006452"],
+        ["from_kaggle/Computer_events.csv:006507"],
+        ["from_kaggle/Computer_events.csv:004123"],
+        ["from_kaggle/Computer_events.csv:006446"],
+        ["from_kaggle/Computer_events.csv:006474"],
+        ["from_kaggle/Computer_events.csv:006504"],
+        ["from_kaggle/Computer_events.csv:004050"],
+        ["from_kaggle/Computer_events.csv:006365"],
+        ["from_kaggle/Computer_events.csv:006437"]
+      ]
+    },
+    {
+      "case_id": "W006",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.7069968100219058, 0.7055133007856067, 0.7032131759084371, 0.7031982618648195,
+        0.7022296015537671, 0.7016651440836414, 0.7013552322905694, 0.7012531274266318,
+        0.7008930809454452, 0.6991517086542278
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:005384"],
+        ["from_kaggle/Computer_events.csv:004240"],
+        ["from_kaggle/Computer_events.csv:006206"],
+        ["from_kaggle/Computer_events.csv:003969"],
+        ["from_kaggle/Computer_events.csv:004558"],
+        ["from_kaggle/Computer_events.csv:005529"],
+        ["from_kaggle/Computer_events.csv:006044"],
+        ["from_kaggle/Computer_events.csv:004613"],
+        ["from_kaggle/Computer_events.csv:005706"],
+        ["from_kaggle/Computer_events.csv:004095"]
+      ]
+    },
+    {
+      "case_id": "W007",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6495295336622274, 0.6456570854959508, 0.6454065453006126, 0.6451056922298314,
+        0.6445272839135522, 0.6444781872084193, 0.6440968841000261, 0.6440828638387889,
+        0.6440582618574275, 0.6439876312361724
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:102185"],
+        ["from_kaggle/windows_event_log.csv:156471"],
+        ["from_kaggle/windows_event_log.csv:116753"],
+        ["from_kaggle/windows_event_log.csv:156233"],
+        ["from_kaggle/windows_event_log.csv:156159"],
+        ["from_kaggle/windows_event_log.csv:154461"],
+        ["from_kaggle/windows_event_log.csv:154282"],
+        ["from_kaggle/windows_event_log.csv:154559"],
+        ["from_kaggle/windows_event_log.csv:155144"],
+        ["from_kaggle/windows_event_log.csv:101536"]
+      ]
+    },
+    {
+      "case_id": "W008",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6873954049907083, 0.6852391155362522, 0.6845988421586021, 0.6845617461685722,
+        0.6844317045228433, 0.6843656763031186, 0.6840267320255708, 0.6836813392402119,
+        0.6836391054625961, 0.6833522711975472
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:003705"],
+        ["from_kaggle/Computer_events.csv:004768"],
+        ["from_kaggle/Computer_events.csv:004929"],
+        ["from_kaggle/Computer_events.csv:003702"],
+        ["from_kaggle/Computer_events.csv:002848"],
+        ["from_kaggle/Computer_events.csv:003543"],
+        ["from_kaggle/Computer_events.csv:003677"],
+        ["from_kaggle/Computer_events.csv:003543"],
+        ["from_kaggle/Computer_events.csv:003543"],
+        ["from_kaggle/Computer_events.csv:005160"]
+      ]
+    },
+    {
+      "case_id": "W009",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.6175905275488506, 0.6168730267955942, 0.6162781437531352, 0.61573680730134,
+        0.6157028217593923, 0.6154899325934025, 0.615214174979884, 0.6152043165614302,
+        0.6150526675829222, 0.6149072008602212
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/windows_event_log.csv:064255"],
+        ["from_kaggle/windows_event_log.csv:069670"],
+        ["from_kaggle/windows_event_log.csv:062059"],
+        ["from_kaggle/windows_event_log.csv:065559"],
+        ["from_kaggle/windows_event_log.csv:068076"],
+        ["from_kaggle/windows_event_log.csv:061364"],
+        ["from_kaggle/windows_event_log.csv:063681"],
+        ["from_kaggle/windows_event_log.csv:060487"],
+        ["from_kaggle/windows_event_log.csv:062496"],
+        ["from_kaggle/windows_event_log.csv:067833"]
+      ]
+    },
+    {
+      "case_id": "W010",
+      "category": "windows_event",
+      "is_negative": true,
+      "relevant_log_ids": [],
+      "top_scores": [
+        0.7044354297949719, 0.7018066614260869, 0.7007510683319352, 0.7006541574969833,
+        0.6995271320845077, 0.6992662154775876, 0.6991959100503982, 0.6982674724129215,
+        0.6981779442363713, 0.6978475919566249
+      ],
+      "retrieved_log_ids": [
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:003705"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002916"],
+        ["from_kaggle/Computer_events.csv:000141"],
+        ["from_kaggle/Computer_events.csv:002242"],
+        ["from_kaggle/Computer_events.csv:005063"]
+      ]
+    }
+  ]
+}

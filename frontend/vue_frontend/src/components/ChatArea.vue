@@ -18,7 +18,7 @@
           <n-p>How can I help you today?</n-p>
         </div>
         <div v-else>
-          <ChatMessage v-for="(message, index) in messages" :key="index" :message="message" />
+          <ChatMessage v-for="message in messages" :key="message.id" :message="message" />
         </div>
         <div v-if="appStore.loading" class="typing-indicator">
           <n-spin size="small" />

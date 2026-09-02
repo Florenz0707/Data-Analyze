@@ -19,10 +19,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-CLEANER_VERSION = "m4-cleaner-v1"
-PARSER_VERSION = "m4-parser-v2"
+CLEANER_VERSION = "m4-cleaner-v2"
+PARSER_VERSION = "m4-parser-v3"
 CHUNKER_VERSION = "m4-chunker-v1"
-DEFAULT_CHUNK_SIZE = 1200
+DEFAULT_CHUNK_SIZE = 200
 
 _LEVELS = {
     "debug": "DEBUG",
@@ -126,6 +126,20 @@ _TOKEN_RE = re.compile(
     r"\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16})\b"
 )
 _QUARANTINE_REASONS = {"secret_field", "secret_value", "email", "pii_value"}
+
+
+class DuplicateDocumentIDError(ValueError):
+    """Raised when retained records would produce the same stable document ID."""
+
+    def __init__(self, document_id: str, first: CanonicalLogRecord, duplicate: CanonicalLogRecord):
+        super().__init__(
+            f"duplicate document_id={document_id}: "
+            f"first={first.source_file}#row-{first.source_row}, "
+            f"duplicate={duplicate.source_file}#row-{duplicate.source_row}"
+        )
+        self.document_id = document_id
+        self.first = first
+        self.duplicate = duplicate
 
 
 def _normalize_key(value: str) -> str:
@@ -234,7 +248,7 @@ def _safe_metadata(row: dict[str, str], canonical_keys: set[str]) -> dict[str, s
         "chunk_count",
     }
     for key, value in row.items():
-        if not value or key in canonical_keys or key in reserved_keys:
+        if not key or not value or key in canonical_keys or key in reserved_keys:
             continue
         if any(marker in key for marker in (*_SECRET_FIELD_MARKERS, *_PII_FIELD_MARKERS)):
             continue
@@ -366,8 +380,15 @@ def _record_from_row(row: dict[str, str], source_file: str, source_row: int) -> 
         "timestamp": timestamp,
         "language": language,
     }
+    metadata = _safe_metadata(row, canonical_keys)
+    dedupe_mode = "computer_event" if is_computer_event else "strict"
+    document_identity = {**identity, "dedupe_mode": dedupe_mode}
+    if dedupe_mode == "strict":
+        # Strict deduplication retains records whose non-canonical metadata
+        # differs, so that metadata must also participate in the stable ID.
+        document_identity["metadata"] = metadata
     return CanonicalLogRecord(
-        document_id=f"log-{_stable_hash(identity)[:32]}",
+        document_id=f"log-{_stable_hash(document_identity)[:32]}",
         source_file=source_file,
         source_row=source_row,
         service=service,
@@ -378,8 +399,8 @@ def _record_from_row(row: dict[str, str], source_file: str, source_row: int) -> 
         cause=cause,
         timestamp=timestamp,
         language=language,
-        metadata=_safe_metadata(row, canonical_keys),
-        dedupe_mode="computer_event" if is_computer_event else "strict",
+        metadata=metadata,
+        dedupe_mode=dedupe_mode,
     )
 
 
@@ -463,6 +484,12 @@ def clean_data_sources(data_path: str | Path) -> CleaningResult:
         winners.values(),
         key=lambda record: (record.document_id, record.source_file, record.source_row),
     )
+    seen_document_ids: dict[str, CanonicalLogRecord] = {}
+    for record in records:
+        first = seen_document_ids.get(record.document_id)
+        if first is not None:
+            raise DuplicateDocumentIDError(record.document_id, first, record)
+        seen_document_ids[record.document_id] = record
     report = {
         "cleaner_version": CLEANER_VERSION,
         "parser_version": PARSER_VERSION,
@@ -470,6 +497,8 @@ def clean_data_sources(data_path: str | Path) -> CleaningResult:
         "rows_read": rows_read,
         "empty_rows": empty_rows,
         "accepted_records": len(records),
+        "unique_document_ids": len(records),
+        "document_id_collision_count": 0,
         "duplicate_rows": duplicate_rows,
         "quarantined_records": len(quarantined),
         "redacted_rows": redacted_rows,

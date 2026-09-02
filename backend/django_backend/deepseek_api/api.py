@@ -15,7 +15,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import F, Q
-from django.http import Http404
+from django.http import Http404, StreamingHttpResponse
 from django.utils import timezone
 from ninja import NinjaAPI, Router
 from ninja.errors import (
@@ -57,6 +57,7 @@ from .services import (
     set_cached_reply,
     set_user_pref,
 )
+from .streaming import encode_sse
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +220,7 @@ def _validate_openai_compat(base_url: str, api_key: str, model_name: str) -> boo
 def _request_rate_limit_scope(request) -> str:
     """Select the narrowest policy for the endpoint before the handler runs."""
     path = request.path.rstrip("/")
-    if request.method == "POST" and path.endswith("/llm/chat"):
+    if request.method == "POST" and path.endswith(("/llm/chat", "/llm/chat/stream")):
         return "chat"
     if request.method == "POST" and path.endswith("/llm/extern"):
         return "model_validate"
@@ -444,6 +445,170 @@ def chat(request, data: ChatIn):
         session.save(update_fields=["updated_at"])
 
     return {"reply": reply}
+
+
+class _StreamModelUnavailable(Exception):
+    """Internal marker converted to a safe model-unavailable SSE event."""
+
+
+@router.post(
+    "/llm/chat/stream",
+    response={
+        200: ChatOut,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        429: ErrorResponse,
+        500: ErrorResponse,
+        503: ErrorResponse,
+    },
+)
+def chat_stream(request, data: ChatIn):
+    """Stream chat progress while committing History only after ``done``."""
+    if not request.auth:
+        return 401, error_payload(ErrorCode.AUTH_REQUIRED, "请先登录获取 API Key")
+
+    sid = (data.session_id or "").strip() or "default_session"
+    user_input = (data.user_input or "").strip()
+    if not user_input:
+        return 400, error_payload(ErrorCode.VALIDATION_ERROR, "请输入消息内容")
+    user = _get_authenticated_user(request)
+    if user is None:
+        return 401, error_payload(ErrorCode.AUTH_INVALID, "认证用户不存在")
+
+    def event_stream():
+        try:
+            with transaction.atomic():
+                session = _get_locked_session(user, sid)
+                message_id = data.message_id or uuid.uuid4()
+                yield encode_sse(
+                    "start",
+                    {
+                        "type": "start",
+                        "session_id": sid,
+                        "message_id": str(message_id),
+                    },
+                )
+
+                previous = History.objects.filter(session=session, message_id=message_id).first()
+                if previous is not None:
+                    reply = previous.response or ""
+                    yield encode_sse("delta", {"type": "delta", "text": reply})
+                    yield encode_sse(
+                        "done",
+                        {
+                            "type": "done",
+                            "reply": reply,
+                            "cached": True,
+                            "message_id": str(message_id),
+                        },
+                    )
+                    return
+
+                hist_cfg = get_history_cfg()
+                use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
+                turns_all = list(
+                    History.objects.filter(session=session)
+                    .order_by("sequence")
+                    .values_list("user_input", "response")
+                )
+                if use_history_mode == "on":
+                    selected = turns_all[-int(hist_cfg.get("max_turns", 8)) :]
+                elif use_history_mode == "auto":
+                    selected = select_history_by_similarity(user_input, turns_all, hist_cfg)
+                else:
+                    selected = []
+                query = compose_prompt_with_history(selected, user_input, hist_cfg)
+                user_obj = request.auth
+                user_pref = services.get_or_create_user_pref(user_obj)
+                cache_parameters = {
+                    "history_mode": use_history_mode,
+                    "history_max_turns": hist_cfg.get("max_turns", 8),
+                    "history_top_k": hist_cfg.get("top_k", 3),
+                    "history_sim_threshold": hist_cfg.get("sim_threshold", 0.25),
+                    "history_max_tokens": hist_cfg.get("max_tokens", 1000),
+                }
+                cached_reply = get_cached_reply(
+                    query,
+                    sid,
+                    user_obj,
+                    provider=user_pref.provider,
+                    model=user_pref.model or None,
+                    parameters=cache_parameters,
+                    history=selected,
+                )
+                reply = cached_reply
+                if cached_reply:
+                    yield encode_sse("delta", {"type": "delta", "text": cached_reply})
+                else:
+                    try:
+                        for item in services.stream_with_user_llm(user_obj, query):
+                            if item.get("type") == "delta" and item.get("text"):
+                                yield encode_sse("delta", item)
+                            elif item.get("type") == "done":
+                                reply = str(item.get("reply") or "")
+                    except GeneratorExit:
+                        raise
+                    except Exception as exc:
+                        raise _StreamModelUnavailable from exc
+                    if not reply:
+                        raise _StreamModelUnavailable
+                    set_cached_reply(
+                        query,
+                        reply,
+                        sid,
+                        user_obj,
+                        provider=user_pref.provider,
+                        model=user_pref.model or None,
+                        parameters=cache_parameters,
+                        history=selected,
+                    )
+
+                session.next_history_sequence = F("next_history_sequence") + 1
+                session.save(update_fields=["next_history_sequence"])
+                session.refresh_from_db(fields=["next_history_sequence"])
+                History.objects.create(
+                    session=session,
+                    sequence=session.next_history_sequence,
+                    message_id=message_id,
+                    user_input=user_input,
+                    response=reply,
+                )
+                session.updated_at = timezone.now()
+                session.save(update_fields=["updated_at"])
+                yield encode_sse(
+                    "done",
+                    {
+                        "type": "done",
+                        "reply": reply,
+                        "cached": bool(cached_reply),
+                        "message_id": str(message_id),
+                    },
+                )
+        except GeneratorExit:
+            logger.info("流式聊天连接已断开，未提交 History：session=%s", sid)
+            raise
+        except _StreamModelUnavailable:
+            yield encode_sse(
+                "error",
+                {
+                    "type": "error",
+                    **error_payload(ErrorCode.MODEL_UNAVAILABLE, "模型服务暂不可用，请稍后重试"),
+                },
+            )
+        except Exception:
+            logger.exception("流式聊天请求失败：session=%s", sid)
+            yield encode_sse(
+                "error",
+                {
+                    "type": "error",
+                    **error_payload(ErrorCode.INTERNAL_ERROR, "服务内部错误，请稍后再试"),
+                },
+            )
+
+    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
 
 
 @router.get(

@@ -15,6 +15,7 @@ from .log_documents import (
     CanonicalLogRecord,
     CleaningResult,
     DocumentChunk,
+    DuplicateDocumentIDError,
     build_document_manifest,
     clean_data_sources,
     diff_document_manifests,
@@ -26,6 +27,7 @@ from .log_documents import (
 __all__ = [
     "CLEANER_VERSION",
     "CHUNKER_VERSION",
+    "DuplicateDocumentIDError",
     "PARSER_VERSION",
     "CanonicalLogRecord",
     "CleaningResult",

@@ -78,14 +78,14 @@
 ### 3.5 数据清洗与文档构建
 
 - 多源 CSV 可通过 `uv run python manage.py build_log_documents --input data/log` 规范化为统一日志 Schema，并输出清洗统计；使用 `--quality-report`、`--documents` 和 `--manifest` 可分别保存质量报告、JSONL 文档块和稳定文档清单。
-- 构建器默认保留来源 Metadata、按 1200 字符分块，并由 `TopKLogSystem` 以有限批次写入新索引；原始 CSV 不会被命令修改。实现与当前真实数据证据见 `../../doc/m4_data_cleaning_and_document_building.md`。
+- 构建器默认保留来源 Metadata、按 200 字符分块，并由 `TopKLogSystem` 以有限批次写入新索引；原始 CSV 不会被命令修改。实现与当前真实数据证据见 `../../doc/m4_data_cleaning_and_document_building.md`。
 
 ### 3.6 索引版本与检索
 
 - `uv run python manage.py rebuild_log_index` 会在新的版本化 Chroma collection 中构建索引，成功后再发布 current pointer；失败时继续保留旧索引。`--config` 可指定 LLM 配置文件。
 - `uv run python manage.py index_status` 查询 `data/vector_stores/.index_state.json` 中的当前版本、构建状态、文档数和失败摘要；可用 `--state-file` 指定其他状态文件。
 - 索引身份绑定数据内容哈希、Embedding 模型/维度/参数、解析器/分块版本和检索参数。更换这些输入时使用重建命令，不要直接覆盖在线 collection。
-- `INDEX_BUILD_BATCH_SIZE` 默认是 4，适配本地 Ollama Embedding 的上下文限制；可在 1–32 范围内调整，增大前应先做真实接口验证。
+- `INDEX_BUILD_BATCH_SIZE` 默认是 32，`INDEX_CHUNK_SIZE` 默认是 200；前者控制请求批量，后者控制单个文档长度，均适配当前本地 Ollama Embedding。调整前应先做真实接口验证。
 - 检索支持 `metadata_filter`、`RETRIEVAL_MIN_SCORE` 和 `retrieval_status=no_evidence`。`RETRIEVAL_MODE=hybrid` 与 `RERANKER_ENABLED=true` 是默认关闭的实验选项；当前 BM25 在向量候选集上计算，正式使用前应通过固定评测验证。
 
 ## 4. 环境准备

@@ -185,6 +185,37 @@ def _validate_provider_models(
                 ) from exc
 
 
+def _normalize_version(config: dict[str, Any], key: str, default: str) -> str:
+    """Normalize a version label and reject empty values that break cache identity."""
+    value = config.get(key, default)
+    normalized = str(default if value is None else value).strip()
+    if not normalized:
+        raise ConfigurationError(f"{key} 不能为空")
+    config[key] = normalized
+    return normalized
+
+
+def _validate_prompt_file_version(config: dict[str, Any]) -> None:
+    """Ensure a structured system prompt declares the configured protocol version."""
+    prompt_path = Path(config["SYSTEM_PROMPT_PATH"])
+    try:
+        raw_prompt = prompt_path.read_text(encoding="utf-8")
+        prompt_data = yaml.safe_load(raw_prompt)
+    except (OSError, yaml.YAMLError) as exc:
+        raise ConfigurationError(f"无法解析 SYSTEM_PROMPT_PATH: {prompt_path}") from exc
+
+    if not isinstance(prompt_data, dict) or "PromptVersion" not in prompt_data:
+        return
+    declared_version = str(prompt_data.get("PromptVersion") or "").strip()
+    if not declared_version:
+        raise ConfigurationError("system_prompt.yaml 的 PromptVersion 不能为空")
+    if declared_version != config["PROMPT_VERSION"]:
+        raise ConfigurationError(
+            "PROMPT_VERSION 与 system_prompt.yaml 的 PromptVersion 不一致: "
+            f"{config['PROMPT_VERSION']!r} != {declared_version!r}"
+        )
+
+
 def load_llm_config(
     config_path: str | Path | None = None,
     *,
@@ -223,12 +254,20 @@ def load_llm_config(
     config["RESPONSE_TOP_K"] = response_top_k
 
     try:
-        index_build_batch_size = int(config.get("INDEX_BUILD_BATCH_SIZE", 4))
+        index_build_batch_size = int(config.get("INDEX_BUILD_BATCH_SIZE", 32))
     except (TypeError, ValueError) as exc:
         raise ConfigurationError("INDEX_BUILD_BATCH_SIZE 必须是正整数") from exc
     if not 1 <= index_build_batch_size <= 32:
         raise ConfigurationError("INDEX_BUILD_BATCH_SIZE 必须在 1 到 32 之间")
     config["INDEX_BUILD_BATCH_SIZE"] = index_build_batch_size
+
+    try:
+        index_chunk_size = int(config.get("INDEX_CHUNK_SIZE", 200))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("INDEX_CHUNK_SIZE 必须是正整数") from exc
+    if not 100 <= index_chunk_size <= 2000:
+        raise ConfigurationError("INDEX_CHUNK_SIZE 必须在 100 到 2000 之间")
+    config["INDEX_CHUNK_SIZE"] = index_chunk_size
 
     try:
         retrieval_min_score = float(config.get("RETRIEVAL_MIN_SCORE", 0.0))
@@ -289,11 +328,11 @@ def load_llm_config(
         raise ConfigurationError("MAX_PROMPT_CONTEXT_CHARS 必须在 1000 到 100000 之间")
     config["MAX_PROMPT_CONTEXT_CHARS"] = max_prompt_context_chars
     for key, default in {
-        "PROMPT_VERSION": "v1",
+        "PROMPT_VERSION": "m5-v1",
         "INDEX_VERSION": "v1",
-        "CACHE_SCHEMA_VERSION": "v1",
+        "CACHE_SCHEMA_VERSION": "m5-v1",
     }.items():
-        config[key] = str(config.get(key, default))
+        _normalize_version(config, key, default)
 
     llm_provider = str(config.get("LLM_PROVIDER") or "ollama").strip().lower()
     embedding_provider = str(config.get("EMBEDDING_PROVIDER") or "auto").strip().lower()
@@ -322,6 +361,7 @@ def load_llm_config(
         for key in ("SYSTEM_PROMPT_PATH", "RESPONSE_TEMPLATE_PATH"):
             if not Path(config[key]).is_file():
                 raise ConfigurationError(f"{key} 不存在或不是文件: {config[key]}")
+        _validate_prompt_file_version(config)
 
     return config
 

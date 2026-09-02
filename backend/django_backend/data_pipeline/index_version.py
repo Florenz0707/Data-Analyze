@@ -79,7 +79,7 @@ def build_index_spec(
     embedding_model: str,
     embedding_dimensions: int | None,
     embedding_parameters: dict[str, Any] | None = None,
-    chunk_size: int = 1200,
+    chunk_size: int = 200,
     retrieval_parameters: dict[str, Any] | None = None,
 ) -> IndexSpec:
     if chunk_size <= 0:

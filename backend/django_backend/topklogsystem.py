@@ -11,6 +11,7 @@ import logging
 import math
 import re
 import warnings
+from collections.abc import Iterator
 from typing import Any
 
 import yaml
@@ -177,7 +178,8 @@ class TopKLogSystem:
             self.default_top_k: int = int(env_cfg.get("RESPONSE_TOP_K", 10))
         except Exception:
             self.default_top_k = 10
-        self.index_build_batch_size = int(env_cfg.get("INDEX_BUILD_BATCH_SIZE", 4))
+        self.index_build_batch_size = int(env_cfg.get("INDEX_BUILD_BATCH_SIZE", 32))
+        self.index_chunk_size = int(env_cfg.get("INDEX_CHUNK_SIZE", 200))
 
         # 从配置读取路径
         self.log_path = env_cfg["LOG_PATH"]
@@ -191,7 +193,7 @@ class TopKLogSystem:
         self.hybrid_vector_weight = float(env_cfg.get("HYBRID_VECTOR_WEIGHT", 0.7))
         self.hybrid_lexical_weight = float(env_cfg.get("HYBRID_LEXICAL_WEIGHT", 0.3))
         self.reranker_enabled = bool(env_cfg.get("RERANKER_ENABLED", False))
-        self.prompt_version = str(env_cfg.get("PROMPT_VERSION", "v1"))
+        self.prompt_version = str(env_cfg.get("PROMPT_VERSION", "m5-v1"))
         self.last_retrieval_status = "not_run"
         self.last_generation_result: dict[str, Any] = {
             "output_mode": "not_run",
@@ -220,7 +222,13 @@ class TopKLogSystem:
         self.provider = provider
         prov = build_providers(env_cfg)
         self.llm = LangChainLLM(llm=prov["llm"])
-        self.embedding = LangchainEmbedding(prov["embedding"])
+        # Keep the LlamaIndex embedding request batch aligned with the
+        # configured index batch.  Ollama providers can reject larger input
+        # batches even when each individual document is within the context
+        # limit.
+        self.embedding = LangchainEmbedding(
+            prov["embedding"], embed_batch_size=self.index_build_batch_size
+        )
         self.llm_key = prov["llm_key"]
         self.embedding_key = prov["embedding_key"]
         self.collection_name = prov.get("collection_name", "log_collection_default")
@@ -250,6 +258,7 @@ class TopKLogSystem:
             embedding_model=self.embedding_key.model,
             embedding_dimensions=dimensions,
             embedding_parameters=embedding_parameters,
+            chunk_size=self.index_chunk_size,
             retrieval_parameters={
                 "min_score": self.retrieval_min_score,
                 "mode": self.retrieval_mode,
@@ -482,11 +491,15 @@ class TopKLogSystem:
         else:
             document_count = 0
             is_versioned_build = collection_name == versioned_collection_name
+            build_completed = False
+            fallback_used = False
             if is_versioned_build:
                 self.index_state_store.mark_building(self.index_spec, collection_name)
             try:
                 for batch in self._document_batches(
-                    self.log_path, batch_size=self.index_build_batch_size
+                    self.log_path,
+                    batch_size=self.index_build_batch_size,
+                    max_chars=self.index_chunk_size,
                 ):
                     if self.log_index is None:
                         self.log_index = VectorStoreIndex.from_documents(
@@ -505,11 +518,18 @@ class TopKLogSystem:
                     self.index_state_store.mark_ready(
                         self.index_spec, collection_name, document_count
                     )
+                    build_completed = True
                     cleanup_old_index_collections(
                         chroma_client,
                         base_name=base_collection_name,
                         state=self.index_state_store.load(),
                     )
+            except KeyboardInterrupt:
+                if is_versioned_build:
+                    self.index_state_store.mark_failed(
+                        self.index_spec, collection_name, "KeyboardInterrupt"
+                    )
+                raise
             except Exception as exc:
                 if is_versioned_build:
                     self.index_state_store.mark_failed(
@@ -526,6 +546,7 @@ class TopKLogSystem:
                             embed_model=self.embedding,
                         )
                         self.index_source_version = "legacy"
+                        fallback_used = True
                         logger.warning("版本化索引构建失败，继续使用旧索引")
                     else:
                         raise
@@ -539,10 +560,12 @@ class TopKLogSystem:
                     embed_model=self.embedding,
                 )
                 logger.info(f"已创建空集合 '{collection_name}'，当前无可写入的日志文档")
-            else:
+            elif build_completed:
                 logger.info(
                     f"新建向量集合 '{collection_name}' 并完成索引构建，共 {document_count} 个文档块"
                 )
+            elif fallback_used:
+                logger.info("当前服务使用旧索引；失败版本化集合未发布")
 
     @staticmethod
     def _collection_names(client) -> set[str]:
@@ -555,10 +578,10 @@ class TopKLogSystem:
         } - {""}
 
     @staticmethod
-    def _document_batches(data_path: str, batch_size: int = 256):
+    def _document_batches(data_path: str, batch_size: int = 256, max_chars: int = 200):
         """Yield bounded batches so the complete Document list is never retained."""
         batch = []
-        for document in iter_llama_documents(data_path):
+        for document in iter_llama_documents(data_path, max_chars=max_chars):
             batch.append(document)
             if len(batch) >= batch_size:
                 yield batch
@@ -705,6 +728,178 @@ class TopKLogSystem:
         if content is not None:
             return content
         return getattr(response, "text", response)
+
+    @staticmethod
+    def _stream_chunk_text(chunk: Any) -> str:
+        """Extract text from LangChain/Ollama/OpenAI streaming chunk shapes."""
+        if isinstance(chunk, str):
+            return chunk
+        content = getattr(chunk, "content", None)
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, dict) and item.get("text"):
+                    parts.append(str(item["text"]))
+            if parts:
+                return "".join(parts)
+        text = getattr(chunk, "text", None)
+        return str(text) if text is not None else ""
+
+    @staticmethod
+    def _stream_preview(raw: str) -> str:
+        """Extract a safe, human-readable preview from partial structured JSON.
+
+        The preview is never used as the persisted answer.  It lets the UI show
+        useful progress without exposing the model's raw JSON contract; the
+        complete response is still parsed and rendered only after validation.
+        """
+
+        def decode_strings(value: str) -> list[str]:
+            result = []
+            for match in re.finditer(r'"((?:\\.|[^"\\])*)"', value):
+                try:
+                    item = json.loads(f'"{match.group(1)}"')
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(item, str) and item.strip():
+                    result.append(item.strip()[:400])
+            return result
+
+        sections: list[tuple[str, list[str]]] = []
+        diagnosis = re.search(r'"diagnosis"\s*:\s*\[(.*?)\]', raw, re.DOTALL)
+        if diagnosis:
+            sections.append(("# 问题诊断", decode_strings(diagnosis.group(1))[:3]))
+        causes = re.findall(r'"cause"\s*:\s*"((?:\\.|[^"\\])*)"', raw)
+        if causes:
+            sections.append(("# 可能原因", decode_strings('"' + causes[0] + '"')[:3]))
+        steps = re.findall(r'"step"\s*:\s*"((?:\\.|[^"\\])*)"', raw)
+        if steps:
+            sections.append(("# 排查步骤", decode_strings('"' + steps[0] + '"')[:3]))
+        for field, title in (("mitigations", "# 临时缓解措施"), ("final_fixes", "# 最终修复建议")):
+            match = re.search(rf'"{field}"\s*:\s*\[(.*?)\]', raw, re.DOTALL)
+            if match:
+                values = decode_strings(match.group(1))[:3]
+                if values:
+                    sections.append((title, values))
+
+        lines: list[str] = []
+        for title, values in sections:
+            if not values:
+                continue
+            lines.append(title)
+            lines.extend(f"{index}. {value}" for index, value in enumerate(values, start=1))
+            lines.append("")
+        return "\n".join(lines).strip()
+
+    def _stream_model(self, prompt: str, llm: Any | None = None) -> Iterator[Any]:
+        """Return a provider stream, with a one-shot compatibility fallback."""
+        model = llm or self.llm
+        stream = getattr(model, "stream", None)
+        if callable(stream):
+            yield from stream(prompt)
+            return
+        response, _ = self._complete_model(prompt, model)
+        yield response
+
+    def stream_response(
+        self, query: str, context: list[dict], *, llm: Any | None = None
+    ) -> Iterator[dict[str, Any]]:
+        """Stream a validated response as preview deltas followed by one done event."""
+        evidence_ids = [
+            str(item["document_id"]) for item in context if item.get("document_id") is not None
+        ]
+        if not context:
+            answer = no_evidence_answer()
+            reply = render_markdown(answer, [])
+            self.last_structured_answer = answer.model_dump()
+            self._record_generation_result(mode="no_evidence")
+            yield {
+                "type": "done",
+                "reply": reply,
+                "retrieval_stats": 0,
+                "retrieval_status": "no_evidence",
+                "retrieved_evidence_ids": [],
+            }
+            return
+
+        prompt = self._build_prompt_text(query, context)
+        raw = ""
+        preview_sent = ""
+        diagnostics: list[dict[str, str]] = []
+        repair_attempts = 0
+        native_structured = False
+        stream = self._stream_model(prompt, llm)
+        try:
+            for chunk in stream:
+                chunk_text = self._stream_chunk_text(chunk)
+                if not chunk_text:
+                    continue
+                raw += chunk_text
+                preview = self._stream_preview(raw)
+                if preview.startswith(preview_sent):
+                    delta = preview[len(preview_sent) :]
+                    preview_sent = preview
+                    if delta:
+                        yield {"type": "delta", "text": delta}
+
+            response_value = raw
+            answer, diagnostics = parse_answer(response_value, context)
+            if answer is None and getattr(self, "structured_repair_retries", 1) > 0:
+                repair_attempts = 1
+                repaired, native_structured = self._complete_model(
+                    self._build_repair_prompt(query, context, raw, diagnostics), llm
+                )
+                response_value = self._response_text(repaired)
+                answer, diagnostics = parse_answer(response_value, context)
+
+            if answer is not None:
+                self.last_structured_answer = answer.model_dump()
+                self._record_generation_result(
+                    mode="structured",
+                    raw=str(response_value or "").strip(),
+                    diagnostics=diagnostics,
+                    repair_attempts=repair_attempts,
+                    native_structured=native_structured,
+                )
+                reply = render_markdown(answer, context)
+            else:
+                self.sanitizer_fallback_count = (
+                    int(getattr(self, "sanitizer_fallback_count", 0)) + 1
+                )
+                self.last_structured_answer = None
+                reply = self._sanitize_output(raw, query) or "当前生成服务暂不可用，请稍后重试"
+                self._record_generation_result(
+                    mode="sanitizer_fallback",
+                    raw=raw,
+                    diagnostics=diagnostics,
+                    repair_attempts=repair_attempts,
+                    native_structured=native_structured,
+                )
+        finally:
+            close = getattr(stream, "close", None)
+            if callable(close):
+                close()
+
+        yield {
+            "type": "done",
+            "reply": reply,
+            "retrieval_stats": len(context),
+            "retrieval_status": getattr(self, "last_retrieval_status", "ok"),
+            "retrieved_evidence_ids": evidence_ids,
+        }
+
+    def stream_query(
+        self,
+        query: str,
+        *,
+        llm: Any | None = None,
+        embedding: Any | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Retrieve evidence and stream a final contract-validated answer."""
+        context = self.retrieve_logs(query, embedding=embedding)
+        yield from self.stream_response(query, context, llm=llm)
 
     def _record_generation_result(
         self,

@@ -105,6 +105,41 @@ class LogDocumentPipelineTests(SimpleTestCase):
         self.assertNotIn("country", result.records[0].metadata)
         self.assertEqual(result.records[0].level, "ERROR")
 
+    def test_blank_source_headers_are_not_emitted_as_chroma_metadata_keys(self):
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "logs.csv"
+            self._write_csv(
+                path,
+                ["service", "level", "message", ""],
+                [["worker", "ERROR", "failed", "unusable metadata"]],
+            )
+            result = clean_data_sources(path)
+
+        self.assertEqual(len(result.records), 1)
+        self.assertNotIn("", result.records[0].metadata)
+
+    def test_strict_metadata_variants_receive_distinct_document_ids(self):
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "windows_event_log.csv"
+            self._write_csv(
+                path,
+                ["MachineName", "EntryType", "Message"],
+                [
+                    ["host-a", "Info", "service started"],
+                    ["host-b", "Info", "service started"],
+                ],
+            )
+            result = clean_data_sources(path)
+            chunks = list(iter_document_chunks(result.records, max_chars=200))
+
+        self.assertEqual(len(result.records), 2)
+        self.assertEqual(len({record.document_id for record in result.records}), 2)
+        self.assertEqual(len({chunk.chunk_id for chunk in chunks}), len(chunks))
+
     def test_document_ids_metadata_and_chunks_are_stable_and_bounded(self):
         record = CanonicalLogRecord(
             document_id="log-fixed",

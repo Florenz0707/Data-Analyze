@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { useAuthStore } from '../stores/auth';
 
 export const chat = (sessionId, userInput, useHistory = 'auto') => {
   return apiClient.post('/llm/chat', {
@@ -6,6 +7,96 @@ export const chat = (sessionId, userInput, useHistory = 'auto') => {
     user_input: userInput,
     use_history: useHistory,
   });
+};
+
+const streamError = (response, data) => {
+  const error = new Error(data?.error || `Stream request failed (${response.status})`);
+  error.response = { status: response.status, data };
+  return error;
+};
+
+const readSseEvents = async (response, onEvent) => {
+  if (!response.body) throw new Error('Streaming response body is unavailable');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      let boundary = buffer.indexOf('\n\n');
+      while (boundary >= 0) {
+        const frame = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        let event = 'message';
+        let data = '';
+        for (const line of frame.split(/\r?\n/)) {
+          if (line.startsWith('event:')) event = line.slice(6).trim();
+          if (line.startsWith('data:')) data += line.slice(5).trimStart();
+        }
+        if (data) onEvent(event, JSON.parse(data));
+        boundary = buffer.indexOf('\n\n');
+      }
+      if (done) break;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+const fetchStream = async (url, init, authStore) => {
+  let response = await fetch(url, init);
+  if (response.status !== 401) return response;
+
+  try {
+    const refreshed = await apiClient.post('/refresh', null, { _skipAuthRefresh: true });
+    const authorization = refreshed?.headers?.authorization;
+    const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+    if (!token) return response;
+    authStore.setApiKey(token);
+    const headers = { ...init.headers, Authorization: `Bearer ${token}` };
+    response = await fetch(url, { ...init, headers });
+  } catch {
+    // Return the original 401 so the caller gets the stable API error shape.
+  }
+  return response;
+};
+
+export const streamChat = async (
+  sessionId,
+  userInput,
+  { useHistory = 'auto', messageId, signal, onEvent } = {},
+) => {
+  const authStore = useAuthStore();
+  const baseURL = apiClient.defaults?.baseURL || '/api';
+  const headers = { 'Content-Type': 'application/json' };
+  if (authStore.apiKey) headers.Authorization = `Bearer ${authStore.apiKey}`;
+  const response = await fetchStream(
+    `${baseURL}/llm/chat/stream`,
+    {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      signal,
+      body: JSON.stringify({
+        session_id: sessionId,
+        user_input: userInput,
+        use_history: useHistory,
+        ...(messageId ? { message_id: messageId } : {}),
+      }),
+    },
+    authStore,
+  );
+  if (!response.ok) {
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      // Preserve the HTTP status when the gateway returned a non-JSON body.
+    }
+    throw streamError(response, data);
+  }
+  await readSseEvents(response, onEvent || (() => {}));
 };
 
 export const getProviders = () => {

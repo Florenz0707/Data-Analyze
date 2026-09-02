@@ -6,6 +6,7 @@ import { useChatStore } from '../src/stores/chat';
 
 vi.mock('../src/api', () => ({
   chat: vi.fn(),
+  streamChat: vi.fn(),
   createSession: vi.fn(),
   deleteSession: vi.fn(),
   getHistory: vi.fn(),
@@ -19,6 +20,9 @@ describe('chat store', () => {
     const authStore = useAuthStore();
     authStore.setApiKey('user-token');
     vi.clearAllMocks();
+    api.streamChat.mockImplementation(async (_sessionId, _text, options) => {
+      options.onEvent('done', { type: 'done', reply: 'answer' });
+    });
   });
 
   it('initializes from the API and falls back to a temporary chat', async () => {
@@ -48,14 +52,13 @@ describe('chat store', () => {
   it('creates a session before sending the first message', async () => {
     api.getSessionList.mockResolvedValue({ data: { sessions: [] } });
     api.createSession.mockResolvedValue({ data: { session_id: 'created' } });
-    api.chat.mockResolvedValue({ data: { reply: 'answer' } });
     const store = useChatStore();
     await store.initialize();
 
     await store.sendMessage('hello');
 
     expect(api.createSession).toHaveBeenCalledOnce();
-    expect(api.chat).toHaveBeenCalledOnce();
+    expect(api.streamChat).toHaveBeenCalledOnce();
     expect(store.currentSession).toMatch(/^session_\d+_hello$/);
     expect(store.messages[store.currentSession]).toHaveLength(2);
   });
@@ -90,7 +93,7 @@ describe('chat store', () => {
     api.getSessionList.mockResolvedValue({ data: { sessions: ['existing'] } });
     api.getHistory.mockRejectedValue(new Error('offline'));
     api.deleteSession.mockResolvedValue({});
-    api.chat.mockRejectedValue(new Error('offline'));
+    api.streamChat.mockRejectedValue(new Error('offline'));
     localStorage.setItem('currentSession_user-token', 'existing');
     const store = useChatStore();
 
@@ -106,5 +109,28 @@ describe('chat store', () => {
     expect(store.sessions).toEqual([]);
     expect(store.messages).toEqual({});
     expect(localStorage.getItem('sessions_user-token')).toBeNull();
+  });
+
+  it('cancels a stream and removes the incomplete assistant message', async () => {
+    api.getSessionList.mockResolvedValue({ data: { sessions: ['existing'] } });
+    let resolveStream;
+    api.streamChat.mockImplementation((_sessionId, _text, options) => {
+      options.signal.addEventListener('abort', () => resolveStream());
+      return new Promise((resolve) => {
+        resolveStream = resolve;
+      });
+    });
+    localStorage.setItem('currentSession_user-token', 'existing');
+    const store = useChatStore();
+    await store.initialize();
+
+    const sending = store.sendMessage('hello');
+    await Promise.resolve();
+    store.cancelGeneration();
+    await sending;
+
+    expect(store.isStreaming).toBe(false);
+    expect(store.messages.existing).toHaveLength(1);
+    expect(store.messages.existing[0].isUser).toBe(true);
   });
 });

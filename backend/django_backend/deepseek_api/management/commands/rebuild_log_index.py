@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
             force_versioned_index=True,
         )
         state = system.index_state_store.load()
-        version = state.get("current_version")
+        version = system.index_spec.version
         record = (state.get("versions") or {}).get(version, {})
         self.stdout.write(
             json.dumps(
@@ -34,3 +34,7 @@ class Command(BaseCommand):
                 ensure_ascii=False,
             )
         )
+        if record.get("status") != "ready":
+            raise CommandError(
+                f"版本化索引构建未发布: version={version}, status={record.get('status')}"
+            )

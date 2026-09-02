@@ -34,9 +34,9 @@
 
 ```yaml
 REPLY_CACHE_TTL: 3600
-PROMPT_VERSION: 'v1'
+PROMPT_VERSION: 'm5-v1'
 INDEX_VERSION: 'v1'
-CACHE_SCHEMA_VERSION: 'v1'
+CACHE_SCHEMA_VERSION: 'm5-v1'
 ```
 
 `REPLY_CACHE_TTL` 单位为秒，默认 3600；设置为 `0` 时关闭缓存写入。配置加载阶段拒绝负数和非整数，避免误配成永久或异常生命周期。

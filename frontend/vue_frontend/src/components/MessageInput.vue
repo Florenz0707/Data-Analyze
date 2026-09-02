@@ -9,6 +9,17 @@
       class="chat-textarea"
     />
     <n-button
+      v-if="chatStore.isStreaming"
+      circle
+      @click="chatStore.cancelGeneration"
+      class="send-button cancel-button"
+    >
+      <template #icon>
+        <n-icon :component="StopIcon" />
+      </template>
+    </n-button>
+    <n-button
+      v-else
       circle
       @click="handleSend"
       :disabled="!text.trim() || appStore.loading"
@@ -26,7 +37,7 @@
 // 修改：导入 watch
 import { ref, watch } from 'vue';
 import { NInput, NButton, NIcon } from 'naive-ui';
-import { SendOutline as SendIcon } from '@vicons/ionicons5';
+import { SendOutline as SendIcon, StopCircleOutline as StopIcon } from '@vicons/ionicons5';
 import { useAppStore } from '../stores/app';
 // 修改：导入 chatStore
 import { useChatStore } from '../stores/chat';
@@ -91,6 +102,14 @@ const handleSend = () => {
 }
 .send-button:hover {
   background: linear-gradient(135deg, #3a75d9, #8a4eae);
+}
+
+.cancel-button {
+  background: #d9534f;
+}
+
+.cancel-button:hover {
+  background: #b52b27;
 }
 .send-button.n-button--disabled {
   background: #f0f0f0;

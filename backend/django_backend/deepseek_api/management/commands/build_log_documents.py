@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument("--quality-report", help="Write the redacted quality report to JSON")
         parser.add_argument("--documents", help="Write document chunks to JSONL")
         parser.add_argument("--manifest", help="Write the stable document manifest to JSON")
-        parser.add_argument("--max-chars", type=int, default=1200)
+        parser.add_argument("--max-chars", type=int, default=200)
 
     def handle(self, *args, **options):
         max_chars = options["max_chars"]

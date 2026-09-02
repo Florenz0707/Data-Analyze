@@ -1,18 +1,19 @@
 {
-  "cleaner_version": "m4-cleaner-v1",
-  "parser_version": "m4-parser-v1",
+  "cleaner_version": "m4-cleaner-v2",
+  "parser_version": "m4-parser-v3",
   "files_discovered": 9,
   "rows_read": 174026,
   "empty_rows": 62,
-  "accepted_records": 164386,
-  "duplicate_rows": 9439,
+  "accepted_records": 73912,
+  "unique_document_ids": 73912,
+  "document_id_collision_count": 0,
+  "duplicate_rows": 99913,
   "quarantined_records": 139,
   "redacted_rows": 161522,
-  "duplicate_rate": 0.05423902175536989,
+  "duplicate_rate": 0.5741268546079321,
   "post_clean_duplicate_rate": 0.0,
   "quarantine_rate": 0.0007987312240699666,
   "required_field_pass_rate": 1.0,
-  "document_chunks": 189129,
   "quarantine_reasons": {
     "email": 5,
     "pii_field": 2,
@@ -52,8 +53,8 @@
       "rows_read": 158184,
       "empty_rows": 0,
       "quarantined": 2,
-      "duplicates": 0,
-      "accepted": 158182
+      "duplicates": 90474,
+      "accepted": 67708
     },
     "java_error_deepseek.csv": {
       "rows_read": 274,
@@ -83,5 +84,6 @@
       "duplicates": 10,
       "accepted": 79
     }
-  }
+  },
+  "document_chunks": 246951
 }

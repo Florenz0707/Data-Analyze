@@ -34,6 +34,13 @@ class ApiIntegrationTests(TestCase):
         client.defaults["HTTP_AUTHORIZATION"] = token
         return client
 
+    def test_stream_chat_uses_chat_rate_limit_scope(self):
+        import deepseek_api.api as api_module
+
+        request = SimpleNamespace(method="POST", path="/api/llm/chat/stream")
+
+        self.assertEqual(api_module._request_rate_limit_scope(request), "chat")
+
     def test_register_rejects_duplicate_username_and_empty_input(self):
         self.register_and_login("duplicate-user")
 
@@ -78,6 +85,7 @@ class ApiIntegrationTests(TestCase):
             self.client.get("/api/llm/extern"),
             self.client.delete("/api/llm/extern", data="{}", content_type="application/json"),
             self.client.post("/api/llm/chat", data="{}", content_type="application/json"),
+            self.client.post("/api/llm/chat/stream", data="{}", content_type="application/json"),
         ]
 
         self.assertTrue(all(response.status_code == 401 for response in cases))
@@ -762,3 +770,61 @@ class ApiIntegrationTests(TestCase):
             Session.objects.filter(session_id="session", user__username="unavailable-user").exists()
         )
         self.assertFalse(History.objects.exists())
+
+    @patch(
+        "deepseek_api.api.services.stream_with_user_llm",
+        return_value=iter(
+            [
+                {"type": "delta", "text": "# 问题诊断\n1. 部分回答"},
+                {
+                    "type": "done",
+                    "reply": "# 问题诊断\n1. 完整回答",
+                },
+            ]
+        ),
+    )
+    def test_stream_chat_persists_only_after_done(self, _stream):
+        client = self.authenticated_client("stream-user")
+        payload = json.dumps(
+            {
+                "session_id": "stream-session",
+                "user_input": "question",
+                "message_id": "11111111-1111-4111-8111-111111111111",
+            }
+        )
+
+        response = client.post(
+            "/api/llm/chat/stream", data=payload, content_type="application/json"
+        )
+        body = b"".join(response.streaming_content).decode("utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        self.assertIn("event: start", body)
+        self.assertIn("event: delta", body)
+        self.assertIn('"type":"done"', body)
+        self.assertIn("完整回答", body)
+        self.assertEqual(
+            History.objects.filter(
+                session__session_id="stream-session", user_input="question"
+            ).count(),
+            1,
+        )
+
+    @patch(
+        "deepseek_api.api.services.stream_with_user_llm",
+        return_value=iter([{"type": "delta", "text": "partial"}]),
+    )
+    def test_stream_disconnect_does_not_persist_partial_history(self, _stream):
+        client = self.authenticated_client("stream-cancel-user")
+        response = client.post(
+            "/api/llm/chat/stream",
+            data=json.dumps({"session_id": "cancel-session", "user_input": "question"}),
+            content_type="application/json",
+        )
+        iterator = iter(response.streaming_content)
+        next(iterator)
+        response._iterator.close()
+
+        self.assertFalse(History.objects.filter(session__session_id="cancel-session").exists())
+        self.assertFalse(Session.objects.filter(session_id="cancel-session").exists())
