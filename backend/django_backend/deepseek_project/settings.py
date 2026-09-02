@@ -61,6 +61,26 @@ WSGI_APPLICATION = "deepseek_project.wsgi.application"
 # Database configuration is kept separate from LLM/application settings.
 DATABASES = {"default": load_database_config(project_root=BASE_DIR)}
 
+# Production workers must share answer/retrieval cache entries. Tests opt into
+# an isolated in-memory backend so they remain deterministic and offline.
+TESTING = parse_bool(os.getenv("DJANGO_TESTING"), False)
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
+if TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "deepseek-tests",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "KEY_PREFIX": os.getenv("CACHE_KEY_PREFIX", "deepseek"),
+        }
+    }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -141,9 +161,10 @@ RATE_LIMIT_API_INTERVAL = int(os.getenv("RATE_LIMIT_API_INTERVAL", str(RATE_LIMI
 RATE_LIMIT_TRUST_PROXY = parse_bool(os.getenv("RATE_LIMIT_TRUST_PROXY"), False)
 CACHE_MAX_SIZE = 200
 CACHE_EXPIRY = 300
+CACHE_MAX_OBJECT_BYTES = int(os.getenv("CACHE_MAX_OBJECT_BYTES", "262144"))
+CACHE_SINGLE_FLIGHT_TIMEOUT = int(os.getenv("CACHE_SINGLE_FLIGHT_TIMEOUT", "120"))
 
 # LLM/model loading controls
-TESTING = parse_bool(os.getenv("DJANGO_TESTING"), False)
 # Whether LLM features are enabled at all (controls if the model can be initialized)
 ENABLE_LLM = parse_bool(os.getenv("ENABLE_LLM"), not TESTING)
 # Whether to preload model and vector index on app startup

@@ -314,6 +314,20 @@ def load_llm_config(
         raise ConfigurationError("REPLY_CACHE_TTL 必须是非负整数")
     config["REPLY_CACHE_TTL"] = reply_cache_ttl
     try:
+        retrieval_cache_ttl = int(config.get("RETRIEVAL_CACHE_TTL", 300))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("RETRIEVAL_CACHE_TTL 必须是非负整数") from exc
+    if retrieval_cache_ttl < 0:
+        raise ConfigurationError("RETRIEVAL_CACHE_TTL 必须是非负整数")
+    config["RETRIEVAL_CACHE_TTL"] = retrieval_cache_ttl
+    try:
+        cache_max_object_bytes = int(config.get("CACHE_MAX_OBJECT_BYTES", 262_144))
+    except (TypeError, ValueError) as exc:
+        raise ConfigurationError("CACHE_MAX_OBJECT_BYTES 必须是正整数") from exc
+    if not 1024 <= cache_max_object_bytes <= 10_485_760:
+        raise ConfigurationError("CACHE_MAX_OBJECT_BYTES 必须在 1024 到 10485760 之间")
+    config["CACHE_MAX_OBJECT_BYTES"] = cache_max_object_bytes
+    try:
         structured_repair_retries = int(config.get("STRUCTURED_REPAIR_RETRIES", 1))
     except (TypeError, ValueError) as exc:
         raise ConfigurationError("STRUCTURED_REPAIR_RETRIES 必须是 0 或 1") from exc

@@ -21,6 +21,7 @@ from data_pipeline import (
     cleanup_old_index_collections,
     iter_llama_documents,
 )
+from deepseek_project.cache_runtime import build_retrieval_cache_key, get_or_compute
 from deepseek_project.configuration import (
     load_llm_config,
     redacted_config_summary,
@@ -193,6 +194,9 @@ class TopKLogSystem:
         self.hybrid_vector_weight = float(env_cfg.get("HYBRID_VECTOR_WEIGHT", 0.7))
         self.hybrid_lexical_weight = float(env_cfg.get("HYBRID_LEXICAL_WEIGHT", 0.3))
         self.reranker_enabled = bool(env_cfg.get("RERANKER_ENABLED", False))
+        self.retrieval_cache_ttl = int(env_cfg.get("RETRIEVAL_CACHE_TTL", 300))
+        self.cache_max_object_bytes = int(env_cfg.get("CACHE_MAX_OBJECT_BYTES", 262_144))
+        self.cache_schema_version = str(env_cfg.get("CACHE_SCHEMA_VERSION", "m5-v1"))
         self.prompt_version = str(env_cfg.get("PROMPT_VERSION", "m5-v1"))
         self.last_retrieval_status = "not_run"
         self.last_generation_result: dict[str, Any] = {
@@ -591,6 +595,58 @@ class TopKLogSystem:
 
     # 检索相关日志
     def retrieve_logs(
+        self,
+        query: str,
+        top_k: int | None = None,
+        *,
+        embedding: Any | None = None,
+        metadata_filter: dict[str, Any] | None = None,
+    ) -> list[dict]:
+        """Retrieve evidence with a versioned, bounded shared cache."""
+        if not getattr(self, "log_index", None) or embedding is not None:
+            return self._retrieve_logs_uncached(
+                query, top_k, embedding=embedding, metadata_filter=metadata_filter
+            )
+
+        resolved_top_k = (
+            int(top_k) if top_k is not None else int(getattr(self, "default_top_k", 10))
+        )
+        if resolved_top_k < 1:
+            raise ValueError("top_k must be positive")
+        filter_values = dict(metadata_filter or {})
+        embedding_key = getattr(self, "embedding_key", None)
+        cache_key = build_retrieval_cache_key(
+            query,
+            index_version=str(
+                getattr(self, "index_source_version", getattr(self, "index_version", "unknown"))
+            ),
+            embedding_provider=str(getattr(embedding_key, "provider", "unknown")),
+            embedding_model=str(getattr(embedding_key, "model", "unknown")),
+            top_k=resolved_top_k,
+            retrieval_mode=str(getattr(self, "retrieval_mode", "vector")),
+            candidate_multiplier=int(getattr(self, "retrieval_candidate_multiplier", 3)),
+            min_score=float(getattr(self, "retrieval_min_score", 0.0)),
+            vector_weight=float(getattr(self, "hybrid_vector_weight", 0.7)),
+            lexical_weight=float(getattr(self, "hybrid_lexical_weight", 0.3)),
+            reranker_enabled=bool(getattr(self, "reranker_enabled", False)),
+            metadata_filter=filter_values,
+            schema_version=str(getattr(self, "cache_schema_version", "m5-v1")),
+            namespace="retrieval-v1",
+        )
+        results, _ = get_or_compute(
+            cache_key,
+            lambda: self._retrieve_logs_uncached(
+                query, resolved_top_k, embedding=None, metadata_filter=filter_values
+            ),
+            timeout=int(getattr(self, "retrieval_cache_ttl", 300)),
+            cache_kind="retrieval",
+            validator=lambda value: isinstance(value, list),
+            max_bytes=int(getattr(self, "cache_max_object_bytes", 262_144)),
+        )
+        self.last_retrieval_status = "ok" if results else "no_evidence"
+        return results
+
+    def _retrieve_logs_uncached(
         self,
         query: str,
         top_k: int | None = None,

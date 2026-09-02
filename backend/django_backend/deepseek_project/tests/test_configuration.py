@@ -34,6 +34,8 @@ class ConfigurationTests(SimpleTestCase):
         self.assertEqual(config["INDEX_BUILD_BATCH_SIZE"], 32)
         self.assertEqual(config["INDEX_CHUNK_SIZE"], 200)
         self.assertEqual(config["REPLY_CACHE_TTL"], 3600)
+        self.assertEqual(config["RETRIEVAL_CACHE_TTL"], 300)
+        self.assertEqual(config["CACHE_MAX_OBJECT_BYTES"], 262144)
         self.assertEqual(config["PROMPT_VERSION"], "m5-v1")
         self.assertEqual(config["INDEX_VERSION"], "v1")
         self.assertNotIn("TOP_K", config)
@@ -183,6 +185,13 @@ class ConfigurationTests(SimpleTestCase):
     def test_negative_reply_cache_ttl_fails_fast(self):
         with self.assertRaisesRegex(ConfigurationError, "REPLY_CACHE_TTL"):
             self._load_temp_config({"REPLY_CACHE_TTL": -1})
+
+    def test_cache_object_limit_is_bounded(self):
+        with self.assertRaisesRegex(ConfigurationError, "CACHE_MAX_OBJECT_BYTES"):
+            self._load_temp_config({"CACHE_MAX_OBJECT_BYTES": 512})
+
+        with self.assertRaisesRegex(ConfigurationError, "RETRIEVAL_CACHE_TTL"):
+            self._load_temp_config({"RETRIEVAL_CACHE_TTL": -1})
 
     def test_index_build_batch_size_is_bounded(self):
         with self.assertRaisesRegex(ConfigurationError, "INDEX_BUILD_BATCH_SIZE"):

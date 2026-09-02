@@ -33,6 +33,7 @@ dependencies = [
     "mysqlclient>=2.2.7",
     "psycopg[binary]>=3.2.3",
     "python-dotenv>=1.1.1",
+    "redis>=5.0.0",
     "sentence-transformers>=5.1.1",
     "setuptools>=80.9.0",
     "torch>=2.9.0",

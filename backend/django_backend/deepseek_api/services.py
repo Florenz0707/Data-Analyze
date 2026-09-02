@@ -8,6 +8,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
+from deepseek_project.cache_runtime import (
+    cache_delete,
+    cache_get,
+    cache_set,
+    get_or_compute,
+)
 from deepseek_project.configuration import load_llm_config
 from deepseek_project.external_endpoint import ExternalEndpointError, validate_external_endpoint
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
@@ -798,11 +804,11 @@ def get_cached_reply(
         parameters=parameters,
         history=history,
     )
-    value = cache.get(cache_key)
+    value = cache_get(cache_key, cache_kind="reply")
     if isinstance(value, str) and value.strip():
         return value
     if value is not None:
-        cache.delete(cache_key)
+        cache_delete(cache_key, cache_kind="reply")
     return None
 
 
@@ -836,8 +842,47 @@ def set_cached_reply(
         parameters=parameters,
         history=history,
     )
-    cache.set(cache_key, reply, timeout)
-    return True
+    return cache_set(
+        cache_key,
+        reply,
+        timeout,
+        cache_kind="reply",
+        max_bytes=int(cfg.get("CACHE_MAX_OBJECT_BYTES", 262_144)),
+    )
+
+
+def compute_cached_reply(
+    prompt: str,
+    session_id: str,
+    user: APIKey,
+    producer,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+    parameters: dict[str, Any] | None = None,
+    history: list[tuple[str, str]] | None = None,
+) -> tuple[str, bool]:
+    """Compute one final answer per cache key and return ``(reply, cached)``."""
+    cfg = _load_env_cfg()
+    timeout = int(cfg.get("REPLY_CACHE_TTL", 3600))
+    cache_key = _build_reply_cache_key(
+        prompt,
+        session_id,
+        user,
+        provider=provider,
+        model=model,
+        parameters=parameters,
+        history=history,
+    )
+    value, cached = get_or_compute(
+        cache_key,
+        producer,
+        timeout=timeout,
+        cache_kind="reply",
+        validator=lambda item: isinstance(item, str) and bool(item.strip()),
+        max_bytes=int(cfg.get("CACHE_MAX_OBJECT_BYTES", 262_144)),
+    )
+    return str(value or ""), cached
 
 
 def invalidate_reply_cache() -> str:

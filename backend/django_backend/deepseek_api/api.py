@@ -48,6 +48,7 @@ from .schemas import (
 )
 from .services import (
     compose_prompt_with_history,
+    compute_cached_reply,
     generate_with_user_llm,
     get_allowed_providers,
     get_cached_reply,
@@ -398,36 +399,23 @@ def chat(request, data: ChatIn):
         # 5. 调用大模型（带缓存）。
         user_obj = request.auth
         user_pref = services.get_or_create_user_pref(user_obj)
-        cached_reply = get_cached_reply(
-            query,
-            sid,
-            user_obj,
-            provider=user_pref.provider,
-            model=user_pref.model or None,
-            parameters=cache_parameters,
-            history=selected,
-        )
-        if cached_reply:
-            reply = cached_reply
-        else:
-            try:
-                reply = generate_with_user_llm(user_obj, query)
-                set_cached_reply(
-                    query,
-                    reply,
-                    sid,
-                    user_obj,
-                    provider=user_pref.provider,
-                    model=user_pref.model or None,
-                    parameters=cache_parameters,
-                    history=selected,
-                )
-            except RuntimeError as e:
-                transaction.set_rollback(True)
-                return 503, error_payload(
-                    ErrorCode.MODEL_UNAVAILABLE,
-                    f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。",
-                )
+        try:
+            reply, _ = compute_cached_reply(
+                query,
+                sid,
+                user_obj,
+                lambda: generate_with_user_llm(user_obj, query),
+                provider=user_pref.provider,
+                model=user_pref.model or None,
+                parameters=cache_parameters,
+                history=selected,
+            )
+        except RuntimeError as e:
+            transaction.set_rollback(True)
+            return 503, error_payload(
+                ErrorCode.MODEL_UNAVAILABLE,
+                f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。",
+            )
         logger.info("TopKLogSystem 已生成回复：session=%s chars=%s", sid, len(reply))
 
         # 6. 写入结构化历史并更新会话时间
