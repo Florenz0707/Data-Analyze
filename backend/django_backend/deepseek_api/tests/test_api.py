@@ -313,6 +313,10 @@ class ApiIntegrationTests(TestCase):
                 "limit": 1,
             },
         )
+        latest = client.get(
+            "/api/sessions/history",
+            {"session_id": "history-session", "limit": 1, "latest": True},
+        )
         invalid_pagination = client.get(
             "/api/sessions/history",
             {
@@ -344,6 +348,9 @@ class ApiIntegrationTests(TestCase):
         self.assertFalse(after.json()["has_more_after"])
         self.assertEqual(before_cursor.json()["turns"][0]["user_input"], "one")
         self.assertEqual(after_cursor.json()["turns"][0]["user_input"], "two")
+        self.assertEqual(latest.json()["turns"][0]["user_input"], "two")
+        self.assertTrue(latest.json()["has_more_before"])
+        self.assertFalse(latest.json()["has_more_after"])
         self.assertEqual(invalid_pagination.status_code, 400)
         self.assertEqual(clear.status_code, 200)
         self.assertEqual(deleted.status_code, 200)

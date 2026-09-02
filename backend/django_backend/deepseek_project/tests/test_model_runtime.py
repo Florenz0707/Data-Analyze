@@ -8,8 +8,12 @@ from django.test import SimpleTestCase
 from deepseek_project.model_runtime import (
     ModelInstanceCache,
     ModelInstanceKey,
+    ProviderClientCache,
+    ProviderClientKey,
     clear_model_caches,
+    get_cached_http_client,
     get_cached_llm,
+    model_load_records,
 )
 
 
@@ -65,6 +69,44 @@ class ModelRuntimeTests(SimpleTestCase):
         self.assertIsNot(first, cache.get_or_create(first_key, object))
         self.assertIsNot(second, third)
 
+    def test_unhealthy_model_is_removed_and_rebuilt(self):
+        cache = ModelInstanceCache(max_size=2)
+        key = ModelInstanceKey("ollama", "model-a", "endpoint")
+        first = cache.get_or_create(key, lambda: object())
+
+        class Unhealthy:
+            def __init__(self):
+                self.healthy = True
+
+            def health_check(self):
+                return self.healthy
+
+        cache = ModelInstanceCache(max_size=2)
+        first = Unhealthy()
+        second = Unhealthy()
+        created = iter((first, second))
+        cached = cache.get_or_create(key, lambda: next(created))
+        first.healthy = False
+
+        rebuilt = cache.get_or_create(key, lambda: next(created))
+
+        self.assertIs(cached, first)
+        self.assertIs(rebuilt, second)
+
+    def test_remote_client_cache_reuses_one_connection_pool_per_endpoint(self):
+        config = {"MODEL_CACHE_MAX_SIZE": 2}
+        with patch("deepseek_project.external_endpoint.create_safe_http_client") as create:
+            create.return_value = object()
+            first = get_cached_http_client("openai_compat", "https://example.test/v1", config)
+            second = get_cached_http_client("openai_compat", "https://example.test/v1", config)
+
+        self.assertIs(first, second)
+        create.assert_called_once_with("https://example.test/v1")
+        self.assertEqual(len(ProviderClientCache(max_size=1)), 0)
+        self.assertEqual(
+            ProviderClientKey("openai_compat", "https://example.test/v1").provider, "openai_compat"
+        )
+
     @patch("llm_provider_factory.build_llm_by")
     def test_cached_llm_forwards_user_selected_model(self, build_llm):
         config = {
@@ -79,3 +121,19 @@ class ModelRuntimeTests(SimpleTestCase):
         self.assertEqual(key.endpoint, "http://endpoint")
         build_llm.assert_called_once_with("ollama", config, model="selected-model")
         self.assertIsNotNone(instance)
+        self.assertEqual(len(model_load_records()), 1)
+
+    @patch("llm_provider_factory.build_llm_by")
+    def test_unhealthy_cached_llm_is_rebuilt(self, build_llm):
+        config = {
+            "MODEL_CACHE_MAX_SIZE": 4,
+            "OLLAMA_CONFIG": {"model": "default", "host": "http://endpoint"},
+        }
+        build_llm.side_effect = [object(), object()]
+
+        first, _ = get_cached_llm("ollama", "selected-model", config)
+        first.mark_unhealthy()
+        second, _ = get_cached_llm("ollama", "selected-model", config)
+
+        self.assertIsNot(first, second)
+        self.assertEqual(build_llm.call_count, 2)

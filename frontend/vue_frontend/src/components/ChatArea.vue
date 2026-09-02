@@ -18,9 +18,23 @@
           <n-p>How can I help you today?</n-p>
         </div>
         <div v-else>
-          <ChatMessage v-for="message in messages" :key="message.id" :message="message" />
+          <n-button
+            v-if="chatStore.hasOlderHistory"
+            text
+            :loading="appStore.isLoadingHistory"
+            class="load-older-button"
+            @click="chatStore.loadOlderHistory()"
+          >
+            Load older messages
+          </n-button>
+          <ChatMessage
+            v-for="message in messages"
+            :key="message.id"
+            :message="message"
+            @retry="chatStore.retryMessage(message)"
+          />
         </div>
-        <div v-if="appStore.loading" class="typing-indicator">
+        <div v-if="appStore.isSending" class="typing-indicator">
           <n-spin size="small" />
           <span>Assistant is typing...</span>
         </div>
@@ -40,7 +54,7 @@
 
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue';
-import { NScrollbar, NH2, NSpin, NP, NH1, NIcon } from 'naive-ui';
+import { NButton, NScrollbar, NH2, NSpin, NP, NH1, NIcon } from 'naive-ui';
 import { SparklesOutline as SparklesIcon } from '@vicons/ionicons5';
 import { useChatStore } from '../stores/chat';
 import { useAppStore } from '../stores/app';
@@ -86,16 +100,23 @@ watch(
 );
 
 watch(
-  messages,
   () => {
-    scrollToBottom();
+    const currentMessages = messages.value;
+    const lastMessage = currentMessages[currentMessages.length - 1];
+    return [
+      chatStore.currentSession,
+      currentMessages.length,
+      lastMessage?.id,
+      lastMessage?.content,
+      lastMessage?.streaming,
+    ];
   },
-  { deep: true },
+  () => scrollToBottom(),
 );
 
 // 修改：handleSendMessage 现在只调用 store action
 const handleSendMessage = (text) => {
-  chatStore.sendMessage(text);
+  void chatStore.sendMessage(text);
 };
 </script>
 
@@ -176,5 +197,10 @@ const handleSendMessage = (text) => {
   gap: 8px;
   padding: 10px 0;
   color: #5f6368;
+}
+
+.load-older-button {
+  display: block;
+  margin: 0 auto 16px;
 }
 </style>

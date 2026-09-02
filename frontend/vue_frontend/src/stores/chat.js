@@ -18,11 +18,39 @@ const createMessageId = () => {
   return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+const HISTORY_PAGE_SIZE = 100;
+
+const messagesFromTurns = (turns) => {
+  const now = new Date().toLocaleString();
+  const result = [];
+  for (const turn of turns) {
+    const turnId = turn.message_id || turn.id;
+    if (turn.user_input) {
+      result.push({
+        id: `${turnId}:user`,
+        isUser: true,
+        content: turn.user_input,
+        timestamp: now,
+      });
+    }
+    if (turn.response) {
+      result.push({
+        id: `${turnId}:assistant`,
+        isUser: false,
+        content: turn.response,
+        timestamp: now,
+      });
+    }
+  }
+  return result;
+};
+
 export const useChatStore = defineStore('chat', {
   state: () => ({
     currentSession: null,
     sessions: [], // 只存储在后端真实创建的 session IDs
     messages: {}, // { [sessionId]: [message] }
+    historyMeta: {},
     isStreaming: false,
     activeAbortController: null,
   }),
@@ -48,11 +76,14 @@ export const useChatStore = defineStore('chat', {
         return { id, displayName };
       });
     },
+    hasOlderHistory(state) {
+      return Boolean(state.historyMeta[state.currentSession]?.has_more_before);
+    },
   },
   actions: {
     async initialize() {
       const appStore = useAppStore();
-      appStore.setLoading(true);
+      appStore.setTaskLoading('initializing', true);
       try {
         const response = await api.getSessionList();
         const apiSessions = response.data.sessions || [];
@@ -80,7 +111,7 @@ export const useChatStore = defineStore('chat', {
         this.startNewChat();
         appStore.setInitialized(true);
       } finally {
-        appStore.setLoading(false);
+        appStore.setTaskLoading('initializing', false);
       }
     },
 
@@ -100,6 +131,7 @@ export const useChatStore = defineStore('chat', {
           // 如果删除了当前会话，则切换到 "New Chat"
           this.startNewChat();
         }
+        delete this.historyMeta[sessionId];
       } catch (error) {
         useAppStore().setError(getApiErrorMessage(error, 'Failed to delete session.'));
       }
@@ -126,22 +158,23 @@ export const useChatStore = defineStore('chat', {
     },
 
     // 新的发送消息 action，处理延迟创建
-    async sendMessage(text) {
+    async sendMessage(text, { retryMessage = null, messageId: requestedMessageId = null } = {}) {
       const appStore = useAppStore();
       let sessionId = this.currentSession;
       const isNewChat = sessionId === TEMP_NEW_CHAT_ID;
-      const messageId = createMessageId();
+      const messageId = requestedMessageId || createMessageId();
 
-      const userMessage = {
+      const userMessage = retryMessage || {
         id: messageId,
         isUser: true,
         content: text,
         timestamp: new Date().toLocaleString(),
       };
+      userMessage.retryable = false;
 
       // 1. 如果是新对话，先在后端创建
       if (isNewChat) {
-        appStore.setLoading(true); // 开始加载
+        appStore.setTaskLoading('sending', true);
         try {
           // 根据消息内容创建 session ID
           const sessionName = text.substring(0, 7);
@@ -162,17 +195,17 @@ export const useChatStore = defineStore('chat', {
           sessionId = newId; // 更新 sessionId 供后续 API 调用
         } catch (error) {
           appStore.setError(getApiErrorMessage(error, 'Failed to create session.'));
-          appStore.setLoading(false);
+          appStore.setTaskLoading('sending', false);
           return; // 创建失败则停止
         }
         // 注意：创建成功后，Loading 状态保持，等待机器人回复
       } else {
         // 如果是旧对话，直接添加用户消息
-        this.addMessage(sessionId, userMessage);
+        if (!retryMessage) this.addMessage(sessionId, userMessage);
       }
 
       // 2. 发送消息到 (已存在的) chat API
-      appStore.setLoading(true);
+      appStore.setTaskLoading('sending', true);
       const botMessage = {
         id: `${messageId}:assistant`,
         isUser: false,
@@ -182,24 +215,53 @@ export const useChatStore = defineStore('chat', {
       };
       this.addMessage(sessionId, botMessage);
       const botMessages = this.messages[sessionId];
+      const updateMessage = (messageId, updates) => {
+        const message = botMessages.find((item) => item.id === messageId);
+        if (message) Object.assign(message, updates);
+      };
       const removeIncompleteBotMessage = () => {
-        const index = botMessages.indexOf(botMessage);
+        const index = botMessages.findIndex((message) => message.id === botMessage.id);
         if (index >= 0) botMessages.splice(index, 1);
       };
       const controller = new AbortController();
       this.activeAbortController = controller;
       this.isStreaming = true;
       let receivedDone = false;
+      let pendingDelta = '';
+      let renderTimer = null;
+      const flushPendingDelta = () => {
+        renderTimer = null;
+        if (pendingDelta) {
+          updateMessage(botMessage.id, {
+            content: `${botMessages.find((message) => message.id === botMessage.id)?.content || ''}${pendingDelta}`,
+          });
+          pendingDelta = '';
+        }
+      };
+      const scheduleDeltaFlush = () => {
+        if (renderTimer !== null) return;
+        if (typeof globalThis.requestAnimationFrame === 'function') {
+          renderTimer = globalThis.requestAnimationFrame(flushPendingDelta);
+        } else {
+          renderTimer = globalThis.setTimeout(flushPendingDelta, 0);
+        }
+      };
       try {
         await api.streamChat(sessionId, text, {
           messageId,
           signal: controller.signal,
           onEvent: (event, data) => {
             if (event === 'delta' || data?.type === 'delta') {
-              botMessage.content += data?.text || '';
+              pendingDelta += data?.text || '';
+              scheduleDeltaFlush();
             } else if (event === 'done' || data?.type === 'done') {
-              botMessage.content = data?.reply || botMessage.content;
-              botMessage.streaming = false;
+              flushPendingDelta();
+              const currentContent =
+                botMessages.find((message) => message.id === botMessage.id)?.content || '';
+              updateMessage(botMessage.id, {
+                content: data?.reply || currentContent,
+                streaming: false,
+              });
               receivedDone = true;
             } else if (event === 'error' || data?.type === 'error') {
               const error = new Error(data?.error || 'Streaming generation failed');
@@ -212,17 +274,28 @@ export const useChatStore = defineStore('chat', {
       } catch (error) {
         removeIncompleteBotMessage();
         if (error?.name !== 'AbortError') {
+          const userMessages = this.messages[sessionId] || [];
+          const currentUserMessage = userMessages.find((message) => message.id === userMessage.id);
+          if (currentUserMessage) currentUserMessage.retryable = true;
           appStore.setError(getApiErrorMessage(error, 'Failed to send message.'));
         }
       } finally {
         if (this.activeAbortController === controller) this.activeAbortController = null;
         this.isStreaming = false;
-        appStore.setLoading(false);
+        appStore.setTaskLoading('sending', false);
       }
     },
 
     cancelGeneration() {
       if (this.activeAbortController) this.activeAbortController.abort();
+    },
+
+    async retryMessage(message) {
+      if (!message?.isUser || !message.retryable || this.isStreaming) return;
+      await this.sendMessage(message.content, {
+        retryMessage: message,
+        messageId: message.id,
+      });
     },
 
     async loadHistory(sessionId) {
@@ -236,37 +309,52 @@ export const useChatStore = defineStore('chat', {
       }
 
       const appStore = useAppStore();
-      appStore.setLoading(true);
+      appStore.setTaskLoading('history', true);
       try {
-        const response = await api.getHistory(sessionId);
-
-        const turns = response.data.turns || [];
-        const newMessages = [];
-        const now = new Date().toLocaleString();
-        for (const turn of turns) {
-          if (turn.user_input) {
-            newMessages.push({
-              id: `${turn.message_id || turn.id}:user`,
-              isUser: true,
-              content: turn.user_input,
-              timestamp: now,
-            });
-          }
-          if (turn.response) {
-            newMessages.push({
-              id: `${turn.message_id || turn.id}:assistant`,
-              isUser: false,
-              content: turn.response,
-              timestamp: now,
-            });
-          }
-        }
-        this.messages[sessionId] = newMessages;
+        const response = await api.getHistory(sessionId, {
+          limit: HISTORY_PAGE_SIZE,
+          latest: true,
+        });
+        this.messages[sessionId] = messagesFromTurns(response.data.turns || []);
+        this.historyMeta[sessionId] = response.data;
       } catch (error) {
         appStore.setError(getApiErrorMessage(error, 'Failed to load chat history.'));
         this.messages[sessionId] = []; // 失败时设置为空数组
       } finally {
-        appStore.setLoading(false);
+        appStore.setTaskLoading('history', false);
+      }
+    },
+
+    async loadOlderHistory(sessionId = this.currentSession) {
+      const meta = this.historyMeta[sessionId];
+      if (
+        !sessionId ||
+        sessionId === TEMP_NEW_CHAT_ID ||
+        !meta?.has_more_before ||
+        !meta.next_before_cursor
+      ) {
+        return false;
+      }
+      const appStore = useAppStore();
+      appStore.setTaskLoading('history', true);
+      try {
+        const response = await api.getHistory(sessionId, {
+          limit: HISTORY_PAGE_SIZE,
+          before_cursor: meta.next_before_cursor,
+        });
+        const older = messagesFromTurns(response.data.turns || []);
+        const knownIds = new Set((this.messages[sessionId] || []).map((message) => message.id));
+        this.messages[sessionId] = [
+          ...older.filter((message) => !knownIds.has(message.id)),
+          ...(this.messages[sessionId] || []),
+        ];
+        this.historyMeta[sessionId] = response.data;
+        return true;
+      } catch (error) {
+        appStore.setError(getApiErrorMessage(error, 'Failed to load older chat history.'));
+        return false;
+      } finally {
+        appStore.setTaskLoading('history', false);
       }
     },
 
@@ -278,6 +366,7 @@ export const useChatStore = defineStore('chat', {
       this.currentSession = null;
       this.sessions = [];
       this.messages = {};
+      this.historyMeta = {};
     },
   },
 });

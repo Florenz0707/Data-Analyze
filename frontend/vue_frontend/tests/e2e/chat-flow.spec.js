@@ -33,6 +33,22 @@ test('logs in and completes a mocked chat flow', async ({ page }) => {
       return;
     }
 
+    if (url.pathname.endsWith('/llm/chat/stream')) {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Cache-Control': 'no-cache' },
+        contentType: 'text/event-stream',
+        body:
+          'event: start\n' +
+          'data: {"type":"start"}\n\n' +
+          'event: delta\n' +
+          'data: {"type":"delta","text":"Mock assistant answer"}\n\n' +
+          'event: done\n' +
+          'data: {"type":"done","reply":"Mock assistant answer"}\n\n',
+      });
+      return;
+    }
+
     if (url.pathname.endsWith('/llm/chat')) {
       await route.fulfill({
         status: 200,
@@ -54,6 +70,7 @@ test('logs in and completes a mocked chat flow', async ({ page }) => {
   await expect(page.getByText('How can I help you today?')).toBeVisible();
 
   await page.getByPlaceholder('Type your message here...').fill('hello');
+  await expect(page.locator('.send-button')).toBeEnabled();
   await page.locator('.send-button').click();
 
   await expect(page.getByText('Mock assistant answer')).toBeVisible();

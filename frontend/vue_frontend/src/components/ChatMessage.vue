@@ -11,6 +11,15 @@
       <!-- eslint-disable-next-line vue/no-v-html -- MarkdownIt has raw HTML disabled. -->
       <div v-if="isMarkdown" v-html="renderedMarkdown" class="markdown-body"></div>
       <div v-else class="text-body">{{ message.content }}</div>
+      <n-button
+        v-if="message.isUser && message.retryable"
+        text
+        size="small"
+        class="retry-button"
+        @click="emit('retry')"
+      >
+        Retry
+      </n-button>
       <div class="timestamp">{{ message.timestamp }}</div>
     </div>
   </div>
@@ -18,14 +27,13 @@
 
 <script setup>
 import { computed } from 'vue';
-import { NAvatar, NIcon } from 'naive-ui';
+import { NAvatar, NButton, NIcon } from 'naive-ui';
 import {
   PersonCircleOutline as UserIcon,
   SparklesOutline as SparklesIcon,
 } from '@vicons/ionicons5';
-import MarkdownIt from 'markdown-it';
 import 'highlight.js/styles/atom-one-dark.css'; // Import a code highlighting style
-import hljs from 'highlight.js';
+import { renderMarkdown } from '../utils/markdown';
 
 const props = defineProps({
   message: {
@@ -33,30 +41,12 @@ const props = defineProps({
     required: true,
   },
 });
-
-// Initialize MarkdownIt with highlighting
-const md = new MarkdownIt({
-  html: false,
-  highlight: (str, lang) => {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return (
-          '<pre class="hljs"><code>' +
-          hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-          '</code></pre>'
-        );
-      } catch {
-        // Fall back to escaped plain code below when language highlighting fails.
-      }
-    }
-    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-  },
-});
+const emit = defineEmits(['retry']);
 
 const isMarkdown = computed(() => !props.message.isUser);
 
 const renderedMarkdown = computed(() => {
-  return md.render(props.message.content || '');
+  return renderMarkdown(props.message.content, { cache: !props.message.streaming });
 });
 </script>
 

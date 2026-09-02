@@ -16,8 +16,10 @@ export const deleteSession = (sessionId) => {
   });
 };
 
-export const getHistory = (sessionId) => {
-  return apiClient.get('/sessions/history', { params: { session_id: sessionId } });
+export const getHistory = (sessionId, params = {}) => {
+  return apiClient.get('/sessions/history', {
+    params: { session_id: sessionId, ...params },
+  });
 };
 
 export const clearHistory = (sessionId) => {

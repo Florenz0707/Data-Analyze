@@ -2,14 +2,30 @@ import { defineStore } from 'pinia';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
-    loading: false,
+    globalLoading: false,
+    isInitializing: false,
+    isLoadingHistory: false,
+    isSending: false,
     error: null,
     isInitialized: false,
     theme: localStorage.getItem('theme') || 'light',
   }),
+  getters: {
+    loading: (state) =>
+      state.globalLoading || state.isInitializing || state.isLoadingHistory || state.isSending,
+  },
   actions: {
     setLoading(state) {
-      this.loading = state;
+      this.globalLoading = state;
+    },
+    setTaskLoading(task, state) {
+      const taskState = {
+        initializing: 'isInitializing',
+        history: 'isLoadingHistory',
+        sending: 'isSending',
+      }[task];
+      if (!taskState) throw new Error(`Unknown loading task: ${task}`);
+      this[taskState] = state;
     },
     setError(message) {
       this.error = message;

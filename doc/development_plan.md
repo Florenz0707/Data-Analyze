@@ -707,11 +707,11 @@ flowchart LR
 
 #### 模型和客户端复用
 
-- [ ] 远端 Provider Client 复用连接池；
-- [ ] 本地模型按容量限制实例；
-- [ ] 模型实例具备健康检查；
-- [ ] 不健康实例自动摘除或重建；
-- [ ] 记录模型加载时间和内存。
+- [x] 远端 Provider Client 复用连接池；
+- [x] 本地模型按容量限制实例；
+- [x] 模型实例具备健康检查；
+- [x] 不健康实例自动摘除或重建；
+- [x] 记录模型加载时间和内存。
 
 #### 缓存
 
@@ -725,12 +725,12 @@ flowchart LR
 #### 前端性能
 
 - [x] 消息使用稳定 ID 作为 Key；
-- [ ] 长会话支持分页或虚拟列表；
-- [ ] 深度 Watch 改为最小依赖；
-- [ ] 流式 Token 合并后批量渲染；
-- [ ] 拆分全局 Loading 状态；
-- [ ] 支持请求取消和重试；
-- [ ] 已完成 Markdown 结果避免重复解析。
+- [x] 长会话支持分页或虚拟列表；
+- [x] 深度 Watch 改为最小依赖；
+- [x] 流式 Token 合并后批量渲染；
+- [x] 拆分全局 Loading 状态；
+- [x] 支持请求取消和重试；
+- [x] 已完成 Markdown 结果避免重复解析。
 
 ### 10.3 性能测试条件
 
@@ -771,13 +771,13 @@ flowchart LR
 ### 10.6 状态记录
 
 ```text
-状态：进行中（流式输出子任务完成；缓存、模型/客户端复用和性能待验收）
+状态：进行中（流式、模型/客户端复用和前端性能子任务完成；缓存与量化性能指标待验收）
 负责人：Codex
-更新时间：2026-09-01
-已完成：Provider stream 适配、SSE start/delta/done/error 协议、结构化结果最终校验、AbortController 取消、断连事务回滚、最终 History 延迟提交、前端稳定消息 ID 和增量更新
-当前实测：后端流式/聊天/结构化契约定向测试 43/43；前端 8 个测试文件 20/20；未进行云端首事件 P95、取消 P95 和 20 并发压测
-剩余工作：远端连接池复用、本地模型健康检查、共享缓存和击穿治理、Token 合并批量渲染、长会话性能以及 M6 全量性能指标
-验收证据：E-031、`doc/m6_streaming_output.md`、`backend/django_backend/deepseek_api/streaming.py`、`frontend/vue_frontend/tests/streaming.spec.js`
+更新时间：2026-09-02
+已完成：Provider stream 适配、SSE start/delta/done/error 协议、结构化结果最终校验、AbortController 取消、断连事务回滚、最终 History 延迟提交、远端端点级连接池复用、有界模型缓存与健康摘除重建、加载耗时/RSS 记录、前端稳定消息 ID、History 最新页/游标分页、delta 批量渲染、Loading 拆分、Retry 和完成 Markdown 缓存
+当前实测：模型/客户端复用定向测试 43/43；前端 8 个测试文件 23/23；ESLint、Prettier、Ruff、Python 编译和 Vite 构建通过；前端 JS Bundle 2580.41 kB（gzip 779.46 kB）已建立首版基线
+剩余工作：共享缓存和击穿治理、云端首事件/取消 P95、20 并发错误率与串台、长会话 1000 条滚动 ≤50ms、真实设备 Web Vitals、Bundle 历史对比以及 M6 全量性能指标
+验收证据：E-031、E-034、E-035、`doc/m6_streaming_output.md`、`doc/m6_model_client_reuse.md`、`doc/m6_frontend_performance.md`
 ```
 
 ---
@@ -1170,6 +1170,9 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | 20 并发错误率            |         TODO |         < 1% |                                            TODO | TODO                                                    | TODO         | -          |
 | 索引失败影响当前在线索引 |       未测试 |         0 次 |                   0 次（真实失败+成功发布复核） | DuplicateID 失败未改变指针；随后 v3 全量索引成功发布    | E-025、E-032 | 2026-09-02 |
 | M4/M5 Prompt 组装 P50    |         TODO |     记录趋势 |                                          0.84ms | 10 条合成证据；未调用模型；单次仅 1 个 evidence 容器    | E-027        | 2026-08-31 |
+| 模型/客户端复用定向回归  |         TODO |         100% |                                      43/43 通过 | SQLite 模板；Fake/Mock Provider；无真实外部网络         | E-034        | 2026-09-02 |
+| 前端性能定向回归         |         TODO |         100% |                                      23/23 通过 | Vitest；分页、批量 delta、Retry、Markdown 缓存          | E-035        | 2026-09-02 |
+| 前端生产 JS Bundle       |         TODO |     建立基线 |                    2580.41 kB（gzip 779.46 kB） | Node 20.20.2、Vite 7.1.6、4481 modules                  | E-035        | 2026-09-02 |
 
 ### 17.3 安全与可靠性指标
 
@@ -1246,6 +1249,8 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | E-031 | M6     | 流式输出实现报告                 | `doc/m6_streaming_output.md`、`backend/django_backend/deepseek_api/streaming.py`、`backend/django_backend/topklogsystem.py`、`backend/django_backend/deepseek_api/api.py`、`frontend/vue_frontend/src/api/llm.js`、`frontend/vue_frontend/src/stores/chat.js`、`backend/django_backend/deepseek_project/tests/test_topk_generation_contract.py`、`backend/django_backend/deepseek_api/tests/test_streaming.py`、`frontend/vue_frontend/tests/streaming.spec.js` | M6 流式子任务完成：Provider stream、SSE 事件、前端增量更新、取消/断连回滚和 done 后 History 提交均有回归测试；后端 44/44、前端 20/20；首事件/取消 P95、20 并发和缓存指标待实测                                   | Codex  | 2026-09-01 |
 | E-032 | M4     | 全量索引 DuplicateID 修复验证    | `doc/m4_data_cleaning_and_document_building.md`、`doc/m4_index_version_and_retrieval.md`、`evaluation/m4/evidence/data_quality_report.json`、`backend/django_backend/data_pipeline/tests/test_log_documents.py`                                                                                                                                                                                                                                                 | 修复严格 Metadata 与稳定 ID 边界不一致、增加失败回退日志语义；246951 个文档块扫描得到 246951 个唯一 ID；后端定向测试 13/13 通过；全量版本化索引随后成功发布                                                      | Codex  | 2026-09-02 |
 | E-033 | M4     | 已发布全量索引健康与检索复核     | `doc/m4_index_version_and_retrieval.md`、`evaluation/m4/evidence/retrieval_published_full_index.json`、`backend/django_backend/data/vector_stores/.index_state.json`                                                                                                                                                                                                                                                                                            | 当前版本 `idx-69c72b8c2a56c2fea290` 为 ready，246951/246951 向量和必需 Metadata 完整；运行时加载/真实检索通过；全量固定集 Recall@10=0.10，说明全语料召回仍未达 M4 目标，不能直接调高阈值掩盖问题                 | Codex  | 2026-09-02 |
+| E-034 | M6     | 模型和客户端复用报告             | `doc/m6_model_client_reuse.md`、`backend/django_backend/deepseek_project/model_runtime.py`、`backend/django_backend/llm_provider_factory.py`、`backend/django_backend/deepseek_project/tests/test_model_runtime.py`                                                                                                                                                                                                                                             | Provider+端点级 HTTP Client 连接池复用、有界模型 LRU、健康检查/失败摘除重建、加载耗时/RSS 记录和用户模型透传通过；定向后端测试 43/43；真实外部服务和多 worker 压测未包含                                         | Codex  | 2026-09-02 |
+| E-035 | M6     | 前端性能报告                     | `doc/m6_frontend_performance.md`、`frontend/vue_frontend/src/stores/chat.js`、`frontend/vue_frontend/src/components/ChatArea.vue`、`frontend/vue_frontend/src/components/ChatMessage.vue`、`frontend/vue_frontend/src/utils/markdown.js`、`frontend/vue_frontend/tests/chat.spec.js`、`frontend/vue_frontend/tests/chat-message.spec.js`                                                                                                                        | 最新页/游标分页、最小 Watch、delta 批量渲染、细粒度 Loading、取消/Retry 和 Markdown LRU 通过；前端 8 文件 23/23、ESLint/Prettier/Vite 构建通过；长会话 1000 条 ≤50ms 和真实设备指标待补测                        | Codex  | 2026-09-02 |
 
 ---
 
@@ -1253,7 +1258,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 | 编号  | 风险                                                                      | 概率 | 影响 | 缓解措施                                                                                                                                                               | 负责人 | 状态     |
 | ----- | ------------------------------------------------------------------------- | ---: | ---: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
-| R-001 | 本地模型资源不足                                                          |   高 |   高 | Provider 抽象、容量限制、云端回退                                                                                                                                      | TODO   | 开放     |
+| R-001 | 本地模型资源不足                                                          |   高 |   高 | Provider 抽象、有界 LRU、失败摘除、加载时间/RSS 记录和云端回退；显存增量与多模型压测仍待补充                                                                           | Codex  | 部分缓解 |
 | R-002 | 数据集重复和噪声导致检索失真                                              |   高 |   高 | 数据去重、Schema、评测集                                                                                                                                               | TODO   | 开放     |
 | R-003 | 缺少真实业务标注                                                          |   高 |   高 | 专家评审、小规模高质量 Gold Set                                                                                                                                        | TODO   | 开放     |
 | R-004 | 全局模型状态造成并发串台                                                  |   高 |   高 | M2 已完成显式依赖注入；Fake Provider 与当前 PostgreSQL 50 请求并发验证均通过；继续进行多进程/生产压测                                                                  | Codex  | 已缓解   |
@@ -1273,6 +1278,7 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 | R-018 | 限流已接入但固定窗口和数据库计数器在高吞吐场景仍有性能边界                |   中 |   中 | 当前使用共享数据库事务/行锁并覆盖用户/IP/接口维度；生产增加 Redis/Gateway 令牌桶、旧 bucket 清理和多进程压测                                                           | Codex  | 已缓解   |
 | R-019 | MySQL 尚未完成真实连接与迁移演练；PostgreSQL 尚未纳入 CI/生产矩阵         |   中 |   高 | PostgreSQL 当前实例已完成迁移和并发集成演练；仍需容器化 MySQL/PostgreSQL 矩阵执行 migrate、并发锁和故障测试，部署前备份并演练回滚                                      | Codex  | 开放     |
 | R-020 | 真实模型可能不稳定地产生非法 JSON、无依据结论或危险建议                   |   高 |   高 | M5 已增加 Schema、Evidence ID 门禁、一次修复、无证据拒答和 Injection 固定集；紧凑 Prompt 使 3 条 smoke 通过率升至 2/3，但 50 条质量复核与 M4 阈值/检索联合调优仍待完成 | Codex  | 部分缓解 |
+| R-021 | 前端生产 Bundle 首次基线较大且构建提示存在大 Chunk                        |   中 |   中 | 已记录 JS 2580.41 kB/gzip 779.46 kB；后续按语言拆分 Highlight.js、路由懒加载并建立 Bundle 预算，当前不阻塞分页/渲染改动                                                | Codex  | 开放     |
 
 ### 19.1 阻塞项更新模板
 
@@ -1294,34 +1300,36 @@ Multi-Agent 不是默认目标。只有单 Agent 出现明确的角色冲突、�
 
 > 重大目标、架构或指标调整必须登记，不只修改最终结论。
 
-| ADR     | 日期       | 决策                                                                                                                     | 原因                                                                                         | 替代方案                                                                | 影响                                                                                                | 状态   |
-| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
-| ADR-001 | 2026-08-28 | 先完成固定 RAG Pipeline，再开发 Agent                                                                                    | 当前正确性、评测和安全基础不足                                                               | 直接加入 Agent 框架                                                     | Agent 里程碑置于 M8                                                                                 | 已接受 |
-| ADR-002 | 2026-08-28 | Multi-Agent 仅作为对照实验                                                                                               | 成本、延迟和复杂度较高                                                                       | 默认使用多 Agent                                                        | 必须证明相对单 Agent 收益                                                                           | 已接受 |
-| ADR-003 | 2026-08-28 | 使用 Ruff、ESLint flat config、Prettier 和 pre-commit 作为统一质量门禁                                                   | 覆盖 Python、JS/TS/Vue 与结构化文本，并可在提交前复现                                        | 依赖开发者手动运行各工具                                                | 首次建立门禁会产生全仓机械格式化                                                                    | 已接受 |
-| ADR-004 | 2026-08-28 | 前端继续以 npm 和已跟踪的 `package-lock.json` 为依赖基准                                                                 | 仓库既有锁文件和本机可用工具均为 npm                                                         | 迁移 pnpm/yarn                                                          | 未经批准不更新其他锁文件                                                                            | 已接受 |
-| ADR-005 | 2026-08-28 | M0 日志 ID 使用 `<CSV 文件名>:<六位数据行号>`                                                                            | 当前 Chroma 未保存来源 metadata，但 CSV 顺序固定且可校验                                     | 使用 Chroma 随机 UUID                                                   | 评测器需按建库序列化规则反向映射；M4 应原生写入 metadata                                            | 已接受 |
-| ADR-006 | 2026-08-28 | 负样本不计入 Recall/MRR/NDCG，单独评估拒答率                                                                             | 当前检索器固定返回 Top-K，负样本没有相关文档可计算排序指标                                   | 将负样本记为 Recall=0                                                   | 避免扭曲检索指标，同时暴露无证据生成问题                                                            | 已接受 |
-| ADR-007 | 2026-08-29 | 用户授权 Codex 完成 M0 抽样评分和冲突裁决，结果标记为 AI 辅助                                                            | 用户要求先完成 M0 剩余验收工作，同时保留评审者类型真实性                                     | 等待第二名真人评审                                                      | 项目内部 M0 可闭环；生产级质量声明仍需真人复核                                                      | 已接受 |
-| ADR-008 | 2026-08-29 | M1 测试默认使用 Django 独立数据库、Fake/Mock Provider 和临时运行目录，真实模型评测与普通回归分离                         | 避免测试依赖生产数据、网络、密钥和本机模型缓存                                               | 测试直接连接 Ollama/共享 Chroma                                         | 普通回归可在 CI 重复运行；真实模型仅保留在独立评测流程                                              | 已接受 |
-| ADR-009 | 2026-08-29 | 请求级 LLM/Embedding 依赖显式传递，实例按 provider、model、endpoint 使用线程安全有界缓存                                 | 避免并发请求覆盖全局 Settings 并控制本地模型资源占用                                         | 每个请求重新加载模型；继续修改全局 Settings                             | 请求不串台且避免重复加载；多进程共享和显存预算留待后续                                              | 已接受 |
-| ADR-010 | 2026-08-29 | `History` 通过非空 ForeignKey 归属 `Session`，删除 Session 级联删除 History；迁移无法归属的旧 History                    | 消除孤立历史和重复用户条件；无法证明归属的数据不应进入普通用户查询                           | 保留字符串冗余列；静默保留孤立行；删除 Session 时手动清理               | 数据库保证归属和删除一致性；迁移前必须备份，生产审计场景可先归档                                    | 已接受 |
-| ADR-011 | 2026-08-30 | `Session.user` 迁移为 Django `User` 外键；无法解析旧用户名的 Session 及其 History 在迁移中清理                           | 用户归属应由数据库约束保证，避免用户名修改或删除后留下不可归属会话                           | 继续保存用户名字符串；保留未知用户占位符                                | 用户删除可级联清理会话；迁移前需备份，其他用户字段后续继续统一                                      | 已接受 |
-| ADR-012 | 2026-08-30 | 同一 Session 的 Chat 使用 `select_for_update`、单调 sequence 和可选 `message_id` 幂等                                    | 避免并发请求读取相同历史、生成重复写入或覆盖顺序；重试不应产生重复 History                   | 仅依赖时间排序；仅在应用内加锁；允许客户端重复写入                      | 生产数据库实现会话级串行化；模型调用期间持锁，需后续压测和缩短事务                                  | 已接受 |
-| ADR-013 | 2026-08-30 | History API 使用 `(created_at, id)` 不透明复合游标，并暂时兼容旧 ID 游标                                                 | 时间排序需要稳定 tie-breaker；只用自增 ID 不足以表达时间边界                                 | offset 分页；只用 created_at；只用 id                                   | 可稳定处理同一时间戳记录；后续可增加签名和过期策略                                                  | 已接受 |
-| ADR-014 | 2026-08-30 | 回复缓存使用完整身份字段的 SHA-256 键、有限 TTL 和可轮换命名空间；只缓存成功非空字符串                                   | 避免跨用户/历史/模型/版本复用及 Prompt/索引更新后的旧结果                                    | 只按 Prompt 缓存；永久 TTL；通配符物理删除                              | 当前可批量逻辑失效；生产需共享缓存后端和后续击穿治理                                                | 已接受 |
-| ADR-015 | 2026-08-30 | 所有 API 错误统一返回 `code`、`error` 和可选 `details`，保留旧 `error` 字段兼容；由全局处理器兜底 Ninja 异常             | 前端需要稳定区分输入、认证、资源、限流、模型和内部故障，且不能泄露堆栈                       | 继续返回自由文本；只依赖 HTTP 状态；直接暴露 `detail`/堆栈              | 客户端可按错误码行动；新错误码需维护前端映射和兼容回退                                              | 已接受 |
-| ADR-016 | 2026-08-30 | LLM 与数据库分别使用跟踪的 `.yaml.example` 规范文件，本地覆盖文件被忽略；数据库通过统一加载器映射 Django backend         | 配置契约应可审查，部署密钥不能入库，数据库切换不应污染 LLM 配置                              | 继续生成 Python 模板；将数据库硬编码在 settings；每种数据库维护独立迁移 | 干净检出可复现，MySQL/PostgreSQL 与 SQLite 共享迁移；真实数据库矩阵留待后续                         | 已接受 |
-| ADR-017 | 2026-08-31 | 使用独立脚本在当前 PostgreSQL 上以随机临时数据和 Fake Provider 验证真实 API/ORM 并发模型隔离                             | 需要覆盖真实多连接、事务和写入语义，同时避免真实模型调用、外部网络和生产数据污染             | 只依赖 SQLite 单测；直接调用真实模型；在数据库中保留固定测试用户        | 获得可重复的 PostgreSQL 单实例证据，脚本结束自动清理；多进程、MySQL、共享缓存和生产负载仍需另行验证 | 已接受 |
-| ADR-018 | 2026-08-31 | Refresh Token 使用哈希记录、家族轮换和重用即家族撤销；Access 过期不删除 APIKey                                           | 旧实现无法检测 Refresh 重放，且 Access 过期会破坏恢复链路；数据库行锁可保证一次性消费        | 长期复用单个 Refresh Token；只覆盖当前 Token；过期时删除 APIKey         | 可检测泄漏后的重放并保留恢复能力；需要共享数据库、迁移旧数据并做好客户端单次刷新                    | 已接受 |
-| ADR-019 | 2026-08-31 | 请求限流使用数据库共享固定窗口 bucket，事务内锁定用户/IP所有维度后一次性递增；接口在认证阶段选择分级策略                 | 既要跨 worker 保持计数一致，又要让登录、聊天和模型验证拥有独立上限                           | 仅使用进程内锁；仅按 API Key 计数；直接依赖默认 LocMemCache             | 跨 PostgreSQL/MySQL worker 可复现且错误语义稳定；高吞吐仍需 Redis/Gateway 与多进程压测              | 已接受 |
-| ADR-020 | 2026-08-31 | 外部模型配置使用稳定外键绑定用户偏好，API Key 使用 Fernet 加密存储，仅在 Provider 边界解密；删除当前模型自动回退默认配置 | 旧实现只保存字符串偏好且明文保存密钥，无法保证实际生成配置和安全边界                         | 继续保存明文；按别名字符串直接生成；删除后保留失效偏好                  | 用户选择、生成和删除行为一致，密钥不进入响应/日志；生产仍需 KMS/Vault、密钥轮换和 SSRF 防护         | 已接受 |
-| ADR-021 | 2026-08-31 | 外部模型探测和生成统一使用无代理、无自动重定向、固定 DNS 公网 IP 的 HTTP 客户端，并限制超时和响应大小                    | 用户可控 Base URL 既可能造成 SSRF，也可能通过 DNS 重绑定、代理、重定向或无界响应绕过单点校验 | 只校验 URL 字符串；仅保存时探测；依赖环境代理和默认重定向               | 实际连接路径持续受同一安全策略约束；默认拒绝 HTTP 和重定向，兼容性由安全配置明确取舍                | 已接受 |
-| ADR-022 | 2026-08-31 | 先将多源 CSV 规范化为 CanonicalLogRecord，再以稳定内容 ID、来源 Metadata 和版本化模板流式构建文档                        | 原始数据字段不一致、完整/精简导出重复、敏感字段和全量 Document 内存占用会影响质量与可追踪性  | 继续按行字符串化并一次性构建；由索引层临时清洗                          | 解析/清洗/文档层可独立测试和审计；索引版本、原子切换及检索实验留到后续任务                          | 已接受 |
-| ADR-023 | 2026-08-31 | 新索引写入带版本的 Chroma collection，并以同目录原子状态文件发布 current pointer；失败构建不覆盖旧版本                   | 需要在重建期间保持在线索引可用，并避免复用半成品集合                                         | 原地清空重建；直接覆盖固定 collection 名称；仅依赖目录时间              | 支持失败回滚和旧版本清理；当前进程热切换及真实全量构建演练仍需后续完善                              | 已接受 |
-| ADR-024 | 2026-08-31 | 默认使用向量检索；Metadata/阈值/无证据为稳定契约，hybrid BM25 和 lexical reranker 作为显式实验开关                       | 混合策略和重排效果尚未通过固定评测，不能未经证据改变线上质量和延迟                           | 默认启用混合和重排；只返回向量 Top-K                                    | 保留可回归的实验入口并记录检索参数；BM25 当前为候选集实验，生产需独立倒排索引和专用 Reranker        | 已接受 |
-| ADR-025 | 2026-08-31 | 生成链路采用 Pydantic JSON Schema、Evidence ID 白名单和后端 Markdown 渲染；旧 Sanitizer 仅作为显式降级路径               | Markdown 正则无法保证证据绑定，日志可能包含 Prompt Injection；API 仍需兼容历史字符串回复     | 继续自由 Markdown；将模型 JSON 直接传给前端；失败时无限重试             | 结构化字段可评测和审计，空证据确定性拒答；真实模型人工质量复核仍是发布前置条件                      | 已接受 |
-| ADR-026 | 2026-08-31 | 保持 M4 vector 为默认，M5 使用单证据块、上下文预算和 Ollama JSON mode；Hybrid/Reranker 只作显式实验                      | 联合固定集显示 Hybrid 仅改善 Recall@1，Reranker 质量下降；Prompt 重复会增加生成成本          | 默认 Hybrid/Reranker；不限制 Prompt；无限结构化修复                     | 质量优先且生成成本可控；真实模型 P95 需在空闲资源和多次重复条件下复测                               | 已接受 |
+| ADR     | 日期       | 决策                                                                                                                             | 原因                                                                                         | 替代方案                                                                     | 影响                                                                                                | 状态   |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
+| ADR-001 | 2026-08-28 | 先完成固定 RAG Pipeline，再开发 Agent                                                                                            | 当前正确性、评测和安全基础不足                                                               | 直接加入 Agent 框架                                                          | Agent 里程碑置于 M8                                                                                 | 已接受 |
+| ADR-002 | 2026-08-28 | Multi-Agent 仅作为对照实验                                                                                                       | 成本、延迟和复杂度较高                                                                       | 默认使用多 Agent                                                             | 必须证明相对单 Agent 收益                                                                           | 已接受 |
+| ADR-003 | 2026-08-28 | 使用 Ruff、ESLint flat config、Prettier 和 pre-commit 作为统一质量门禁                                                           | 覆盖 Python、JS/TS/Vue 与结构化文本，并可在提交前复现                                        | 依赖开发者手动运行各工具                                                     | 首次建立门禁会产生全仓机械格式化                                                                    | 已接受 |
+| ADR-004 | 2026-08-28 | 前端继续以 npm 和已跟踪的 `package-lock.json` 为依赖基准                                                                         | 仓库既有锁文件和本机可用工具均为 npm                                                         | 迁移 pnpm/yarn                                                               | 未经批准不更新其他锁文件                                                                            | 已接受 |
+| ADR-005 | 2026-08-28 | M0 日志 ID 使用 `<CSV 文件名>:<六位数据行号>`                                                                                    | 当前 Chroma 未保存来源 metadata，但 CSV 顺序固定且可校验                                     | 使用 Chroma 随机 UUID                                                        | 评测器需按建库序列化规则反向映射；M4 应原生写入 metadata                                            | 已接受 |
+| ADR-006 | 2026-08-28 | 负样本不计入 Recall/MRR/NDCG，单独评估拒答率                                                                                     | 当前检索器固定返回 Top-K，负样本没有相关文档可计算排序指标                                   | 将负样本记为 Recall=0                                                        | 避免扭曲检索指标，同时暴露无证据生成问题                                                            | 已接受 |
+| ADR-007 | 2026-08-29 | 用户授权 Codex 完成 M0 抽样评分和冲突裁决，结果标记为 AI 辅助                                                                    | 用户要求先完成 M0 剩余验收工作，同时保留评审者类型真实性                                     | 等待第二名真人评审                                                           | 项目内部 M0 可闭环；生产级质量声明仍需真人复核                                                      | 已接受 |
+| ADR-008 | 2026-08-29 | M1 测试默认使用 Django 独立数据库、Fake/Mock Provider 和临时运行目录，真实模型评测与普通回归分离                                 | 避免测试依赖生产数据、网络、密钥和本机模型缓存                                               | 测试直接连接 Ollama/共享 Chroma                                              | 普通回归可在 CI 重复运行；真实模型仅保留在独立评测流程                                              | 已接受 |
+| ADR-009 | 2026-08-29 | 请求级 LLM/Embedding 依赖显式传递，实例按 provider、model、endpoint 使用线程安全有界缓存                                         | 避免并发请求覆盖全局 Settings 并控制本地模型资源占用                                         | 每个请求重新加载模型；继续修改全局 Settings                                  | 请求不串台且避免重复加载；多进程共享和显存预算留待后续                                              | 已接受 |
+| ADR-010 | 2026-08-29 | `History` 通过非空 ForeignKey 归属 `Session`，删除 Session 级联删除 History；迁移无法归属的旧 History                            | 消除孤立历史和重复用户条件；无法证明归属的数据不应进入普通用户查询                           | 保留字符串冗余列；静默保留孤立行；删除 Session 时手动清理                    | 数据库保证归属和删除一致性；迁移前必须备份，生产审计场景可先归档                                    | 已接受 |
+| ADR-011 | 2026-08-30 | `Session.user` 迁移为 Django `User` 外键；无法解析旧用户名的 Session 及其 History 在迁移中清理                                   | 用户归属应由数据库约束保证，避免用户名修改或删除后留下不可归属会话                           | 继续保存用户名字符串；保留未知用户占位符                                     | 用户删除可级联清理会话；迁移前需备份，其他用户字段后续继续统一                                      | 已接受 |
+| ADR-012 | 2026-08-30 | 同一 Session 的 Chat 使用 `select_for_update`、单调 sequence 和可选 `message_id` 幂等                                            | 避免并发请求读取相同历史、生成重复写入或覆盖顺序；重试不应产生重复 History                   | 仅依赖时间排序；仅在应用内加锁；允许客户端重复写入                           | 生产数据库实现会话级串行化；模型调用期间持锁，需后续压测和缩短事务                                  | 已接受 |
+| ADR-013 | 2026-08-30 | History API 使用 `(created_at, id)` 不透明复合游标，并暂时兼容旧 ID 游标                                                         | 时间排序需要稳定 tie-breaker；只用自增 ID 不足以表达时间边界                                 | offset 分页；只用 created_at；只用 id                                        | 可稳定处理同一时间戳记录；后续可增加签名和过期策略                                                  | 已接受 |
+| ADR-014 | 2026-08-30 | 回复缓存使用完整身份字段的 SHA-256 键、有限 TTL 和可轮换命名空间；只缓存成功非空字符串                                           | 避免跨用户/历史/模型/版本复用及 Prompt/索引更新后的旧结果                                    | 只按 Prompt 缓存；永久 TTL；通配符物理删除                                   | 当前可批量逻辑失效；生产需共享缓存后端和后续击穿治理                                                | 已接受 |
+| ADR-015 | 2026-08-30 | 所有 API 错误统一返回 `code`、`error` 和可选 `details`，保留旧 `error` 字段兼容；由全局处理器兜底 Ninja 异常                     | 前端需要稳定区分输入、认证、资源、限流、模型和内部故障，且不能泄露堆栈                       | 继续返回自由文本；只依赖 HTTP 状态；直接暴露 `detail`/堆栈                   | 客户端可按错误码行动；新错误码需维护前端映射和兼容回退                                              | 已接受 |
+| ADR-016 | 2026-08-30 | LLM 与数据库分别使用跟踪的 `.yaml.example` 规范文件，本地覆盖文件被忽略；数据库通过统一加载器映射 Django backend                 | 配置契约应可审查，部署密钥不能入库，数据库切换不应污染 LLM 配置                              | 继续生成 Python 模板；将数据库硬编码在 settings；每种数据库维护独立迁移      | 干净检出可复现，MySQL/PostgreSQL 与 SQLite 共享迁移；真实数据库矩阵留待后续                         | 已接受 |
+| ADR-017 | 2026-08-31 | 使用独立脚本在当前 PostgreSQL 上以随机临时数据和 Fake Provider 验证真实 API/ORM 并发模型隔离                                     | 需要覆盖真实多连接、事务和写入语义，同时避免真实模型调用、外部网络和生产数据污染             | 只依赖 SQLite 单测；直接调用真实模型；在数据库中保留固定测试用户             | 获得可重复的 PostgreSQL 单实例证据，脚本结束自动清理；多进程、MySQL、共享缓存和生产负载仍需另行验证 | 已接受 |
+| ADR-018 | 2026-08-31 | Refresh Token 使用哈希记录、家族轮换和重用即家族撤销；Access 过期不删除 APIKey                                                   | 旧实现无法检测 Refresh 重放，且 Access 过期会破坏恢复链路；数据库行锁可保证一次性消费        | 长期复用单个 Refresh Token；只覆盖当前 Token；过期时删除 APIKey              | 可检测泄漏后的重放并保留恢复能力；需要共享数据库、迁移旧数据并做好客户端单次刷新                    | 已接受 |
+| ADR-019 | 2026-08-31 | 请求限流使用数据库共享固定窗口 bucket，事务内锁定用户/IP所有维度后一次性递增；接口在认证阶段选择分级策略                         | 既要跨 worker 保持计数一致，又要让登录、聊天和模型验证拥有独立上限                           | 仅使用进程内锁；仅按 API Key 计数；直接依赖默认 LocMemCache                  | 跨 PostgreSQL/MySQL worker 可复现且错误语义稳定；高吞吐仍需 Redis/Gateway 与多进程压测              | 已接受 |
+| ADR-020 | 2026-08-31 | 外部模型配置使用稳定外键绑定用户偏好，API Key 使用 Fernet 加密存储，仅在 Provider 边界解密；删除当前模型自动回退默认配置         | 旧实现只保存字符串偏好且明文保存密钥，无法保证实际生成配置和安全边界                         | 继续保存明文；按别名字符串直接生成；删除后保留失效偏好                       | 用户选择、生成和删除行为一致，密钥不进入响应/日志；生产仍需 KMS/Vault、密钥轮换和 SSRF 防护         | 已接受 |
+| ADR-021 | 2026-08-31 | 外部模型探测和生成统一使用无代理、无自动重定向、固定 DNS 公网 IP 的 HTTP 客户端，并限制超时和响应大小                            | 用户可控 Base URL 既可能造成 SSRF，也可能通过 DNS 重绑定、代理、重定向或无界响应绕过单点校验 | 只校验 URL 字符串；仅保存时探测；依赖环境代理和默认重定向                    | 实际连接路径持续受同一安全策略约束；默认拒绝 HTTP 和重定向，兼容性由安全配置明确取舍                | 已接受 |
+| ADR-022 | 2026-08-31 | 先将多源 CSV 规范化为 CanonicalLogRecord，再以稳定内容 ID、来源 Metadata 和版本化模板流式构建文档                                | 原始数据字段不一致、完整/精简导出重复、敏感字段和全量 Document 内存占用会影响质量与可追踪性  | 继续按行字符串化并一次性构建；由索引层临时清洗                               | 解析/清洗/文档层可独立测试和审计；索引版本、原子切换及检索实验留到后续任务                          | 已接受 |
+| ADR-023 | 2026-08-31 | 新索引写入带版本的 Chroma collection，并以同目录原子状态文件发布 current pointer；失败构建不覆盖旧版本                           | 需要在重建期间保持在线索引可用，并避免复用半成品集合                                         | 原地清空重建；直接覆盖固定 collection 名称；仅依赖目录时间                   | 支持失败回滚和旧版本清理；当前进程热切换及真实全量构建演练仍需后续完善                              | 已接受 |
+| ADR-024 | 2026-08-31 | 默认使用向量检索；Metadata/阈值/无证据为稳定契约，hybrid BM25 和 lexical reranker 作为显式实验开关                               | 混合策略和重排效果尚未通过固定评测，不能未经证据改变线上质量和延迟                           | 默认启用混合和重排；只返回向量 Top-K                                         | 保留可回归的实验入口并记录检索参数；BM25 当前为候选集实验，生产需独立倒排索引和专用 Reranker        | 已接受 |
+| ADR-025 | 2026-08-31 | 生成链路采用 Pydantic JSON Schema、Evidence ID 白名单和后端 Markdown 渲染；旧 Sanitizer 仅作为显式降级路径                       | Markdown 正则无法保证证据绑定，日志可能包含 Prompt Injection；API 仍需兼容历史字符串回复     | 继续自由 Markdown；将模型 JSON 直接传给前端；失败时无限重试                  | 结构化字段可评测和审计，空证据确定性拒答；真实模型人工质量复核仍是发布前置条件                      | 已接受 |
+| ADR-026 | 2026-08-31 | 保持 M4 vector 为默认，M5 使用单证据块、上下文预算和 Ollama JSON mode；Hybrid/Reranker 只作显式实验                              | 联合固定集显示 Hybrid 仅改善 Recall@1，Reranker 质量下降；Prompt 重复会增加生成成本          | 默认 Hybrid/Reranker；不限制 Prompt；无限结构化修复                          | 质量优先且生成成本可控；真实模型 P95 需在空闲资源和多次重复条件下复测                               | 已接受 |
+| ADR-027 | 2026-09-02 | 模型按 provider/model/endpoint 使用有界健康感知缓存；远端 HTTP 客户端按 provider/endpoint 共享连接池；模型失败后下次命中自动重建 | 重复加载模型和重复建连会放大延迟与内存；无界缓存和失效实例会持续占用资源或重复失败           | 每请求构造；仅按模型名缓存；每个模型各自关闭共享客户端；每次请求主动网络探测 | 保持模型隔离并复用安全连接池，限制本地资源；多 worker 共享与主动 health endpoint 留待后续           | 已接受 |
+| ADR-028 | 2026-09-02 | 前端历史默认加载最新 100 条并以 `(created_at,id)` 游标向前分页；流式 delta 以 RAF 批量提交；完成 Markdown 使用进程内 LRU         | 全量长会话、深度 Watch 和逐 Token 解析会放大渲染开销；用户需要可恢复的失败重试               | 一次性加载；深度监听；每 Token 更新；每组件创建 Markdown 渲染器              | 首屏和流式响应式工作量受控，完成结果可复用；当前仍需真实设备长会话和 Web Vitals 测量                | 已接受 |
 
 ### 20.1 ADR 模板
 
@@ -1380,6 +1388,8 @@ ADR 编号：ADR-XXX
 | 2026-09-01 | Codex | 审计并修复配置版本与 RAG 构建契约：统一 Prompt/缓存协议为 m5-v1，校验 system_prompt 版本，增加 200 字符分块、32 批量和空 metadata key 清洗；PostgreSQL data-analyze schema 已确认，完整新索引构建仍待资源空闲后完成 | M4/M5 | `doc/configuration_audit_and_fix.md` |
 | 2026-09-02 | Codex | 修复全量 M4 索引的 DuplicateIDError：严格模式稳定 ID 纳入安全 Metadata 和去重模式，清洗阶段增加 ID 冲突门禁，并修正失败回退后的误导性成功日志；246951 个文档块复核为 0 个重复 ID | M4 | `doc/m4_data_cleaning_and_document_building.md`、`doc/m4_index_version_and_retrieval.md` |
 | 2026-09-02 | Codex | 完成修复后的全量索引验收：`idx-69c72b8c2a56c2fea290` 状态 ready，246951 条向量和必需 Metadata 完整，运行时版本匹配且真实检索成功；全量固定集 Recall@10=0.10，跨源干扰和阈值策略列入 M4 后续优化 | M4 | E-033、`evaluation/m4/evidence/retrieval_published_full_index.json` |
+| 2026-09-02 | Codex | 执行 M6 模型和客户端复用：Provider+端点级 HTTP Client 连接池、有界模型 LRU、健康检查/失败摘除重建、模型加载耗时和 RSS 记录；新增后端定向回归测试及实现报告 | M6 | E-034、`doc/m6_model_client_reuse.md` |
+| 2026-09-02 | Codex | 执行 M6 前端性能：History 最新页/游标分页、最小依赖 Watch、RAF 批量 delta、细粒度 Loading、取消/Retry 和完成 Markdown LRU；新增前端回归测试并记录首版 Bundle 基线 | M6 | E-035、`doc/m6_frontend_performance.md` |
 
 ### 21.1 后续更新示例
 

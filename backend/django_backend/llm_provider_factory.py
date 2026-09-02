@@ -80,7 +80,6 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
 
     if p == "openai_compat":
         _maybe_load_dotenv()
-        from deepseek_project.external_endpoint import create_safe_http_client
         from langchain_openai import ChatOpenAI
 
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
@@ -102,14 +101,17 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
             "max_retries": max_retries,
         }
         if base_url:
-            client_kwargs["http_client"] = create_safe_http_client(base_url)
+            from deepseek_project.model_runtime import get_cached_http_client
+
+            client_kwargs["http_client"] = get_cached_http_client(
+                "openai_compat", base_url, env_cfg
+            )
         return ChatOpenAI(
             **client_kwargs,
         )
 
     if p == "dashscope":
         _maybe_load_dotenv()
-        from deepseek_project.external_endpoint import create_safe_http_client
         from langchain_openai import ChatOpenAI
 
         cfg = env_cfg.get("DASHSCOPE_CONFIG", {})
@@ -129,7 +131,9 @@ def build_llm_by(provider: str, env_cfg: dict[str, Any], *, model: str | None = 
             "max_retries": max_retries,
         }
         if base_url:
-            client_kwargs["http_client"] = create_safe_http_client(base_url)
+            from deepseek_project.model_runtime import get_cached_http_client
+
+            client_kwargs["http_client"] = get_cached_http_client("dashscope", base_url, env_cfg)
         return ChatOpenAI(**client_kwargs)
 
     raise ValueError(f"不支持的 LLM provider: {provider}")
@@ -165,6 +169,7 @@ def build_embedding_by(
 
     if p == "openai_compat":
         _maybe_load_dotenv()
+        from deepseek_project.model_runtime import get_cached_http_client
         from langchain_openai import OpenAIEmbeddings
 
         cfg = env_cfg.get("OPENAI_COMPAT_CONFIG", {})
@@ -188,11 +193,14 @@ def build_embedding_by(
         }
         if emb_dims:
             kwargs["dimensions"] = int(emb_dims)
+        if base_url:
+            kwargs["http_client"] = get_cached_http_client("openai_compat", base_url, env_cfg)
         embed = OpenAIEmbeddings(**kwargs)
         return embed, emb_model
 
     if p == "dashscope":
         _maybe_load_dotenv()
+        from deepseek_project.model_runtime import get_cached_http_client
         from langchain_core.embeddings import Embeddings as LCEmbeddings
         from openai import OpenAI as OpenAIClient
 
@@ -211,9 +219,17 @@ def build_embedding_by(
                 self, model: str, api_key: str, base_url: str, timeout: int, max_retries: int
             ):
                 self.model = model
-                self.client = OpenAIClient(
-                    api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
-                )
+                client_kwargs: dict[str, Any] = {
+                    "api_key": api_key,
+                    "base_url": base_url,
+                    "timeout": timeout,
+                    "max_retries": max_retries,
+                }
+                if base_url:
+                    client_kwargs["http_client"] = get_cached_http_client(
+                        "dashscope", base_url, env_cfg
+                    )
+                self.client = OpenAIClient(**client_kwargs)
 
             def embed_documents(self, texts: list[str], **kwargs) -> list[list[float]]:
                 if not texts:

@@ -1,8 +1,17 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ChatMessage from '../src/components/ChatMessage.vue';
+import { clearMarkdownCache, renderMarkdown } from '../src/utils/markdown';
 
 describe('ChatMessage', () => {
+  it('caches completed Markdown rendering', () => {
+    clearMarkdownCache();
+    const first = renderMarkdown('**cached**');
+    const second = renderMarkdown('**cached**');
+
+    expect(second).toBe(first);
+  });
+
   it('escapes raw HTML in assistant Markdown', () => {
     const wrapper = mount(ChatMessage, {
       props: {

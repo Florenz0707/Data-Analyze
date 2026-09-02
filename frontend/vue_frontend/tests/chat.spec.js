@@ -133,4 +133,65 @@ describe('chat store', () => {
     expect(store.messages.existing).toHaveLength(1);
     expect(store.messages.existing[0].isUser).toBe(true);
   });
+
+  it('loads the latest history page and prepends older pages on demand', async () => {
+    api.getSessionList.mockResolvedValue({ data: { sessions: ['existing'] } });
+    api.getHistory
+      .mockResolvedValueOnce({
+        data: {
+          turns: [{ id: 2, user_input: 'new', response: 'new answer' }],
+          has_more_before: true,
+          next_before_cursor: 'cursor-2',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          turns: [{ id: 1, user_input: 'old', response: 'old answer' }],
+          has_more_before: false,
+        },
+      });
+    localStorage.setItem('currentSession_user-token', 'existing');
+    const store = useChatStore();
+
+    await store.initialize();
+    await store.loadHistory('existing');
+    await store.loadOlderHistory('existing');
+
+    expect(api.getHistory).toHaveBeenNthCalledWith(1, 'existing', {
+      limit: 100,
+      latest: true,
+    });
+    expect(api.getHistory).toHaveBeenNthCalledWith(2, 'existing', {
+      limit: 100,
+      before_cursor: 'cursor-2',
+    });
+    expect(store.messages.existing.map((message) => message.content)).toEqual([
+      'old',
+      'old answer',
+      'new',
+      'new answer',
+    ]);
+    expect(store.hasOlderHistory).toBe(false);
+  });
+
+  it('marks a failed message retryable and retries it without duplicating the user message', async () => {
+    api.getSessionList.mockResolvedValue({ data: { sessions: ['existing'] } });
+    api.streamChat.mockRejectedValueOnce(new Error('offline'));
+    api.streamChat.mockImplementationOnce(async (_sessionId, _text, options) => {
+      options.onEvent('done', { type: 'done', reply: 'recovered' });
+    });
+    localStorage.setItem('currentSession_user-token', 'existing');
+    const store = useChatStore();
+    await store.initialize();
+
+    await store.sendMessage('retry me');
+    const userMessage = store.messages.existing[0];
+    expect(userMessage.retryable).toBe(true);
+
+    await store.retryMessage(userMessage);
+
+    expect(store.messages.existing).toHaveLength(2);
+    expect(store.messages.existing[0].retryable).toBe(false);
+    expect(store.messages.existing[1].content).toBe('recovered');
+  });
 });

@@ -22,9 +22,11 @@
       v-else
       circle
       @click="handleSend"
-      :disabled="!text.trim() || appStore.loading"
+      :disabled="
+        !text.trim() || appStore.isSending || appStore.isInitializing || appStore.isLoadingHistory
+      "
       class="send-button"
-      :loading="appStore.loading"
+      :loading="appStore.isSending"
     >
       <template #icon>
         <n-icon :component="SendIcon" />
@@ -60,7 +62,12 @@ watch(
 );
 
 const handleSend = () => {
-  if (text.value.trim() && !appStore.loading) {
+  if (
+    text.value.trim() &&
+    !appStore.isSending &&
+    !appStore.isInitializing &&
+    !appStore.isLoadingHistory
+  ) {
     emit('send', text.value);
     text.value = '';
   }

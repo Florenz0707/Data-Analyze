@@ -630,6 +630,7 @@ def history(
     after_cursor: str | None = None,
     before_id: int | None = None,
     after_id: int | None = None,
+    latest: bool = False,
 ):
     """结构化获取对话历史：
     - 基于新表 deepseek_api_session / deepseek_api_history
@@ -681,6 +682,8 @@ def history(
         qs = qs.filter(id__lt=before_id).order_by("-created_at", "-id")
     elif after_id is not None:
         qs = qs.filter(id__gt=after_id).order_by("created_at", "id")
+    elif latest:
+        qs = qs.order_by("-created_at", "-id")
     else:
         qs = qs.order_by("created_at", "id")
 
@@ -688,7 +691,7 @@ def history(
     items = list(qs[:limit])
 
     # 若使用 before_id 且倒序取，需要再翻转为升序返回
-    if before_cursor or before_id is not None:
+    if before_cursor or before_id is not None or latest:
         items = list(reversed(items))
 
     turns = [

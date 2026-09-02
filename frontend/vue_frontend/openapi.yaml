@@ -119,6 +119,31 @@ paths:
           required: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: 每页历史条数
+          required: false
+          schema:
+            type: integer
+            default: 200
+        - name: before_cursor
+          in: query
+          description: 向更早历史翻页的游标
+          required: false
+          schema:
+            type: string
+        - name: after_cursor
+          in: query
+          description: 向更新历史翻页的游标
+          required: false
+          schema:
+            type: string
+        - name: latest
+          in: query
+          description: 是否从最新一页开始返回
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: ''
