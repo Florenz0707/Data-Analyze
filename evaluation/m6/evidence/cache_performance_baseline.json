@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-02T11:46:53.968042+00:00",
+  "benchmark": "M6 cache performance baseline",
+  "scope": "cache-layer microbenchmark; deterministic fake producer/retriever; no external model or network",
+  "conditions": {
+    "python": "3.13.11",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "backend_root": "backend/django_backend",
+    "dataset": "not used; deterministic fake producer/retriever",
+    "vector_count": 0,
+    "input_output_tokens": "not applicable; no model call",
+    "django_testing": false,
+    "redis_url_host_port": "127.0.0.1:6379",
+    "iterations": 200,
+    "single_flight_rounds": 10,
+    "single_flight_concurrency": 16,
+    "cache_max_object_bytes": 262144
+  },
+  "duration_seconds": 2.3830454170238227,
+  "redis_before": {
+    "backend": "RedisCacheClient",
+    "redis_version": "7.0.15",
+    "used_memory_bytes": 1090176,
+    "evicted_keys": 0,
+    "connected_clients": 1
+  },
+  "redis_during": {
+    "backend": "RedisCacheClient",
+    "redis_version": "7.0.15",
+    "used_memory_bytes": 4538368,
+    "evicted_keys": 0,
+    "connected_clients": 91
+  },
+  "redis_after": {
+    "backend": "RedisCacheClient",
+    "redis_version": "7.0.15",
+    "used_memory_bytes": 4504960,
+    "evicted_keys": 0,
+    "connected_clients": 91
+  },
+  "reply_cache": {
+    "warm_hit": {
+      "count": 200,
+      "min_ms": 3.4844529582187533,
+      "p50_ms": 3.886103047989309,
+      "p95_ms": 4.4199570547789335,
+      "p99_ms": 5.016630981117487,
+      "max_ms": 6.161787081509829,
+      "mean_ms": 3.933999830624088
+    },
+    "cold_compute_and_store": {
+      "count": 50,
+      "min_ms": 7.5266159838065505,
+      "p50_ms": 8.100298000499606,
+      "p95_ms": 8.946537971496582,
+      "p99_ms": 12.639834079891443,
+      "max_ms": 12.639834079891443,
+      "mean_ms": 8.232112685218453
+    },
+    "warm_hit_value_chars": 30
+  },
+  "retrieval_cache": {
+    "warm_hit": {
+      "count": 200,
+      "min_ms": 0.2907869638875127,
+      "p50_ms": 0.3489165101200342,
+      "p95_ms": 0.5048880120739341,
+      "p99_ms": 0.55173400323838,
+      "max_ms": 0.6761159747838974,
+      "mean_ms": 0.3735066036460921
+    },
+    "cold_retrieve_and_store": {
+      "count": 50,
+      "min_ms": 1.2126429937779903,
+      "p50_ms": 1.5181355411186814,
+      "p95_ms": 1.7781939823180437,
+      "p99_ms": 1.8722859676927328,
+      "max_ms": 1.8722859676927328,
+      "mean_ms": 1.5164463315159082
+    },
+    "warm_seed_seconds": 0.001327625010162592,
+    "retriever_calls": 51,
+    "expected_retriever_calls": 51,
+    "filter_identity_isolated": true
+  },
+  "single_flight": {
+    "rounds": 10,
+    "concurrency": 16,
+    "wall_time": {
+      "count": 10,
+      "min_ms": 74.35072807129472,
+      "p50_ms": 80.19951597088948,
+      "p95_ms": 88.15359603613615,
+      "p99_ms": 88.15359603613615,
+      "max_ms": 88.15359603613615,
+      "mean_ms": 80.24455310078338
+    },
+    "producer_count_total": 10,
+    "producer_count_per_round": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "all_rounds_one_producer": true,
+    "scope": "one Python worker process; local Future plus configured Redis lock"
+  },
+  "cache_metrics": {
+    "reply_writes": 51,
+    "reply_hits": 200,
+    "reply_misses": 50,
+    "retrieval_misses": 51,
+    "retrieval_writes": 51,
+    "retrieval_hits": 200,
+    "benchmark_misses": 160,
+    "local_inflight_waits": 150,
+    "benchmark_writes": 10,
+    "skipped_large": 0,
+    "stampede_waits": 0,
+    "errors": 0,
+    "hit_rate": 0.7984031936127745,
+    "redis_used_memory_bytes": 4504960,
+    "redis_evicted_keys": 0
+  },
+  "limitations": [
+    "This is not an end-to-end HTTP chat benchmark and does not measure real model generation latency.",
+    "Single-flight concurrency is within one Python worker process; multi-process contention requires a separate deployment benchmark.",
+    "Redis memory and eviction values are instance-wide gauges and may include unrelated local keys."
+  ]
+}

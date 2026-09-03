@@ -1,22 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-28T10:05:14.741364+00:00",
+  "generated_at": "2026-09-02T11:36:22.638532+00:00",
   "dataset": {
     "path": "evaluation/m0/gold_queries.jsonl",
-    "sha256": "6f21886f3bcffc95eee7711083a281387dd22b63ff0d66fa039b0deee5410f80",
+    "sha256": "7f64d6b4b7672fbe9bf2b5e88dd064739157456632786bedadb35e29b6c1e5e5",
     "case_count": 50,
     "positive_count": 40,
     "negative_count": 10
   },
   "runtime": {
-    "llm_provider": "ollama",
+    "llm_provider": "openai_compat",
     "embedding_provider": "ollama",
     "embedding_model": "bge-large:latest",
     "collection": "log_collection_bge_large_latest",
     "collection_count": 1708,
     "source_row_count": 1708,
     "embedding_dimensions": 1024,
-    "embedding_seconds": 0.7100759199965978,
+    "embedding_seconds": 3.548765955027193,
     "repeat_count": 2
   },
   "metrics": {
@@ -37,7 +37,7 @@
   "runs": [
     {
       "run": 1,
-      "query_seconds": 0.03582099699997343,
+      "query_seconds": 0.15474096406251192,
       "metrics": {
         "recall_at_1": 0.8,
         "recall_at_5": 0.95,
@@ -1401,7 +1401,7 @@
     },
     {
       "run": 2,
-      "query_seconds": 0.0293111460050568,
+      "query_seconds": 0.02415555203333497,
       "metrics": {
         "recall_at_1": 0.8,
         "recall_at_5": 0.95,
