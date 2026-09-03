@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { attachTraceContext, reportClientError } from './errors';
 import { useAuthStore } from '../stores/auth';
 
 export const chat = (sessionId, userInput, useHistory = 'auto') => {
@@ -12,7 +13,7 @@ export const chat = (sessionId, userInput, useHistory = 'auto') => {
 const streamError = (response, data) => {
   const error = new Error(data?.error || `Stream request failed (${response.status})`);
   error.response = { status: response.status, data };
-  return error;
+  return attachTraceContext(error, response);
 };
 
 const readSseEvents = async (response, onEvent) => {
@@ -71,32 +72,41 @@ export const streamChat = async (
   const baseURL = apiClient.defaults?.baseURL || '/api';
   const headers = { 'Content-Type': 'application/json' };
   if (authStore.apiKey) headers.Authorization = `Bearer ${authStore.apiKey}`;
-  const response = await fetchStream(
-    `${baseURL}/llm/chat/stream`,
-    {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      signal,
-      body: JSON.stringify({
-        session_id: sessionId,
-        user_input: userInput,
-        use_history: useHistory,
-        ...(messageId ? { message_id: messageId } : {}),
-      }),
-    },
-    authStore,
-  );
-  if (!response.ok) {
-    let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      // Preserve the HTTP status when the gateway returned a non-JSON body.
+  let response;
+  try {
+    response = await fetchStream(
+      `${baseURL}/llm/chat/stream`,
+      {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        signal,
+        body: JSON.stringify({
+          session_id: sessionId,
+          user_input: userInput,
+          use_history: useHistory,
+          ...(messageId ? { message_id: messageId } : {}),
+        }),
+      },
+      authStore,
+    );
+    if (!response.ok) {
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        // Preserve the HTTP status when the gateway returned a non-JSON body.
+      }
+      throw streamError(response, data);
     }
-    throw streamError(response, data);
+    await readSseEvents(response, onEvent || (() => {}));
+  } catch (error) {
+    if (response) attachTraceContext(error, response);
+    if (error?.name !== 'AbortError') {
+      reportClientError(error, { source: 'fetch.stream' });
+    }
+    throw error;
   }
-  await readSseEvents(response, onEvent || (() => {}));
 };
 
 export const getProviders = () => {

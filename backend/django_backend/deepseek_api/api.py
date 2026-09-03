@@ -2,6 +2,7 @@ import base64
 import binascii
 import json
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 
@@ -10,12 +11,20 @@ from deepseek_project.external_endpoint import (
     create_safe_http_client,
     validate_external_endpoint,
 )
+from deepseek_project.health import liveness_payload, provider_health_payload, readiness_payload
+from deepseek_project.metrics import render_metrics
+from deepseek_project.observability import (
+    estimate_tokens,
+    hash_identifier,
+    hash_text,
+    log_phase,
+)
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import F, Q
-from django.http import Http404, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.utils import timezone
 from ninja import NinjaAPI, Router
 from ninja.errors import (
@@ -63,6 +72,27 @@ from .streaming import encode_sse
 logger = logging.getLogger(__name__)
 
 api = NinjaAPI(title="DeepSeek-KAI API", version="0.1.0")
+
+
+@api.get("/health/live")
+def health_live(request):
+    return liveness_payload()
+
+
+@api.get("/health/ready")
+def health_ready(request):
+    status, payload = readiness_payload()
+    return api.create_response(request, payload, status=status)
+
+
+@api.get("/health/providers")
+def health_providers(request):
+    return provider_health_payload()
+
+
+@api.get("/metrics")
+def metrics_endpoint(request):
+    return HttpResponse(render_metrics(), content_type="text/plain; version=0.0.4")
 
 
 @api.exception_handler(AuthenticationError)
@@ -233,10 +263,14 @@ def api_key_auth(request):
     - 若已过期，删除记录并拒绝
     - 若有效，返回 APIKey 实例
     """
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        return None
+    started = time.perf_counter()
+    outcome = "missing"
+    user_hash = None
     try:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return None
+        outcome = "failure"
         scheme, key = auth_header.split()
         if scheme.lower() != "bearer":
             raise AuthenticationError(message="API Key 无效")
@@ -251,9 +285,20 @@ def api_key_auth(request):
         )
         if not decision.allowed:
             raise Throttled(decision.retry_after)
+        outcome = "success"
+        user_hash = hash_identifier(api_key.user)
         return api_key
     except (ValueError, APIKey.DoesNotExist):
+        outcome = "failure"
         raise AuthenticationError(message="API Key 无效") from None
+    finally:
+        log_phase(
+            logger,
+            "authentication",
+            started,
+            outcome=outcome,
+            user_hash=user_hash,
+        )
 
 
 router = Router(auth=api_key_auth)
@@ -371,6 +416,7 @@ def chat(request, data: ChatIn):
             return {"reply": previous.response or ""}
 
         # 4. 构造历史上下文（通过 ForeignKey 约束到当前 Session）
+        history_started = time.perf_counter()
         hist_cfg = get_history_cfg()
         use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
         qs = History.objects.filter(session=session).order_by("sequence")
@@ -382,11 +428,24 @@ def chat(request, data: ChatIn):
         else:
             selected = []
         query = compose_prompt_with_history(selected, user_input, hist_cfg)
+        log_phase(
+            logger,
+            "history_selection",
+            history_started,
+            mode=use_history_mode,
+            total_turns=len(turns_all),
+            selected_turns=len(selected),
+        )
         logger.info(
-            "传递给 TopKLogSystem 的 query：session=%s history_turns=%s chars=%s",
-            sid,
-            len(selected),
-            len(query),
+            "generation.input",
+            extra={
+                "event": "generation.input",
+                "session_hash": hash_identifier(sid),
+                "prompt_hash": hash_text(query),
+                "prompt_chars": len(query),
+                "input_tokens_estimate": estimate_tokens(query),
+                "history_turns": len(selected),
+            },
         )
         cache_parameters = {
             "history_mode": use_history_mode,
@@ -416,7 +475,14 @@ def chat(request, data: ChatIn):
                 ErrorCode.MODEL_UNAVAILABLE,
                 f"服务未启用模型：{str(e)}。请在 runserver 或启用相应开关后再试。",
             )
-        logger.info("TopKLogSystem 已生成回复：session=%s chars=%s", sid, len(reply))
+        logger.info(
+            "generation.completed",
+            extra={
+                "event": "generation.completed",
+                "session_hash": hash_identifier(sid),
+                "output_chars": len(reply),
+            },
+        )
 
         # 6. 写入结构化历史并更新会话时间
         session.next_history_sequence = F("next_history_sequence") + 1
@@ -492,6 +558,7 @@ def chat_stream(request, data: ChatIn):
                     )
                     return
 
+                history_started = time.perf_counter()
                 hist_cfg = get_history_cfg()
                 use_history_mode = (data.use_history or hist_cfg.get("mode") or "auto").lower()
                 turns_all = list(
@@ -506,6 +573,25 @@ def chat_stream(request, data: ChatIn):
                 else:
                     selected = []
                 query = compose_prompt_with_history(selected, user_input, hist_cfg)
+                log_phase(
+                    logger,
+                    "history_selection",
+                    history_started,
+                    mode=use_history_mode,
+                    total_turns=len(turns_all),
+                    selected_turns=len(selected),
+                )
+                logger.info(
+                    "generation.input",
+                    extra={
+                        "event": "generation.input",
+                        "session_hash": hash_identifier(sid),
+                        "prompt_hash": hash_text(query),
+                        "prompt_chars": len(query),
+                        "input_tokens_estimate": estimate_tokens(query),
+                        "history_turns": len(selected),
+                    },
+                )
                 user_obj = request.auth
                 user_pref = services.get_or_create_user_pref(user_obj)
                 cache_parameters = {
@@ -573,7 +659,13 @@ def chat_stream(request, data: ChatIn):
                     },
                 )
         except GeneratorExit:
-            logger.info("流式聊天连接已断开，未提交 History：session=%s", sid)
+            logger.info(
+                "stream.cancelled",
+                extra={
+                    "event": "stream.cancelled",
+                    "session_hash": hash_identifier(sid),
+                },
+            )
             raise
         except _StreamModelUnavailable:
             yield encode_sse(
@@ -584,7 +676,13 @@ def chat_stream(request, data: ChatIn):
                 },
             )
         except Exception:
-            logger.exception("流式聊天请求失败：session=%s", sid)
+            logger.exception(
+                "stream.failed",
+                extra={
+                    "event": "stream.failed",
+                    "session_hash": hash_identifier(sid),
+                },
+            )
             yield encode_sse(
                 "error",
                 {

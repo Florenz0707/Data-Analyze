@@ -29,6 +29,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "deepseek_project.middleware.RequestTraceMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -113,7 +114,18 @@ CORS_ALLOW_CREDENTIALS = True
 # 允许前端读取响应头中的 Authorization（便于拿到新的 access token）
 CORS_EXPOSE_HEADERS = [
     "Authorization",
+    "X-Request-ID",
+    "X-Trace-ID",
 ]
+
+INDEX_STATE_FILE = os.getenv(
+    "INDEX_STATE_FILE", str(BASE_DIR / "data" / "vector_stores" / ".index_state.json")
+)
+try:
+    OBSERVABILITY_WORKER_CAPACITY = max(1, int(os.getenv("OBSERVABILITY_WORKER_CAPACITY", "1")))
+except ValueError:
+    OBSERVABILITY_WORKER_CAPACITY = 1
+OBSERVABILITY_PROVIDER_COST_USD_PER_1K = os.getenv("OBSERVABILITY_PROVIDER_COST_USD_PER_1K", "")
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
@@ -164,8 +176,108 @@ CACHE_EXPIRY = 300
 CACHE_MAX_OBJECT_BYTES = int(os.getenv("CACHE_MAX_OBJECT_BYTES", "262144"))
 CACHE_SINGLE_FLIGHT_TIMEOUT = int(os.getenv("CACHE_SINGLE_FLIGHT_TIMEOUT", "120"))
 
+# Persistent structured logging is enabled by default outside tests. Each
+# level gets its own JSONL file and is rotated by the logging handler.
+PERSISTENT_LOG_ENABLED = parse_bool(os.getenv("PERSISTENT_LOG_ENABLED"), not TESTING)
+PERSISTENT_LOG_DIR = Path(
+    os.getenv("PERSISTENT_LOG_DIR", str(BASE_DIR / "data" / "log"))
+).expanduser()
+PERSISTENT_LOG_LEVEL = os.getenv("PERSISTENT_LOG_LEVEL", "INFO").upper()
+PERSISTENT_LOG_ROTATION_WHEN = os.getenv("PERSISTENT_LOG_ROTATION_WHEN", "midnight")
+try:
+    PERSISTENT_LOG_ROTATION_INTERVAL = max(
+        1, int(os.getenv("PERSISTENT_LOG_ROTATION_INTERVAL", "1"))
+    )
+except ValueError:
+    PERSISTENT_LOG_ROTATION_INTERVAL = 1
+try:
+    PERSISTENT_LOG_BACKUP_COUNT = max(0, int(os.getenv("PERSISTENT_LOG_BACKUP_COUNT", "14")))
+except ValueError:
+    PERSISTENT_LOG_BACKUP_COUNT = 14
+PERSISTENT_LOG_UTC = parse_bool(os.getenv("PERSISTENT_LOG_UTC"), True)
+
 # LLM/model loading controls
 # Whether LLM features are enabled at all (controls if the model can be initialized)
 ENABLE_LLM = parse_bool(os.getenv("ENABLE_LLM"), not TESTING)
 # Whether to preload model and vector index on app startup
 PRELOAD_LLM_ON_STARTUP = parse_bool(os.getenv("PRELOAD_LLM_ON_STARTUP"), not TESTING)
+
+_log_handlers = ["console_json"]
+_log_filters = {
+    "request_context": {
+        "()": "deepseek_project.observability.RequestContextFilter",
+    },
+}
+_log_handler_config = {
+    "console_json": {
+        "class": "logging.StreamHandler",
+        "filters": ["request_context"],
+        "formatter": "json",
+        "level": PERSISTENT_LOG_LEVEL,
+    },
+}
+if PERSISTENT_LOG_ENABLED:
+    PERSISTENT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    _persistent_levels = {
+        "debug": ("DEBUG", "DEBUG"),
+        "info": ("INFO", "INFO"),
+        "warning": ("WARNING", "WARNING"),
+        "error": ("ERROR", "CRITICAL"),
+    }
+    for name, (min_level, max_level) in _persistent_levels.items():
+        _log_filters[f"persistent_{name}_level"] = {
+            "()": "deepseek_project.observability.LevelRangeFilter",
+            "min_level": min_level,
+            "max_level": max_level,
+        }
+        _log_handler_config[f"persistent_{name}"] = {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": str(PERSISTENT_LOG_DIR / f"{name}.jsonl"),
+            "when": PERSISTENT_LOG_ROTATION_WHEN,
+            "interval": PERSISTENT_LOG_ROTATION_INTERVAL,
+            "backupCount": PERSISTENT_LOG_BACKUP_COUNT,
+            "utc": PERSISTENT_LOG_UTC,
+            "encoding": "utf-8",
+            "delay": True,
+            "filters": ["request_context", f"persistent_{name}_level"],
+            "formatter": "json",
+            "level": min_level,
+        }
+    _log_handlers.extend(name for name in _log_handler_config if name != "console_json")
+
+# Emit one-line structured logs with request/trace context. The formatter
+# intentionally keeps exception messages bounded and redacts credential-like
+# fields before they reach the console or a persistent log file.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": _log_filters,
+    "formatters": {
+        "json": {
+            "()": "deepseek_project.observability.JsonFormatter",
+        },
+    },
+    "handlers": _log_handler_config,
+    "loggers": {
+        "deepseek_api": {
+            "handlers": _log_handlers,
+            "level": PERSISTENT_LOG_LEVEL,
+            "propagate": False,
+        },
+        "deepseek_project": {
+            "handlers": _log_handlers,
+            "level": PERSISTENT_LOG_LEVEL,
+            "propagate": False,
+        },
+        "topklogsystem": {
+            "handlers": _log_handlers,
+            "level": PERSISTENT_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": _log_handlers,
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}

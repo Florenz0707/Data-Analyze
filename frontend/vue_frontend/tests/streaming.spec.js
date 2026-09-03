@@ -10,12 +10,13 @@ vi.mock('../src/api/client', () => ({
   },
 }));
 
-const responseFrom = (text, ok = true, status = 200) => {
+const responseFrom = (text, ok = true, status = 200, headers = {}) => {
   const bytes = new TextEncoder().encode(text);
   let read = false;
   return {
     ok,
     status,
+    headers: { get: (name) => headers[name] || null },
     body: ok
       ? {
           getReader: () => ({
@@ -36,6 +37,7 @@ describe('chat streaming API', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     useAuthStore().setApiKey('stream-token');
+    delete globalThis.__APP_ERROR_REPORTER__;
     vi.restoreAllMocks();
   });
 
@@ -68,13 +70,33 @@ describe('chat streaming API', () => {
   });
 
   it('exposes structured API errors for non-stream responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(responseFrom('', false, 503)));
+    const reporter = vi.fn();
+    globalThis.__APP_ERROR_REPORTER__ = reporter;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        responseFrom('', false, 503, {
+          'x-trace-id': 'trace-stream',
+          'x-request-id': 'request-stream',
+        }),
+      ),
+    );
 
     await expect(streamChat('session-1', 'question')).rejects.toMatchObject({
       response: {
         status: 503,
         data: { code: 'MODEL_UNAVAILABLE' },
       },
+      traceId: 'trace-stream',
+      requestId: 'request-stream',
     });
+    expect(reporter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'client.error',
+        trace_id: 'trace-stream',
+        request_id: 'request-stream',
+        source: 'fetch.stream',
+      }),
+    );
   });
 });

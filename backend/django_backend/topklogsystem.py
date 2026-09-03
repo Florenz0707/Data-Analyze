@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import re
+import time
 import warnings
 from collections.abc import Iterator
 from typing import Any
@@ -27,6 +28,8 @@ from deepseek_project.configuration import (
     redacted_config_summary,
     resolve_config_path,
 )
+from deepseek_project.metrics import record_generation
+from deepseek_project.observability import estimate_tokens, hash_text, log_phase
 from deepseek_project.response_contract import (
     StructuredAnswer,
     no_evidence_answer,
@@ -633,7 +636,8 @@ class TopKLogSystem:
             schema_version=str(getattr(self, "cache_schema_version", "m5-v1")),
             namespace="retrieval-v1",
         )
-        results, _ = get_or_compute(
+        retrieval_started = time.perf_counter()
+        results, cache_hit = get_or_compute(
             cache_key,
             lambda: self._retrieve_logs_uncached(
                 query, resolved_top_k, embedding=None, metadata_filter=filter_values
@@ -644,6 +648,23 @@ class TopKLogSystem:
             max_bytes=int(getattr(self, "cache_max_object_bytes", 262_144)),
         )
         self.last_retrieval_status = "ok" if results else "no_evidence"
+        log_phase(
+            logger,
+            "retrieval",
+            retrieval_started,
+            cache_hit=cache_hit,
+            retrieval_count=len(results),
+            evidence_ids=[
+                str(item.get("document_id"))
+                for item in results
+                if item.get("document_id") is not None
+            ],
+            evidence_scores=[item.get("score") for item in results],
+            index_version=str(
+                getattr(self, "index_source_version", getattr(self, "index_version", "unknown"))
+            ),
+            metadata_filter_fields=sorted(filter_values),
+        )
         return results
 
     def _retrieve_logs_uncached(
@@ -887,6 +908,7 @@ class TopKLogSystem:
         repair_attempts = 0
         native_structured = False
         stream = self._stream_model(prompt, llm)
+        stream_started = time.perf_counter()
         try:
             for chunk in stream:
                 chunk_text = self._stream_chunk_text(chunk)
@@ -901,14 +923,44 @@ class TopKLogSystem:
                         yield {"type": "delta", "text": delta}
 
             response_value = raw
+            parse_started = time.perf_counter()
             answer, diagnostics = parse_answer(response_value, context)
+            log_phase(
+                logger,
+                "parsing",
+                parse_started,
+                schema_valid=answer is not None,
+                diagnostics_count=len(diagnostics),
+                repair_attempt=0,
+            )
             if answer is None and getattr(self, "structured_repair_retries", 1) > 0:
                 repair_attempts = 1
+                repair_started = time.perf_counter()
                 repaired, native_structured = self._complete_model(
                     self._build_repair_prompt(query, context, raw, diagnostics), llm
                 )
+                log_phase(
+                    logger,
+                    "model",
+                    repair_started,
+                    outcome="success",
+                    provider=getattr(self, "provider", "unknown"),
+                    model=getattr(getattr(self, "llm_key", None), "model", "unknown"),
+                    prompt_hash=hash_text(query),
+                    input_tokens_estimate=estimate_tokens(query),
+                    repair_attempt=1,
+                )
                 response_value = self._response_text(repaired)
+                parse_started = time.perf_counter()
                 answer, diagnostics = parse_answer(response_value, context)
+                log_phase(
+                    logger,
+                    "parsing",
+                    parse_started,
+                    schema_valid=answer is not None,
+                    diagnostics_count=len(diagnostics),
+                    repair_attempt=1,
+                )
 
             if answer is not None:
                 self.last_structured_answer = answer.model_dump()
@@ -937,6 +989,18 @@ class TopKLogSystem:
             close = getattr(stream, "close", None)
             if callable(close):
                 close()
+            log_phase(
+                logger,
+                "model",
+                stream_started,
+                outcome="success",
+                provider=getattr(self, "provider", "unknown"),
+                model=getattr(getattr(self, "llm_key", None), "model", "unknown"),
+                prompt_hash=hash_text(prompt),
+                input_tokens_estimate=estimate_tokens(prompt),
+                output_tokens_estimate=estimate_tokens(raw),
+                streamed=True,
+            )
 
         yield {
             "type": "done",
@@ -980,14 +1044,18 @@ class TopKLogSystem:
             "prompt_version": getattr(self, "prompt_version", "unknown"),
         }
         logger.info(
-            "LLM generation result: mode=%s schema_valid=%s repair_attempts=%s "
-            "raw_chars=%s prompt_version=%s",
-            mode,
-            mode == "structured",
-            repair_attempts,
-            len(raw),
-            getattr(self, "prompt_version", "unknown"),
+            "generation.completed",
+            extra={
+                "event": "generation.completed",
+                "output_mode": mode,
+                "schema_valid": mode == "structured",
+                "repair_attempts": repair_attempts,
+                "raw_chars": len(raw),
+                "output_tokens_estimate": estimate_tokens(raw),
+                "prompt_version": getattr(self, "prompt_version", "unknown"),
+            },
         )
+        record_generation(mode, mode == "structured", estimate_tokens(raw))
 
     def _build_repair_prompt(
         self, query: str, context: list[dict], raw: str, diagnostics: list[dict[str, str]]
@@ -1038,9 +1106,30 @@ class TopKLogSystem:
         last_raw = ""
         native_structured = False
         try:
+            model_started = time.perf_counter()
             response, native_structured = self._complete_model(prompt, llm)
+            log_phase(
+                logger,
+                "model",
+                model_started,
+                outcome="success",
+                provider=getattr(self, "provider", "unknown"),
+                model=getattr(getattr(self, "llm_key", None), "model", "unknown"),
+                prompt_hash=hash_text(prompt),
+                input_tokens_estimate=estimate_tokens(prompt),
+                repair_attempt=0,
+            )
             last_raw = str(self._response_text(response) or "").strip()
+            parse_started = time.perf_counter()
             answer, diagnostics = parse_answer(self._response_text(response), context)
+            log_phase(
+                logger,
+                "parsing",
+                parse_started,
+                schema_valid=answer is not None,
+                diagnostics_count=len(diagnostics),
+                repair_attempt=0,
+            )
             if answer is not None:
                 self.last_structured_answer = answer.model_dump()
                 self._record_generation_result(
@@ -1053,12 +1142,33 @@ class TopKLogSystem:
 
             if getattr(self, "structured_repair_retries", 1) > 0:
                 repair_attempts = 1
+                model_started = time.perf_counter()
                 repaired, native_structured = self._complete_model(
                     self._build_repair_prompt(query, context, last_raw, diagnostics), llm
                 )
+                log_phase(
+                    logger,
+                    "model",
+                    model_started,
+                    outcome="success",
+                    provider=getattr(self, "provider", "unknown"),
+                    model=getattr(getattr(self, "llm_key", None), "model", "unknown"),
+                    prompt_hash=hash_text(query),
+                    input_tokens_estimate=estimate_tokens(query),
+                    repair_attempt=1,
+                )
                 repaired_value = self._response_text(repaired)
                 repaired_raw = str(repaired_value or "").strip()
+                parse_started = time.perf_counter()
                 answer, diagnostics = parse_answer(repaired_value, context)
+                log_phase(
+                    logger,
+                    "parsing",
+                    parse_started,
+                    schema_valid=answer is not None,
+                    diagnostics_count=len(diagnostics),
+                    repair_attempt=1,
+                )
                 if answer is not None:
                     self.last_structured_answer = answer.model_dump()
                     self._record_generation_result(

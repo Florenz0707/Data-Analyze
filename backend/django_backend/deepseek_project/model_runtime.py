@@ -252,6 +252,54 @@ def model_load_records() -> tuple[ModelLoadRecord, ...]:
         return tuple(_MODEL_LOAD_RECORDS.values())
 
 
+def cached_provider_health() -> list[dict[str, Any]]:
+    """Return health for loaded provider instances without making network calls."""
+    result: list[dict[str, Any]] = []
+    with _CACHE_LOCK:
+        caches = (("llm", _LLM_CACHE), ("embedding", _EMBEDDING_CACHE))
+        for kind, cache in caches:
+            if cache is None:
+                continue
+            with cache._lock:
+                items = list(cache._items.items())
+            for key, instance in items:
+                checker = getattr(instance, "health_check", None)
+                healthy = True
+                if callable(checker):
+                    try:
+                        healthy = bool(checker())
+                    except Exception:
+                        healthy = False
+                result.append(
+                    {
+                        "kind": kind,
+                        "provider": key.provider,
+                        "model": key.model,
+                        "status": "healthy" if healthy else "unhealthy",
+                    }
+                )
+    return result
+
+
+def model_runtime_snapshot() -> dict[str, int | float]:
+    """Return bounded model cache and load diagnostics for metrics scraping."""
+    with _CACHE_LOCK:
+        records = tuple(_MODEL_LOAD_RECORDS.values())
+        return {
+            "model_cache_llm_entries": len(_LLM_CACHE) if _LLM_CACHE is not None else 0,
+            "model_cache_embedding_entries": (
+                len(_EMBEDDING_CACHE) if _EMBEDDING_CACHE is not None else 0
+            ),
+            "provider_client_cache_entries": len(_CLIENT_CACHE) if _CLIENT_CACHE is not None else 0,
+            "model_load_records_total": len(records),
+            "model_last_load_duration_seconds": max(
+                (record.duration_seconds for record in records), default=0.0
+            ),
+            "model_peak_rss_bytes": max((record.peak_rss_kib for record in records), default=0)
+            * 1024,
+        }
+
+
 def _build_managed_model(key: ModelInstanceKey, factory: Callable[[], Any]) -> HealthAwareModel:
     started = perf_counter()
     instance = HealthAwareModel(

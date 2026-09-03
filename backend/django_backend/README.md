@@ -183,6 +183,15 @@ uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit
 - `GET /api/sessions/history` 返回每条记录的 `id`、`created_at`、正文和 `before_cursor`/`after_cursor` 复合分页游标；旧 ID 参数仍兼容。
 - `POST /api/sessions` 支持可选 `title`；不传时默认使用 `session_id`。
 
+### 6.5 指标与健康检查
+
+- `GET /api/health/live` 是不访问外部依赖的进程存活检查；`GET /api/health/ready` 检查必要配置、数据库、缓存和当前 ready 索引，不就绪时返回 `503`。
+- `GET /api/health/providers` 展示已配置和已加载 Provider 的状态，不主动初始化模型；`GET /api/metrics` 输出 Prometheus 文本格式指标。
+- `INDEX_STATE_FILE` 可覆盖就绪检查使用的索引状态文件；`OBSERVABILITY_WORKER_CAPACITY` 配置 Worker 容量代理值，默认 `1`。
+- `OBSERVABILITY_PROVIDER_COST_USD_PER_1K` 可配置成本估算，例如 `openai_compat=0.002,dashscope=0.001`。Token 和成本当前为估算值，不用于结算。
+- 生产环境必须在反向代理或网络层限制健康/指标端点的访问范围；端点不返回 API Key、Prompt 原文、Token 或用户标识。
+- 持久化结构化日志默认写入 `data/log/{debug,info,warning,error}.jsonl`，按级别分流并默认每天 UTC 轮换、保留 14 个备份；可用 `PERSISTENT_LOG_ENABLED`、`PERSISTENT_LOG_DIR`、`PERSISTENT_LOG_LEVEL`、`PERSISTENT_LOG_ROTATION_WHEN`、`PERSISTENT_LOG_ROTATION_INTERVAL`、`PERSISTENT_LOG_BACKUP_COUNT` 和 `PERSISTENT_LOG_UTC` 调整。
+
 ## 7. 常见问题
 
 - 更换嵌入模型后报错或召回异常：删除 data/vector_stores 并重建索引。

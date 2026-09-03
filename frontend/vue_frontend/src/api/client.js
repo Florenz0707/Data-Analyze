@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+import { attachTraceContext, reportClientError } from './errors';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -38,6 +39,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    attachTraceContext(error);
     const originalRequest = error.config;
     const isUnauthorized = error.response?.status === 401;
     const isRefreshRequest = originalRequest?.url?.endsWith('/refresh');
@@ -75,6 +77,11 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         clearAuthAndRedirect();
+        reportClientError(refreshError, {
+          source: 'axios.refresh',
+          traceId: error.traceId,
+          requestId: error.requestId,
+        });
         return Promise.reject(refreshError);
       }
     }
@@ -82,6 +89,7 @@ apiClient.interceptors.response.use(
     if (isUnauthorized) {
       clearAuthAndRedirect();
     }
+    reportClientError(error, { source: 'axios' });
     return Promise.reject(error);
   },
 );

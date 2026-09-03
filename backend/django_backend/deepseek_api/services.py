@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import logging
 import threading
 import time
 import uuid
@@ -17,6 +18,12 @@ from deepseek_project.cache_runtime import (
 from deepseek_project.configuration import load_llm_config
 from deepseek_project.external_endpoint import ExternalEndpointError, validate_external_endpoint
 from deepseek_project.model_runtime import configured_endpoint, configured_model, get_cached_llm
+from deepseek_project.observability import (
+    estimate_tokens,
+    hash_identifier,
+    hash_text,
+    log_phase,
+)
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
@@ -444,20 +451,70 @@ def get_user_llm(user: APIKey):
 def generate_with_user_llm(user: APIKey, prompt: str) -> str:
     """Generate with an explicit user-selected LLM without mutating global state."""
     system = _get_system()
+    preference = get_or_create_user_pref(user)
     llm = get_user_llm(user)
     from llama_index.llms.langchain import LangChainLLM
 
+    started = time.perf_counter()
     result = system.query(prompt, llm=LangChainLLM(llm=llm))
+    log_phase(
+        logging.getLogger(__name__),
+        "model_pipeline",
+        started,
+        provider=preference.provider,
+        model=preference.model or getattr(getattr(system, "llm_key", None), "model", "unknown"),
+        index_version=result.get("index_version", "unknown"),
+        retrieval_count=result.get("retrieval_stats", 0),
+        prompt_hash=hash_text(prompt),
+        input_tokens_estimate=estimate_tokens(prompt),
+        output_tokens_estimate=estimate_tokens(result.get("response", "")),
+        token_usage_source="character_estimate",
+        generation_mode=(result.get("generation") or {}).get("output_mode", "unknown"),
+    )
     return result.get("response", "")
 
 
 def stream_with_user_llm(user: APIKey, prompt: str):
     """Return a provider-backed stream using the same retrieval pipeline as chat."""
     system = _get_system()
+    preference = get_or_create_user_pref(user)
     llm = get_user_llm(user)
     from llama_index.llms.langchain import LangChainLLM
 
-    return system.stream_query(prompt, llm=LangChainLLM(llm=llm))
+    stream = system.stream_query(prompt, llm=LangChainLLM(llm=llm))
+
+    def observed_stream():
+        started = time.perf_counter()
+        output_chars = 0
+        result: dict[str, Any] = {}
+        try:
+            for item in stream:
+                result = item if isinstance(item, dict) else result
+                if isinstance(item, dict) and item.get("type") == "delta":
+                    output_chars += len(str(item.get("text") or ""))
+                elif isinstance(item, dict) and item.get("type") == "done":
+                    output_chars = len(str(item.get("reply") or ""))
+                yield item
+        finally:
+            log_phase(
+                logging.getLogger(__name__),
+                "model_pipeline",
+                started,
+                provider=preference.provider,
+                model=preference.model
+                or getattr(getattr(system, "llm_key", None), "model", "unknown"),
+                index_version=result.get(
+                    "index_version", getattr(system, "index_source_version", "unknown")
+                ),
+                retrieval_count=result.get("retrieval_stats", 0),
+                prompt_hash=hash_text(prompt),
+                input_tokens_estimate=estimate_tokens(prompt),
+                output_tokens_estimate=max(1, (output_chars + 3) // 4) if output_chars else 0,
+                token_usage_source="character_estimate",
+                streamed=True,
+            )
+
+    return observed_stream()
 
 
 def create_api_key(user: str) -> APIKey:
@@ -776,11 +833,16 @@ def get_or_create_session(session_id: str, user: APIKey) -> ConversationSession:
         user=username,  # 与用户名关联
         defaults={"context": ""},
     )
-    # 调试日志：确认是否创建新会话（created=True 表示新会话）
-    import logging
-
     logger = logging.getLogger(__name__)
-    logger.info(f"会话 {session_id}（用户：{username}）{'创建新会话' if created else '加载旧会话'}")
+    logger.info(
+        "session.loaded",
+        extra={
+            "event": "session.loaded",
+            "session_hash": hash_identifier(session_id),
+            "user_hash": hash_identifier(username),
+            "session_created": created,
+        },
+    )
     return session
 
 
