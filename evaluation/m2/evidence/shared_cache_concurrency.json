@@ -1,0 +1,13 @@
+{
+  "redis_url": "redis://127.0.0.1:6379/0",
+  "processes": 4,
+  "rounds": 10,
+  "total_calls": 40,
+  "producer_count": 10,
+  "expected_producer_count": 10,
+  "all_values_equal": true,
+  "child_exit_codes": [0, 0, 0, 0],
+  "elapsed_seconds": 2.312,
+  "pass": true,
+  "scope": "independent spawned Django processes using Redis atomic lock; no real model call"
+}

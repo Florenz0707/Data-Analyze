@@ -98,8 +98,21 @@ DJANGO_TESTING=true uv run --project . python manage.py test \
 2. 在 M6 增加同一 Key 的请求合并或短时锁，避免缓存击穿导致重复模型生成。
 3. 将 Prompt/索引发布流程与 `invalidate_reply_cache()` 或版本递增绑定，避免依赖人工记忆执行命令。
 4. 增加最大响应大小和序列化策略，防止超大回答挤占缓存；必要时只缓存经过校验的结构化最终答案。
-5. 在 PostgreSQL/Redis 等真实部署组合上做多进程缓存一致性与故障演练；当前 SQLite/LocMemCache 测试不能证明生产级共享语义。
+5. 在 PostgreSQL/Redis 等真实部署组合上做多进程缓存一致性与故障演练；当前已补充 4 进程/10 轮 Redis 原子锁验证，但真实模型调用、长时间驱逐和故障恢复仍待演练。
 
 ## 6. 变更边界
 
-本次完成 M2 缓存正确性子任务，不包含 M6 的缓存击穿治理、流式事件缓存、Redis 选型和生产压测；实际限流接入和真实多连接并发仍按开发计划继续验收。
+本次完成 M2 缓存正确性子任务，并补充真实 Redis 多进程同 Key 验证；不包含 M6 的流式事件缓存、Redis 长期驱逐和生产流量压测，实际限流接入和数据库多连接并发仍按开发计划继续验收。
+
+### 6.1 多进程共享缓存验证
+
+执行脚本：
+
+```bash
+REDIS_URL=redis://127.0.0.1:6379/0 \
+  uv run --project backend/django_backend \
+  python evaluation/m2/benchmark_shared_cache_concurrency.py \
+  --processes 4 --rounds 10
+```
+
+2026-09-04 实测 4 个独立 Django 进程、10 轮独立 Key、共 40 次调用：每轮生产者恰好 1 次（总计 10 次），40 个返回值一致，4 个子进程退出码均为 0，耗时 2.312 秒。临时缓存 Key 和计数 Key 已在脚本结束后删除。证据见 `evaluation/m2/evidence/shared_cache_concurrency.json`。
