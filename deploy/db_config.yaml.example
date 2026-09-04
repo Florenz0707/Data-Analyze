@@ -1,0 +1,12 @@
+# Compose PostgreSQL configuration. Values are expanded from the container environment.
+DATABASE:
+  ENGINE: postgresql
+  NAME: "${POSTGRES_DB}"
+  USER: "${POSTGRES_USER}"
+  PASSWORD: "${POSTGRES_PASSWORD}"
+  HOST: "${POSTGRES_SERVICE_NAME}"
+  PORT: "${POSTGRES_CONTAINER_PORT}"
+  CONN_MAX_AGE: 60
+  CONN_HEALTH_CHECKS: true
+  OPTIONS:
+    connect_timeout: 5

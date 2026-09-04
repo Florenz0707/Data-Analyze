@@ -1,0 +1,132 @@
+services:
+  db:
+    image: ${POSTGRES_IMAGE}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_CONTAINER_PORT: ${POSTGRES_CONTAINER_PORT}
+    command: ['postgres', '-p', '${POSTGRES_CONTAINER_PORT}']
+    expose:
+      - '${POSTGRES_CONTAINER_PORT}'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -p "$${POSTGRES_CONTAINER_PORT}"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - ${POSTGRES_SERVICE_NAME}
+
+  redis:
+    image: ${REDIS_IMAGE}
+    restart: unless-stopped
+    environment:
+      REDIS_CONTAINER_PORT: ${REDIS_CONTAINER_PORT}
+    command: ['redis-server', '--port', '${REDIS_CONTAINER_PORT}', '--appendonly', 'yes']
+    expose:
+      - '${REDIS_CONTAINER_PORT}'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -p "$${REDIS_CONTAINER_PORT}" ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - ${REDIS_SERVICE_NAME}
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${BACKEND_ENV_FILE}
+    environment:
+      DJANGO_PORT: ${BACKEND_CONTAINER_PORT}
+      DJANGO_DB_CONFIG: /app/config/db_config.yaml
+      DJANGO_DB_PATH: /app/data/db.sqlite3
+      REDIS_URL: ${REDIS_URL:-redis://${REDIS_SERVICE_NAME}:${REDIS_CONTAINER_PORT}/0}
+      PERSISTENT_LOG_DIR: /app/data/log
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_CONTAINER_PORT: ${POSTGRES_CONTAINER_PORT}
+      POSTGRES_SERVICE_NAME: ${POSTGRES_SERVICE_NAME}
+      REDIS_SERVICE_NAME: ${REDIS_SERVICE_NAME}
+    volumes:
+      - ${BACKEND_DB_CONFIG_FILE}:/app/config/db_config.yaml:ro
+      - ${BACKEND_LLM_CONFIG_FILE}:/app/config/llm_config.yaml:ro
+      - ${BACKEND_DATA_DIR}:/app/data
+      - ${BACKEND_LOG_DIR}:/app/data/log
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    expose:
+      - '${BACKEND_CONTAINER_PORT}'
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        exec python -m uvicorn deepseek_project.asgi:application
+        --host 0.0.0.0 --port "$${DJANGO_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'python -c "import os,urllib.request; urllib.request.urlopen(''http://127.0.0.1:'' + os.environ[''DJANGO_PORT''] + ''/api/health/live'', timeout=3)"',
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - ${BACKEND_SERVICE_NAME}
+    ports:
+      - '${BACKEND_PUBLISHED_PORT}:${BACKEND_CONTAINER_PORT}'
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    restart: unless-stopped
+    environment:
+      FRONTEND_CONTAINER_PORT: ${FRONTEND_CONTAINER_PORT}
+      BACKEND_SERVICE_NAME: ${BACKEND_SERVICE_NAME}
+      BACKEND_CONTAINER_PORT: ${BACKEND_CONTAINER_PORT}
+      NGINX_ENVSUBST_VARS: FRONTEND_CONTAINER_PORT BACKEND_SERVICE_NAME BACKEND_CONTAINER_PORT
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '${FRONTEND_PUBLISHED_PORT}:${FRONTEND_CONTAINER_PORT}'
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:$${FRONTEND_CONTAINER_PORT}/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

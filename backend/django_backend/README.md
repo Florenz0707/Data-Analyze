@@ -192,6 +192,18 @@ uv run --project . coverage report --data-file=/tmp/data-analyze.coverage --omit
 - 生产环境必须在反向代理或网络层限制健康/指标端点的访问范围；端点不返回 API Key、Prompt 原文、Token 或用户标识。
 - 持久化结构化日志默认写入 `data/log/{debug,info,warning,error}.jsonl`，按级别分流并默认每天 UTC 轮换、保留 14 个备份；可用 `PERSISTENT_LOG_ENABLED`、`PERSISTENT_LOG_DIR`、`PERSISTENT_LOG_LEVEL`、`PERSISTENT_LOG_ROTATION_WHEN`、`PERSISTENT_LOG_ROTATION_INTERVAL`、`PERSISTENT_LOG_BACKUP_COUNT` 和 `PERSISTENT_LOG_UTC` 调整。
 
+### 6.6 Docker Compose 部署
+
+Compose 部署方式、配置文件、端口变量、数据挂载和健康检查见 [`doc/m7_docker_compose_deployment.md`](../../doc/m7_docker_compose_deployment.md)。快速启动：
+
+```bash
+cp deploy/.env.example deploy/.env
+cp deploy/backend.env.example deploy/backend.env
+cp deploy/db_config.yaml.example deploy/db_config.yaml
+cp deploy/llm_config.yaml.example deploy/llm_config.yaml
+docker compose --env-file deploy/.env up --build -d
+```
+
 ## 7. 常见问题
 
 - 更换嵌入模型后报错或召回异常：删除 data/vector_stores 并重建索引。

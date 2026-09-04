@@ -1,0 +1,27 @@
+# Copy and customize this file for the selected Provider.
+LLM_PROVIDER: ollama
+EMBEDDING_PROVIDER: ollama
+RESPONSE_TOP_K: 10
+INDEX_BUILD_BATCH_SIZE: 32
+INDEX_CHUNK_SIZE: 200
+RETRIEVAL_MIN_SCORE: 0.0
+RETRIEVAL_MODE: vector
+RERANKER_ENABLED: false
+MODEL_CACHE_MAX_SIZE: 4
+REPLY_CACHE_TTL: 3600
+RETRIEVAL_CACHE_TTL: 300
+CACHE_MAX_OBJECT_BYTES: 262144
+PROMPT_VERSION: m5-v1
+INDEX_VERSION: v1
+CACHE_SCHEMA_VERSION: m5-v1
+LOG_PATH: data/log
+SYSTEM_PROMPT_PATH: config/system_prompt.yaml
+RESPONSE_TEMPLATE_PATH: config/response_template.md
+VECTOR_STORE_PATH: data/vector_stores
+
+OLLAMA_CONFIG:
+  model: deepseek-r1:7b
+  embedding_model: bge-large:latest
+  host: http://host.docker.internal:11434
+  format: json
+  max_new_tokens: 600
