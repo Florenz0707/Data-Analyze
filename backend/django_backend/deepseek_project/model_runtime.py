@@ -318,42 +318,26 @@ def _build_managed_model(key: ModelInstanceKey, factory: Callable[[], Any]) -> H
 
 def configured_model(config: dict[str, Any], provider: str, *, embedding: bool = False) -> str:
     """Resolve the configured LLM or embedding model name for a provider."""
-    sections = {
-        "transformers": ("TRANSFORMERS_CONFIG", "embedding_model" if embedding else "llm_model"),
-        "ollama": ("OLLAMA_CONFIG", "embedding_model" if embedding else "model"),
-        "openai_compat": (
-            "OPENAI_COMPAT_CONFIG",
-            "embedding_model" if embedding else "model",
-        ),
-        "dashscope": (
-            "DASHSCOPE_CONFIG",
-            "embedding_model" if embedding else "chat_model",
-        ),
-    }
-    section_name, model_key = sections[provider]
-    value = (config.get(section_name) or {}).get(model_key)
-    return str(value or "")
+    from model_providers import get_adapter
+
+    adapter = get_adapter(provider)
+    return adapter.resolve_model(config, embedding=embedding)
 
 
 def configured_endpoint(config: dict[str, Any], provider: str) -> str:
     """Return the non-secret endpoint identity used in the model cache key."""
-    section_name = {
-        "transformers": "TRANSFORMERS_CONFIG",
-        "ollama": "OLLAMA_CONFIG",
-        "openai_compat": "OPENAI_COMPAT_CONFIG",
-        "dashscope": "DASHSCOPE_CONFIG",
-    }[provider]
-    section = config.get(section_name) or {}
-    return str(
-        section.get("cache_identity") or section.get("base_url") or section.get("host") or ""
-    )
+    from model_providers import get_adapter
+
+    return get_adapter(provider).cache_identity(config)
 
 
 def get_cached_llm(
     provider: str, model: str | None, config: dict[str, Any]
 ) -> tuple[Any, ModelInstanceKey]:
     """Return a bounded, shared LLM instance and its cache identity."""
-    normalized_provider = provider.lower()
+    from model_providers import normalize_provider
+
+    normalized_provider = normalize_provider(provider)
     resolved_model = (model or configured_model(config, normalized_provider)).strip()
     key = ModelInstanceKey(
         normalized_provider, resolved_model, configured_endpoint(config, normalized_provider)
@@ -373,7 +357,9 @@ def get_cached_embedding(
     provider: str, model: str | None, config: dict[str, Any]
 ) -> tuple[Any, ModelInstanceKey]:
     """Return a bounded, shared embedding instance and its cache identity."""
-    normalized_provider = provider.lower()
+    from model_providers import normalize_provider
+
+    normalized_provider = normalize_provider(provider)
     resolved_model = (
         model or configured_model(config, normalized_provider, embedding=True)
     ).strip()

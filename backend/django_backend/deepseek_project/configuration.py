@@ -9,18 +9,12 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import yaml
+from model_providers import get_adapter, registered_providers
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SUPPORTED_DATABASE_ENGINES = {"sqlite", "mysql", "postgresql"}
-SUPPORTED_LLM_PROVIDERS = {"transformers", "ollama", "openai_compat", "dashscope"}
-SUPPORTED_EMBEDDING_PROVIDERS = {
-    "auto",
-    "hf",
-    "transformers",
-    "ollama",
-    "openai_compat",
-    "dashscope",
-}
+SUPPORTED_LLM_PROVIDERS = registered_providers(embedding=False)
+SUPPORTED_EMBEDDING_PROVIDERS = registered_providers(embedding=True) | {"auto"}
 
 
 class ConfigurationError(ValueError):
@@ -158,30 +152,32 @@ def _require_model(config: dict[str, Any], section: str, key: str) -> str:
 def _validate_provider_models(
     config: dict[str, Any], llm_provider: str, embedding_provider: str
 ) -> None:
-    llm_model_keys = {
-        "transformers": ("TRANSFORMERS_CONFIG", "llm_model"),
-        "ollama": ("OLLAMA_CONFIG", "model"),
-        "openai_compat": ("OPENAI_COMPAT_CONFIG", "model"),
-        "dashscope": ("DASHSCOPE_CONFIG", "chat_model"),
-    }
-    llm_section, llm_key = llm_model_keys[llm_provider]
-    _require_model(config, llm_section, llm_key)
+    llm_adapter = get_adapter(llm_provider)
+    llm_metadata = llm_adapter.metadata
+    _require_model(
+        config,
+        llm_metadata.llm_config_section,
+        llm_metadata.llm_model_key,
+    )
 
-    if embedding_provider in {"hf", "transformers"}:
-        _require_model(config, "TRANSFORMERS_CONFIG", "embedding_model")
-    elif embedding_provider == "ollama":
-        _require_model(config, "OLLAMA_CONFIG", "embedding_model")
-    elif embedding_provider in {"openai_compat", "dashscope"}:
-        embedding_section = _require_mapping(config, embedding_provider.upper() + "_CONFIG")
-        _require_model(config, embedding_provider.upper() + "_CONFIG", "embedding_model")
-        dimensions = embedding_section.get("embedding_dimensions")
+    embedding_adapter = get_adapter(embedding_provider)
+    embedding_metadata = embedding_adapter.metadata
+    _require_model(
+        config,
+        embedding_metadata.embedding_config_section,
+        embedding_metadata.embedding_model_key,
+    )
+    dimensions_key = embedding_metadata.embedding_dimensions_key
+    if dimensions_key:
+        embedding_section = _require_mapping(config, embedding_metadata.embedding_config_section)
+        dimensions = embedding_section.get(dimensions_key)
         if dimensions is not None:
             try:
                 if int(dimensions) <= 0:
                     raise ValueError
             except (TypeError, ValueError) as exc:
                 raise ConfigurationError(
-                    f"{embedding_provider.upper()}_CONFIG.embedding_dimensions 必须是正整数"
+                    f"{embedding_metadata.embedding_config_section}.{dimensions_key} 必须是正整数"
                 ) from exc
 
 
@@ -356,8 +352,8 @@ def load_llm_config(
         raise ConfigurationError(f"不支持的 Embedding provider: {embedding_provider}")
     if embedding_provider == "auto":
         embedding_provider = llm_provider
-    config["LLM_PROVIDER"] = llm_provider
-    config["EMBEDDING_PROVIDER"] = embedding_provider
+    config["LLM_PROVIDER"] = get_adapter(llm_provider).name
+    config["EMBEDDING_PROVIDER"] = get_adapter(embedding_provider).name
     _validate_provider_models(config, llm_provider, embedding_provider)
 
     for key, default in {
