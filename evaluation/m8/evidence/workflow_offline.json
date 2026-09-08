@@ -1,0 +1,358 @@
+{
+  "suite": "m8_fixed_workflow_offline",
+  "cases": [
+    {
+      "name": "valid task 01",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 01",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 01",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 01",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 01",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 02",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 02",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 02",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 02",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 02",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 03",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 03",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 03",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 03",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 03",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 04",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 04",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 04",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 04",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 04",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 05",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 05",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 05",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 05",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 05",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 06",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 06",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 06",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 06",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 06",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 07",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 07",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 07",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 07",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 07",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 08",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 08",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 08",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 08",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "valid task 08",
+      "status": "completed",
+      "steps": 1,
+      "error_codes": [null],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "unknown tool",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["TOOL_NOT_ALLOWED"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "role denied",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["ROLE_FORBIDDEN"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "identity override",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["IDENTITY_OVERRIDE"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "range rejected",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["RANGE_EXCEEDED"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "service denied",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["SERVICE_FORBIDDEN"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "metric denied",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["METRIC_FORBIDDEN"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "step denied",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["SCHEMA_INVALID"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "unknown argument",
+      "status": "needs_human_review",
+      "steps": 1,
+      "error_codes": ["SCHEMA_INVALID"],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "",
+      "status": "needs_human_review",
+      "steps": 0,
+      "error_codes": [],
+      "trace_id": "m8-evaluation-trace"
+    },
+    {
+      "name": "step budget",
+      "status": "needs_human_review",
+      "steps": 0,
+      "error_codes": [],
+      "trace_id": "m8-evaluation-trace"
+    }
+  ],
+  "case_count": 50,
+  "pass": true,
+  "elapsed_seconds": 0.01
+}

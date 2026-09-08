@@ -1,6 +1,6 @@
-# M8 只读工具权限与审计方案（评审草案）
+# M8 只读工具权限与审计方案（已确认方案与实现记录）
 
-状态：草案，待项目评审；本文件不代表 M8 启动条件已经满足。
+状态：权限与审计方案已由用户确认；Workflow 第一阶段实现中。
 
 更新时间：2026-09-04
 
@@ -119,4 +119,40 @@
 - [ ] 拒绝、下游失败和人工接管路径已演练；
 - [ ] 只读边界经安全评审确认，且没有生产写入口。
 
-当前结论：本文件完成方案草拟，但尚未完成评审，不能作为 M8 启动条件的通过证据。评审通过后，再按本契约实现工具注册表、适配器、Workflow 边界和离线安全测试。
+当前结论：权限与审计边界已由用户确认；具体工具适配器、保留策略和完整演练仍需按第 8 节逐项验收，不能因本核心实现完成而宣称 M8 整体通过。
+
+## 9. 第一阶段 Workflow 实现
+
+已实现 `deepseek_project.agent_workflow` 固定编排核心：
+
+```text
+输入问题 → 分类(read_only_diagnostic) → 计划(最多 5 步)
+  → 服务端授权/Schema/范围校验 → 串行执行只读工具
+  → 证据验证 → 完成回答或人工复核接管
+```
+
+当前实现包括：
+
+- `ToolRegistry` 只允许方案中的五个工具，默认拒绝未注册工具；
+- `ToolContext` 保存服务端派生的用户、角色、服务范围、请求/追踪 ID、Token 和时间预算；
+- `ToolRegistry.schemas()` 暴露 `additionalProperties=false` 的版本化 JSON Schema-like 契约；
+- 工具执行前拒绝身份覆盖、越权服务、非法指标、超范围时间、非法参数和超步数请求；
+- 工具执行有 5 秒硬上限、响应大小上限和稳定错误码；超时或无证据会停止并返回 `needs_human_review`；
+- 通过依赖注入接入具体查询适配器；未配置适配器时安全返回 `BACKEND_UNAVAILABLE`，不伪造证据；
+- 每次授权/执行结果输出 `agent.tool.audit` 结构化审计事件，参数只记录脱敏值和摘要。
+
+实现证据：`backend/django_backend/deepseek_project/agent_workflow/core.py`、`backend/django_backend/deepseek_project/tests/test_agent_workflow.py`，定向测试 6/6 通过。
+
+尚未完成：生产日志/指标/发布/依赖/事故系统适配器、审计保留与集中检索、真实下游故障演练和端到端 Agent 决策评测。当前已提供 `InMemoryReadOnlyDataSource` 作为可重复评测适配器；固定 Workflow 当前不允许模型直接改变计划、权限或工具身份。
+
+## 10. 离线评测入口
+
+下一轮可直接执行以下命令进行固定 Workflow 安全与契约评测：
+
+```bash
+uv run --project backend/django_backend \
+  python evaluation/m8/run_workflow_evaluation.py \
+  --output evaluation/m8/evidence/workflow_offline.json
+```
+
+当前固定集共 50 个用例，包含 40 个五类只读工具正常任务和 10 个越权/非法参数任务。2026-09-04 实测 50/50 通过，耗时约 0.01 秒。该结果是离线契约/安全基线，不代表真实日志、指标或发布系统可用。
